@@ -87,7 +87,10 @@ public class FindMinSupport {
 //		for( String filename : inlist ) {
 //			createReducedTrees(filename);
 //		}
-        createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+
+        createLeastGappySubseq("abcded-fgijkl", 4);
+
+        //createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	}
 
 	public static void createReducedTrees( String filename, String alignName ) {
@@ -140,6 +143,26 @@ public class FindMinSupport {
         }
     }
 
+    private static String createLeastGappySubseq(String seq, int length) {
+        int[] nm = getNonGapCharacterMap(seq);
+        if( nm.length < length ) {
+            throw new RuntimeException( "less than " + length + " non-gap characters in sequence" );
+        }
+        for( int i = 0; i < nm.length - length + 1; i++ ) {
+            int numGaps = 0;
+
+
+            for( int j = i; j < i + length - 1; j++ ) {
+                numGaps += nm[j+1] - nm[j] - 1;
+            }
+
+
+            System.out.printf( "start pos: %d: %d\n", i, numGaps );
+        }
+
+        return null;
+    }
+
     private static int[] getNonGapCharacterMap(String seq) {
         int num = 0;
         for( int i = 0; i < seq.length(); i++ ) {
@@ -190,7 +213,15 @@ public class FindMinSupport {
 
         return new String(sa);
     }
+    private static void createSubseqAlignment(File infile, File outfile, String taxon, int length) {
+        MultipleAlignment ma = MultipleAlignment.loadPhylip(infile);
+        String seq = ma.getSequence(taxon);
 
+        String degseq = createLeastGappySubseq( seq, length );
+        ma.replaceSequence(taxon, degseq);
+
+        ma.writePhylip(outfile);
+    }
     private static LN[] getAsList(LN n) {
         int nNodes = countNodes(n);
         LN[] list = new LN[nNodes];
