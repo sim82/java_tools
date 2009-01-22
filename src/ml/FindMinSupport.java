@@ -87,7 +87,9 @@ public class FindMinSupport {
 //		for( String filename : inlist ) {
 //			createReducedTrees(filename);
 //		}
-        createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+ //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+         //createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
+        createReducedTrees("RAxML_bipartitions.81.BEST.WITH", "81" );
 	}
 
 	public static void createReducedTrees( String filename, String alignName ) {
@@ -143,7 +145,7 @@ public class FindMinSupport {
     private static int[] getNonGapCharacterMap(String seq) {
         int num = 0;
         for( int i = 0; i < seq.length(); i++ ) {
-            if( seq.charAt(i) != '-') {
+            if( !isGapCharacter(seq.charAt(i))) {
                 num++;
             }
         }
@@ -152,7 +154,7 @@ public class FindMinSupport {
         num = 0;
 
         for( int i = 0; i < seq.length(); i++ ) {
-            if( seq.charAt(i) != '-') {
+            if( !isGapCharacter(seq.charAt(i)) ) {
                 map[num++] = i;
             }
         }
@@ -276,6 +278,10 @@ public class FindMinSupport {
         }
 
         return ra;
+    }
+
+    private static boolean isGapCharacter(char c) {
+        return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
     }
 
 	private static String padchar(String string, char c, int num) {
