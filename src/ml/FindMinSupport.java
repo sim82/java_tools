@@ -21,6 +21,8 @@ import java.util.logging.Logger;
  */
 public class FindMinSupport {
 
+	public static Random rand = new Random();
+
 	public static String createNThReducedTree( LN n, int num ) {
 		LN[] nodelist = getAsList(n);
 
@@ -88,9 +90,9 @@ public class FindMinSupport {
 //			createReducedTrees(filename);
 //		}
 
-        createLeastGappySubseq("abcded-fgijkl", 4);
+        createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-        //createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+      //  createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	}
 
 	public static void createReducedTrees( String filename, String alignName ) {
@@ -98,7 +100,8 @@ public class FindMinSupport {
 		File alignmentdir = new File( "/space/raxml/VINCENT/DATA" );
 
 		File outdir = new File( "/space/redtree" );
-        File alignoutdir = new File( "/space/degen_alignments" );
+        File degen_alignoutdir = new File( "/space/degen_alignments" );
+		File subseq_alignoutdir = new File( "/space/subseq_alignments" );
 
 		for( int i = 0;; i++ ) {
 			File f = new File( basedir, filename );
@@ -128,8 +131,11 @@ public class FindMinSupport {
 
 
             for( int j = 0; j < 100; j+= 10 ) {
-                createDegeneratedAlignment( new File( alignmentdir, alignName ), new File( alignoutdir, alignName + "_" + padchar( "" + i, '0', 4 ) + "_" + j), taxon, j);
+                createDegeneratedAlignment( new File( alignmentdir, alignName ), new File( degen_alignoutdir, alignName + "_" + padchar( "" + i, '0', 4 ) + "_" + j), taxon, j);
             }
+
+			int ssLen = 500;
+			createSubseqAlignment(new File( alignmentdir, alignName ), new File( degen_alignoutdir, alignName + "_" + padchar( "" + i, '0', 4 ) + "_" + ssLen), taxon, ssLen );
             
 		}
         //System.out.printf( "nTT: %d\n", nTT );
@@ -148,7 +154,14 @@ public class FindMinSupport {
         if( nm.length < length ) {
             throw new RuntimeException( "less than " + length + " non-gap characters in sequence" );
         }
-        for( int i = 0; i < nm.length - length + 1; i++ ) {
+
+		int maxStartPos = nm.length - length + 1;
+
+		int[] gapsByStartpos = new int[maxStartPos];
+
+		int minGaps = Integer.MAX_VALUE;
+		
+        for( int i = 0; i < maxStartPos; i++ ) {
             int numGaps = 0;
 
 
@@ -156,9 +169,35 @@ public class FindMinSupport {
                 numGaps += nm[j+1] - nm[j] - 1;
             }
 
+			gapsByStartpos[i] = numGaps;
 
-            System.out.printf( "start pos: %d: %d\n", i, numGaps );
+			minGaps = Math.min( minGaps, numGaps );
+            //System.out.printf( "start pos: %d: %d\n", i, numGaps );
         }
+
+		if( minGaps == Integer.MAX_VALUE ) {
+			throw new RuntimeException( "could not find any start position with less infinite gaps (which should not be possible ...)" );
+		}
+		
+		System.out.printf( "best possible subseq has %d gaps\n", minGaps );
+				
+		ArrayList<Integer> minPosList = new ArrayList<Integer>();
+
+		for( int i = 0; i < maxStartPos; i++ ) {
+			if( gapsByStartpos[i] == minGaps ) {
+				minPosList.add( i );
+			}
+		}
+
+		assert( minPosList.size() >= 1 );
+
+		int sp = minPosList.get(rand.nextInt( minPosList.size()));
+		int ep = sp + length - 1;
+
+		int rsp = nm[sp];
+		int rep = nm[ep] + 1;
+
+		System.out.printf( "'%s' => '%s'\n", seq, seq.substring(rsp, rep) );
 
         return null;
     }
@@ -199,7 +238,7 @@ public class FindMinSupport {
 
         int numgaps = (int) (ngm.length * f);
 
-        Random rand = new Random();
+        
 
         for( int i = 0; i < numgaps; i++ ) {
             int n = rand.nextInt(ngmsize);
