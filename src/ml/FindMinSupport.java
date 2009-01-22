@@ -92,10 +92,10 @@ public class FindMinSupport {
 
 
 
-        createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
+//        createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
 
-        //createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+        createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 
  //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
          //createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -186,7 +186,7 @@ public class FindMinSupport {
 			throw new RuntimeException( "could not find any start position with less infinite gaps (which should not be possible ...)" );
 		}
 		
-		System.out.printf( "best possible subseq has %d gaps\n", minGaps );
+		
 				
 		ArrayList<Integer> minPosList = new ArrayList<Integer>();
 
@@ -196,6 +196,7 @@ public class FindMinSupport {
 			}
 		}
 
+        System.out.printf( "best possible subseq has %d gaps (%d alternatives)\n", minGaps, minPosList.size() );
 		assert( minPosList.size() >= 1 );
 
 		int sp = minPosList.get(rand.nextInt( minPosList.size()));
@@ -204,9 +205,11 @@ public class FindMinSupport {
 		int rsp = nm[sp];
 		int rep = nm[ep] + 1;
 
-		System.out.printf( "'%s' => '%s'\n", seq, seq.substring(rsp, rep) );
 
-        return null;
+        String sub = seq.substring(rsp, rep);
+		System.out.printf( "'%s' => '%s'\n", seq, sub );
+
+        return sub;
     }
 
     private static int[] getNonGapCharacterMap(String seq) {
