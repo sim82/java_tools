@@ -93,7 +93,7 @@ public class MultipleAlignment {
         try {
             PrintWriter w = new PrintWriter(new FileWriter(file));
 
-            w.printf( "%d %d", nTaxon, seqLen);
+            w.printf( "%d %d\n", nTaxon, seqLen);
 
             int maxNameLen = 0;
 

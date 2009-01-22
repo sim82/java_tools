@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package ml;
 
 import java.io.BufferedOutputStream;
@@ -23,45 +22,45 @@ public class FindMinSupport {
 
 	public static Random rand = new Random();
 
-	public static String createNThReducedTree( LN n, int num ) {
+	public static String createNThReducedTree(LN n, int num) {
 		LN[] nodelist = getAsList(n);
 
-        System.out.printf( "nodes: %d\n", nodelist.length );
+		System.out.printf("nodes: %d\n", nodelist.length);
 
-        int nTT = 0;
+		int nTT = 0;
 		int i = 0;
 
-        for( LN node : nodelist ) {
-            int nt = numTips(node);
+		for (LN node : nodelist) {
+			int nt = numTips(node);
 
-			if( node.data.getSupport() < 100.0 ) {
+			if (node.data.getSupport() < 100.0) {
 				continue;
 			}
 
-            if( nt == 2 ) {
-                nTT++;
+			if (nt == 2) {
+				nTT++;
 
-                String[] tn = getTipNames(node);
+				String[] tn = getTipNames(node);
 
-                assert( tn.length == 2 );
+				assert (tn.length == 2);
 
-                System.out.printf( "%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
+				System.out.printf("%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
 
-                LN tnt = getTowardsNonTip(node);
+				LN tnt = getTowardsNonTip(node);
 
-                int c = 2;
-                if( i == num ) {
-                    tnt.back.back = tnt.next.back;
-                    tnt.next.back.back = tnt.back;
+				int c = 2;
+				if (i == num) {
+					tnt.back.back = tnt.next.back;
+					tnt.next.back.back = tnt.back;
 
 					return tn[1];
-                } 
+				}
 				i++;
-				if( i == num ) {
-                    tnt.back.back = tnt.next.next.back;
-                    tnt.next.next.back.back = tnt.back;
+				if (i == num) {
+					tnt.back.back = tnt.next.next.back;
+					tnt.next.next.back.back = tnt.back;
 					return tn[0];
-                }
+				}
 				i++;
 			}
 //            else if( nt == 1 ) {
@@ -74,12 +73,12 @@ public class FindMinSupport {
 
 
 
-        }
+		}
 
 		return null;
 	}
 
-    public static void main( String[] args ) {
+	public static void main(String[] args) {
 //		String[] inlist = {"RAxML_bipartitions.125.BEST.WITH", "RAxML_bipartitions.1908.BEST.WITH", "RAxML_bipartitions.354.BEST.WITH", "RAxML_bipartitions.59.BEST.WITH", "RAxML_bipartitions.855.BEST.WITH",
 //			"RAxML_bipartitions.140.BEST.WITH", "RAxML_bipartitions.2000.BEST.WITH", "RAxML_bipartitions.404.BEST.WITH", "RAxML_bipartitions.628.BEST.WITH", "RAxML_bipartitions.8.BEST.WITH",
 //			"RAxML_bipartitions.150.BEST.WITH", "RAxML_bipartitions.217.BEST.WITH", "RAxML_bipartitions.500.BEST.WITH", "RAxML_bipartitions.714.BEST.WITH",
@@ -92,26 +91,26 @@ public class FindMinSupport {
 
 
 
-//        createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
+		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
 
-        createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 
- //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
-         //createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
+	//       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
 
 	}
 
-	public static void createReducedTrees( String filename, String alignName ) {
-		File basedir = new File( "/space/raxml/VINCENT/" );
-		File alignmentdir = new File( "/space/raxml/VINCENT/DATA" );
+	public static void createReducedTrees(String filename, String alignName) {
+		File basedir = new File("/space/raxml/VINCENT/");
+		File alignmentdir = new File("/space/raxml/VINCENT/DATA");
 
-		File outdir = new File( "/space/redtree" );
-        File degen_alignoutdir = new File( "/space/degen_alignments" );
-		File subseq_alignoutdir = new File( "/space/subseq_alignments" );
+		File outdir = new File("/space/redtree");
+		File degen_alignoutdir = new File("/space/degen_alignments");
+		File subseq_alignoutdir = new File("/space/subseq_alignments");
 
-		for( int i = 0;; i++ ) {
-			File f = new File( basedir, filename );
+		for (int i = 0;; i++) {
+			File f = new File(basedir, filename);
 
 			TreeParser tp = new TreeParser(f);
 
@@ -119,14 +118,14 @@ public class FindMinSupport {
 			LN n = tp.parse();
 
 			String taxon = createNThReducedTree(n, i);
-			if( taxon == null ) {
-				System.out.printf( "finished after %d trees\n", i );
+			if (taxon == null) {
+				System.out.printf("finished after %d trees\n", i);
 				break;
 			}
 
 
 			try {
-				File outfile = new File( outdir, filename + "_" + padchar( "" + i, '0', 4 ) );
+				File outfile = new File(outdir, filename + "_" + padchar("" + i, '0', 4));
 
 				PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(outfile)));
 				TreePrinter.printRaw(n, ps);
@@ -134,236 +133,247 @@ public class FindMinSupport {
 			} catch (FileNotFoundException ex) {
 				Logger.getLogger(FindMinSupport.class.getName()).log(Level.SEVERE, null, ex);
 			}
-            System.out.printf( "dropped taxon: %s\n", taxon );
+			System.out.printf("dropped taxon: %s\n", taxon);
 
 
-            for( int j = 0; j < 100; j+= 10 ) {
-                createDegeneratedAlignment( new File( alignmentdir, alignName ), new File( degen_alignoutdir, alignName + "_" + padchar( "" + i, '0', 4 ) + "_" + j), taxon, j);
-            }
+			for (int j = 0; j < 100; j += 10) {
+				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
+			}
 
-			int ssLen = 500;
-			createSubseqAlignment(new File( alignmentdir, alignName ), new File( degen_alignoutdir, alignName + "_" + padchar( "" + i, '0', 4 ) + "_" + ssLen), taxon, ssLen );
-            
+			int ssLen = 35;
+			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
+
 		}
-        //System.out.printf( "nTT: %d\n", nTT );
-    }
+	//System.out.printf( "nTT: %d\n", nTT );
+	}
 
-    private static int countNodes(LN n) {
-        if( n.data.isTip ) {
-            return 1;
-        } else {
-            return 1 + countNodes(n.next.back) + countNodes(n.next.next.back);
-        }
-    }
+	private static int countNodes(LN n) {
+		if (n.data.isTip) {
+			return 1;
+		} else {
+			return 1 + countNodes(n.next.back) + countNodes(n.next.next.back);
+		}
+	}
 
-    private static String createLeastGappySubseq(String seq, int length) {
-        int[] nm = getNonGapCharacterMap(seq);
-        if( nm.length < length ) {
-            throw new RuntimeException( "less than " + length + " non-gap characters in sequence" );
-        }
+	private static String createLeastGappySubseq(String seq, int length) {
+		int[] nm = getNonGapCharacterMap(seq);
+		if (nm.length < length) {
+			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
+		}
 
 		int maxStartPos = nm.length - length + 1;
 
 		int[] gapsByStartpos = new int[maxStartPos];
 
 		int minGaps = Integer.MAX_VALUE;
-		
-        for( int i = 0; i < maxStartPos; i++ ) {
-            int numGaps = 0;
+
+		for (int i = 0; i < maxStartPos; i++) {
+			int numGaps = 0;
 
 
-            for( int j = i; j < i + length - 1; j++ ) {
-                numGaps += nm[j+1] - nm[j] - 1;
-            }
+			for (int j = i; j < i + length - 1; j++) {
+				numGaps += nm[j + 1] - nm[j] - 1;
+			}
 
 			gapsByStartpos[i] = numGaps;
 
-			minGaps = Math.min( minGaps, numGaps );
-            //System.out.printf( "start pos: %d: %d\n", i, numGaps );
-        }
-
-		if( minGaps == Integer.MAX_VALUE ) {
-			throw new RuntimeException( "could not find any start position with less infinite gaps (which should not be possible ...)" );
+			minGaps = Math.min(minGaps, numGaps);
+		//System.out.printf( "start pos: %d: %d\n", i, numGaps );
 		}
-		
-		
-				
+
+		if (minGaps == Integer.MAX_VALUE) {
+			throw new RuntimeException("could not find any start position with less infinite gaps (which should not be possible ...)");
+		}
+
+
+
 		ArrayList<Integer> minPosList = new ArrayList<Integer>();
 
-		for( int i = 0; i < maxStartPos; i++ ) {
-			if( gapsByStartpos[i] == minGaps ) {
-				minPosList.add( i );
+		for (int i = 0; i < maxStartPos; i++) {
+			if (gapsByStartpos[i] == minGaps) {
+				minPosList.add(i);
 			}
 		}
 
-        System.out.printf( "best possible subseq has %d gaps (%d alternatives)\n", minGaps, minPosList.size() );
-		assert( minPosList.size() >= 1 );
+		System.out.printf("best possible subseq has %d gaps (%d alternatives)\n", minGaps, minPosList.size());
+		assert (minPosList.size() >= 1);
 
-		int sp = minPosList.get(rand.nextInt( minPosList.size()));
+		int sp = minPosList.get(rand.nextInt(minPosList.size()));
 		int ep = sp + length - 1;
 
 		int rsp = nm[sp];
 		int rep = nm[ep] + 1;
 
 
-        String sub = seq.substring(rsp, rep);
-		System.out.printf( "'%s' => '%s'\n", seq, sub );
+		String sub = repchar('-', rsp) + seq.substring(rsp, rep) + repchar('-', seq.length() - rep);
+		System.out.printf("'%s' =>\n'%s'\n", seq, sub);
 
-        return sub;
-    }
+		return sub;
+	}
 
-    private static int[] getNonGapCharacterMap(String seq) {
-        int num = 0;
-        for( int i = 0; i < seq.length(); i++ ) {
-            if( !isGapCharacter(seq.charAt(i))) {
-                num++;
-            }
-        }
+	private static String repchar(char c, int n) {
+		StringBuffer sb = new StringBuffer(n);
+		for (int i = 0; i < n; i++) {
+			sb.append(c);
+		}
 
-        int[] map = new int[num];
-        num = 0;
+		return sb.toString();
+	}
 
-        for( int i = 0; i < seq.length(); i++ ) {
-            if( !isGapCharacter(seq.charAt(i)) ) {
-                map[num++] = i;
-            }
-        }
-        return map;
-    }
+	private static int[] getNonGapCharacterMap(String seq) {
+		int num = 0;
+		for (int i = 0; i < seq.length(); i++) {
+			if (!isGapCharacter(seq.charAt(i))) {
+				num++;
+			}
+		}
 
-    private static void createDegeneratedAlignment(File infile, File outfile, String taxon, int dp) {
-        MultipleAlignment ma = MultipleAlignment.loadPhylip(infile);
-        String seq = ma.getSequence(taxon);
+		int[] map = new int[num];
+		num = 0;
 
-        String degseq = createDegeneratedSequence( seq, dp / 100.0f);
-        ma.replaceSequence(taxon, degseq);
+		for (int i = 0; i < seq.length(); i++) {
+			if (!isGapCharacter(seq.charAt(i))) {
+				map[num++] = i;
+			}
+		}
+		return map;
+	}
 
-        ma.writePhylip(outfile);
-    }
+	private static void createDegeneratedAlignment(File infile, File outfile, String taxon, int dp) {
+		MultipleAlignment ma = MultipleAlignment.loadPhylip(infile);
+		String seq = ma.getSequence(taxon);
 
-    private static String createDegeneratedSequence(String seq, float f) {
-        int[] ngm = getNonGapCharacterMap(seq);
-        int ngmsize = ngm.length;
-        char[] sa = seq.toCharArray();
+		String degseq = createDegeneratedSequence(seq, dp / 100.0f);
+		ma.replaceSequence(taxon, degseq);
 
-        int numgaps = (int) (ngm.length * f);
+		ma.writePhylip(outfile);
+	}
 
-        
+	private static String createDegeneratedSequence(String seq, float f) {
+		int[] ngm = getNonGapCharacterMap(seq);
+		int ngmsize = ngm.length;
+		char[] sa = seq.toCharArray();
 
-        for( int i = 0; i < numgaps; i++ ) {
-            int n = rand.nextInt(ngmsize);
-
-            int r = ngm[n];
-            sa[r] = '-';
-
-            ngm[n] = ngm[ngmsize-1];
-            ngmsize--;
-        }
-
-        return new String(sa);
-    }
-    private static void createSubseqAlignment(File infile, File outfile, String taxon, int length) {
-        MultipleAlignment ma = MultipleAlignment.loadPhylip(infile);
-        String seq = ma.getSequence(taxon);
-
-        String degseq = createLeastGappySubseq( seq, length );
-        ma.replaceSequence(taxon, degseq);
-
-        ma.writePhylip(outfile);
-    }
-    private static LN[] getAsList(LN n) {
-        int nNodes = countNodes(n);
-        LN[] list = new LN[nNodes];
+		int numgaps = (int) (ngm.length * f);
 
 
 
-        int xpos = insertDFS( n, list, 0 );
+		for (int i = 0; i < numgaps; i++) {
+			int n = rand.nextInt(ngmsize);
 
-        if( xpos != nNodes ) {
-            throw new RuntimeException("xpos != nNodes");
-        }
+			int r = ngm[n];
+			sa[r] = '-';
 
-        return list;
-    }
+			ngm[n] = ngm[ngmsize - 1];
+			ngmsize--;
+		}
 
-    static int insertDFS( LN n, LN[] list, int pos ) {
-        if( n.data.isTip ) {
-            list[pos] = n;
-            return pos + 1;
-        } else {
+		return new String(sa);
+	}
 
-            pos = insertDFS(n.next.back, list, pos);
-            pos = insertDFS(n.next.next.back, list, pos);
-            list[pos] = n;
-            return pos + 1;
-        }
-    }
+	private static void createSubseqAlignment(File infile, File outfile, String taxon, int length) {
+		MultipleAlignment ma = MultipleAlignment.loadPhylip(infile);
+		String seq = ma.getSequence(taxon);
 
-    static int numTips( LN n ) {
-        if( n.data.isTip ) {
-            return 0;
-        } else {
-            LN start = n;
-            LN cur = n.next;
-            int nTips = 0;
+		String degseq = createLeastGappySubseq(seq, length);
+		ma.replaceSequence(taxon, degseq);
 
-            while( cur != start ) {
-                if( cur.back.data.isTip ) {
-                    nTips++;
-                }
-                cur = cur.next;
-            }
+		ma.writePhylip(outfile);
+	}
 
-            return nTips;
-        }
-    }
-
-    static LN getTowardsNonTip( LN n ) {
-        LN start = n;
-        LN cur = n.next;
-        
-        while( cur != start ) {
-            
-            cur = cur.next;
-
-            if( !cur.back.data.isTip ) {
-                break;
-            }
-        }
-
-        return cur;
-    }
-
-    static String[] getTipNames( LN n ) {
-        ArrayList<String> tipnames = new ArrayList<String>();
-        
-        LN start = n;
-        LN cur = n.next;
-        int nTips = 0;
-
-        while( cur != start ) {
-            if( cur.back.data.isTip ) {
-                tipnames.add( cur.back.data.getTipName());
-            }
-            cur = cur.next;
-        }
-
-        String[] ra = new String[tipnames.size()];
+	private static LN[] getAsList(LN n) {
+		int nNodes = countNodes(n);
+		LN[] list = new LN[nNodes];
 
 
-        for( int i = 0; i < tipnames.size(); i++ ) {
-            ra[i] = tipnames.get(i);
-        }
 
-        return ra;
-    }
+		int xpos = insertDFS(n, list, 0);
 
-    private static boolean isGapCharacter(char c) {
-        return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
-    }
+		if (xpos != nNodes) {
+			throw new RuntimeException("xpos != nNodes");
+		}
+
+		return list;
+	}
+
+	static int insertDFS(LN n, LN[] list, int pos) {
+		if (n.data.isTip) {
+			list[pos] = n;
+			return pos + 1;
+		} else {
+
+			pos = insertDFS(n.next.back, list, pos);
+			pos = insertDFS(n.next.next.back, list, pos);
+			list[pos] = n;
+			return pos + 1;
+		}
+	}
+
+	static int numTips(LN n) {
+		if (n.data.isTip) {
+			return 0;
+		} else {
+			LN start = n;
+			LN cur = n.next;
+			int nTips = 0;
+
+			while (cur != start) {
+				if (cur.back.data.isTip) {
+					nTips++;
+				}
+				cur = cur.next;
+			}
+
+			return nTips;
+		}
+	}
+
+	static LN getTowardsNonTip(LN n) {
+		LN start = n;
+		LN cur = n.next;
+
+		while (cur != start) {
+
+			cur = cur.next;
+
+			if (!cur.back.data.isTip) {
+				break;
+			}
+		}
+
+		return cur;
+	}
+
+	static String[] getTipNames(LN n) {
+		ArrayList<String> tipnames = new ArrayList<String>();
+
+		LN start = n;
+		LN cur = n.next;
+		int nTips = 0;
+
+		while (cur != start) {
+			if (cur.back.data.isTip) {
+				tipnames.add(cur.back.data.getTipName());
+			}
+			cur = cur.next;
+		}
+
+		String[] ra = new String[tipnames.size()];
+
+
+		for (int i = 0; i < tipnames.size(); i++) {
+			ra[i] = tipnames.get(i);
+		}
+
+		return ra;
+	}
+
+	private static boolean isGapCharacter(char c) {
+		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
+	}
 
 	private static String padchar(String string, char c, int num) {
-		while( string.length() < num ) {
+		while (string.length() < num) {
 			string = c + string;
 		}
 		return string;
