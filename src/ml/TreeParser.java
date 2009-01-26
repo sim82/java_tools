@@ -117,6 +117,33 @@ public class TreeParser {
 		return node;
 	}
 
+    private String parseBranchLabel() {
+        if( inputA[ptr] == '[' ) {
+            int lstart = ptr;
+            ptr++;
+            
+
+            int lend = findNext(ptr, ']' );
+
+            ptr = lend+1;
+
+            // labels have the form [blablabla], so the label content starts at lstart + 1
+
+            if( lend - (lstart+1) <= 0 ) {
+                printLocation();
+                throw new RuntimeException("bad branch label: " + substring(lstart, ptr) );
+            }
+
+            return substring(lstart + 1, lend);
+            
+
+        } else {
+            return null;
+        }
+
+
+    }
+
 	private LN parseNode() {
 		skipWhitespace();
 
@@ -166,6 +193,8 @@ public class TreeParser {
 		// parse left node + branch length
 		LN nl = parseNode();
 		double l1 = parseBranchLength();
+        String label1 = parseBranchLabel();
+
 
 		skipWhitespace();
 
@@ -181,6 +210,7 @@ public class TreeParser {
 		// parse right node + branch length
 		LN nr = parseNode();
 		double l2 = parseBranchLength();
+        String label2 = parseBranchLabel();
 
 		skipWhitespace();
 
@@ -207,8 +237,8 @@ public class TreeParser {
 			LN n = LN.create();
             n.data.setSupport(support);
 
-			twiddle( nl, n.next, l1 );
-			twiddle( nr, n.next.next, l2 );
+			twiddle( nl, n.next, l1, label1 );
+			twiddle( nr, n.next.next, l2, label2 );
 
 
 			return n;
@@ -219,7 +249,8 @@ public class TreeParser {
 			LN nx = parseNode();
 
 			double l3 = parseBranchLength();
-
+            String label3 = parseBranchLabel();
+            
 			skipWhitespace();
 
 			if( inputA[ptr] != ')' ) {
@@ -231,9 +262,9 @@ public class TreeParser {
 
 			LN n = LN.create();
 
-			twiddle( nl, n.next, l1 );
-			twiddle( nr, n.next.next, l2 );
-			twiddle( nx, n, l3 );
+			twiddle( nl, n.next, l1, label1 );
+			twiddle( nr, n.next.next, l2, label2 );
+			twiddle( nx, n, l3, label3 );
 
 			return n;
 		} else {
@@ -251,7 +282,7 @@ public class TreeParser {
 	 * @param n2
 	 * @param branchLen
 	 */
-	private static void twiddle( LN n1, LN n2, double branchLen ) {
+	private static void twiddle( LN n1, LN n2, double branchLen, String branchLabel ) {
 		if( n1.back != null ) {
 			throw new RuntimeException( "n1.back != null" );
 		}
@@ -265,8 +296,8 @@ public class TreeParser {
 
         n1.backLen = branchLen;
         n2.backLen = branchLen;
-
-
+        n1.backLabel = branchLabel;
+        n2.backLabel = branchLabel;
 	}
 
 

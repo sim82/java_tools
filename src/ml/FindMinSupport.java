@@ -22,8 +22,8 @@ public class FindMinSupport {
 
 	public static Random rand = new Random();
 
-	public static String createNThReducedTree(LN n, int num) {
-		LN[] nodelist = getAsList(n);
+	public static String[] createNThReducedTree(LN n, int num) {
+		LN[] nodelist = LN.getAsList(n);
 
 		System.out.printf("nodes: %d\n", nodelist.length);
 
@@ -40,6 +40,7 @@ public class FindMinSupport {
 			if (nt == 2) {
 				nTT++;
 
+
 				String[] tn = getTipNames(node);
 
 				assert (tn.length == 2);
@@ -48,18 +49,28 @@ public class FindMinSupport {
 
 				LN tnt = getTowardsNonTip(node);
 
+
+                String ret[] = new String[2];
 				int c = 2;
 				if (i == num) {
 					tnt.back.back = tnt.next.back;
 					tnt.next.back.back = tnt.back;
 
-					return tn[1];
+                    ret[0] = tn[1];
+                    ret[1] = tn[0];
+					//return tn[1];
+                    return ret;
 				}
 				i++;
 				if (i == num) {
 					tnt.back.back = tnt.next.next.back;
 					tnt.next.next.back.back = tnt.back;
-					return tn[0];
+
+                    ret[0] = tn[0];
+                    ret[1] = tn[1];
+                    return ret;
+                    
+					//return tn[0];
 				}
 				i++;
 			}
@@ -75,7 +86,7 @@ public class FindMinSupport {
 
 		}
 
-		return null;
+		return new String[2];
 	}
 
 	public static void main(String[] args) {
@@ -94,9 +105,11 @@ public class FindMinSupport {
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
 
-		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
-
-	//       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
+	//	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
+	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
+    //createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+        //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
+        //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
 
 	}
@@ -109,6 +122,14 @@ public class FindMinSupport {
 		File degen_alignoutdir = new File("/space/degen_alignments");
 		File subseq_alignoutdir = new File("/space/subseq_alignments");
 
+        PrintStream real_neighborfile;
+        try {
+            real_neighborfile = new PrintStream(new FileOutputStream(new File(degen_alignoutdir, "real_neighbors_" + alignName + ".txt")));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(FindMinSupport.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException("bailing out");
+        }
+
 		for (int i = 0;; i++) {
 			File f = new File(basedir, filename);
 
@@ -117,12 +138,16 @@ public class FindMinSupport {
 
 			LN n = tp.parse();
 
-			String taxon = createNThReducedTree(n, i);
+			String[] taxonAN = createNThReducedTree(n, i);
+            String taxon = taxonAN[0];
+
+            
+
 			if (taxon == null) {
 				System.out.printf("finished after %d trees\n", i);
 				break;
 			}
-
+            real_neighborfile.println( taxonAN[0] + "\t" + taxonAN[1] );
 
 			try {
 				File outfile = new File(outdir, filename + "_" + padchar("" + i, '0', 4));
@@ -136,25 +161,20 @@ public class FindMinSupport {
 			System.out.printf("dropped taxon: %s\n", taxon);
 
 
-			for (int j = 0; j < 100; j += 10) {
-				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
-			}
+//			for (int j = 50; j < 100; j += 10) {
+//				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
+//			}
 
-			int ssLen = 35;
-			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
+//			int ssLen = 500;
+//			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
 
 		}
+
+        real_neighborfile.close();
 	//System.out.printf( "nTT: %d\n", nTT );
 	}
 
-	private static int countNodes(LN n) {
-		if (n.data.isTip) {
-			return 1;
-		} else {
-			return 1 + countNodes(n.next.back) + countNodes(n.next.next.back);
-		}
-	}
-
+	
 	private static String createLeastGappySubseq(String seq, int length) {
 		int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
@@ -281,33 +301,7 @@ public class FindMinSupport {
 		ma.writePhylip(outfile);
 	}
 
-	private static LN[] getAsList(LN n) {
-		int nNodes = countNodes(n);
-		LN[] list = new LN[nNodes];
-
-
-
-		int xpos = insertDFS(n, list, 0);
-
-		if (xpos != nNodes) {
-			throw new RuntimeException("xpos != nNodes");
-		}
-
-		return list;
-	}
-
-	static int insertDFS(LN n, LN[] list, int pos) {
-		if (n.data.isTip) {
-			list[pos] = n;
-			return pos + 1;
-		} else {
-
-			pos = insertDFS(n.next.back, list, pos);
-			pos = insertDFS(n.next.next.back, list, pos);
-			list[pos] = n;
-			return pos + 1;
-		}
-	}
+	
 
 	static int numTips(LN n) {
 		if (n.data.isTip) {
