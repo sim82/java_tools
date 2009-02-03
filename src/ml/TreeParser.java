@@ -237,8 +237,8 @@ public class TreeParser {
 			LN n = LN.create();
             n.data.setSupport(support);
 
-			twiddle( nl, n.next, l1, label1 );
-			twiddle( nr, n.next.next, l2, label2 );
+			twiddle( nl, n.next, l1, label1, nl.data.getSupport() );
+			twiddle( nr, n.next.next, l2, label2, nr.data.getSupport() );
 
 
 			return n;
@@ -262,9 +262,9 @@ public class TreeParser {
 
 			LN n = LN.create();
 
-			twiddle( nl, n.next, l1, label1 );
-			twiddle( nr, n.next.next, l2, label2 );
-			twiddle( nx, n, l3, label3 );
+			twiddle( nl, n.next, l1, label1, nl.data.getSupport() );
+			twiddle( nr, n.next.next, l2, label2, nr.data.getSupport() );
+			twiddle( nx, n, l3, label3, nx.data.getSupport() );
 
 			return n;
 		} else {
@@ -282,7 +282,7 @@ public class TreeParser {
 	 * @param n2
 	 * @param branchLen
 	 */
-	private static void twiddle( LN n1, LN n2, double branchLen, String branchLabel ) {
+	private static void twiddle( LN n1, LN n2, double branchLen, String branchLabel, double support ) {
 		if( n1.back != null ) {
 			throw new RuntimeException( "n1.back != null" );
 		}
@@ -298,6 +298,9 @@ public class TreeParser {
         n2.backLen = branchLen;
         n1.backLabel = branchLabel;
         n2.backLabel = branchLabel;
+        n1.backSupport = support;
+        n2.backSupport = support;
+
 	}
 
 

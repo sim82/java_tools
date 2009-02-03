@@ -11,14 +11,21 @@ public class ANode {
 	}
 
 	public String getTipName() {
-		assert( isTip );
+
+		//assert( isTip );
+
+        if( !isTip ) {
+            throw new RuntimeException( "getTipName called for non tip" );
+        }
 		return tipName;
 	}
+
 
     void setSupport(double support) {
         this.support = support;
     }
 
+    // note: the support ist not really a property of the nodes, but it is convenient for the parser to store them in the nodes.
     double getSupport() {
         return support;
     }

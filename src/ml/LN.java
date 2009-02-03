@@ -8,7 +8,7 @@ public class LN {
 	LN back;
 	double backLen;
     String backLabel;
-
+    double backSupport;
 
 	public LN( ANode data ) {
 		this.data = data;

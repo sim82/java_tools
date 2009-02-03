@@ -30,62 +30,92 @@ public class FindMinSupport {
 		int nTT = 0;
 		int i = 0;
 
-		for (LN node : nodelist) {
-			int nt = numTips(node);
+        //if( true ) {
+        for (LN node : nodelist) {
+            int nt = numTips(node);
 
-			if (node.data.getSupport() < 100.0) {
-				continue;
-			}
+            if (node.data.getSupport() < 100.0) {
+                continue;
+            }
 
-			if (nt == 2) {
-				nTT++;
+            if (nt == 2) {
+                nTT++;
 
 
-				String[] tn = getTipNames(node);
+                String[] tn = getTipNames(node);
 
-				assert (tn.length == 2);
+                assert (tn.length == 2);
 
-				System.out.printf("%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
+                System.out.printf("%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
 
-				LN tnt = getTowardsNonTip(node);
-
+                LN tnt = getTowardsNonTip(node);
+                if( tnt.back.data.isTip ) {
+                    throw new RuntimeException("tnt.back.data.isTip is true");
+                }
 
                 String ret[] = new String[2];
-				int c = 2;
-				if (i == num) {
-					tnt.back.back = tnt.next.back;
-					tnt.next.back.back = tnt.back;
+                //int c = 2;
+                if (i == num) {
+                    tnt.back.back = tnt.next.back;
+                    tnt.next.back.back = tnt.back;
 
                     ret[0] = tn[1];
                     ret[1] = tn[0];
-					//return tn[1];
+                    //return tn[1];
                     return ret;
-				}
-				i++;
-				if (i == num) {
-					tnt.back.back = tnt.next.next.back;
-					tnt.next.next.back.back = tnt.back;
+                }
+                i++;
+                if (i == num) {
+                    tnt.back.back = tnt.next.next.back;
+                    tnt.next.next.back.back = tnt.back;
 
                     ret[0] = tn[0];
                     ret[1] = tn[1];
                     return ret;
-                    
-					//return tn[0];
-				}
-				i++;
-			}
-//            else if( nt == 1 ) {
-//                String[] tn = getTipNames(node);
-//
-//                assert( tn.length == 1 );
-//
-//                System.out.printf( "%s %f (%s): %d\n", node.data, node.data.getSupport(), tn[0], nt);
-//            }
+
+                    //return tn[0];
+                }
+                i++;
+            }
 
 
 
-		}
+        }
+        //}
 
+        // find cases where a single tip has two neighboring brnaches with 100 % support
+        // this is done in an extra loop to keep the sorting order compatible with the old version
+		for (LN node : nodelist) {
+			int nt = numTips(node);
+
+            if( nt == 1 ) {
+                LN tt = getTowardsTip(node);
+
+//                if( tt.back.data.getTipName().equals("poly914")) {
+//                    System.out.printf( "poly914\n" );
+//                }
+
+                if( !tt.next.back.data.isTip && !tt.next.next.back.data.isTip && tt.next.backSupport >= 100.0 && tt.next.next.backSupport >= 100.0 ) {
+                    if( i == num ) {
+
+                        String ret[] = new String[2];
+
+                        // remove the current node (and the branch toward the tip) by retwiddling of the other two nodes
+                        tt.next.back.back = tt.next.next.back;
+                        tt.next.next.back.back = tt.next.back;
+
+                        ret[0] = tt.back.data.getTipName();
+                        ret[1] = null;
+
+                        return ret;
+
+                    }
+
+                    i++;
+                }
+            }
+
+        }
 		return new String[2];
 	}
 
@@ -104,10 +134,10 @@ public class FindMinSupport {
 
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-
-	//	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
-	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
-    //createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+	createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+//	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
+//	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
+//    createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -122,9 +152,11 @@ public class FindMinSupport {
 		File degen_alignoutdir = new File("/space/degen_alignments");
 		File subseq_alignoutdir = new File("/space/subseq_alignments");
 
-        PrintStream real_neighborfile;
+        PrintStream realNeighborFile;
+        PrintStream numberToTaxonFile;
         try {
-            real_neighborfile = new PrintStream(new FileOutputStream(new File(degen_alignoutdir, "real_neighbors_" + alignName + ".txt")));
+            realNeighborFile = new PrintStream(new FileOutputStream(new File(degen_alignoutdir, "real_neighbors_" + alignName + ".txt")));
+            numberToTaxonFile = new PrintStream(new FileOutputStream(new File(degen_alignoutdir, "number_to_taxon_" + alignName + ".txt")));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(FindMinSupport.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("bailing out");
@@ -147,7 +179,14 @@ public class FindMinSupport {
 				System.out.printf("finished after %d trees\n", i);
 				break;
 			}
-            real_neighborfile.println( taxonAN[0] + "\t" + taxonAN[1] );
+
+            if( taxonAN[1] != null ) {
+                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxonAN[0] + "\t" + taxonAN[1] );
+            } else {
+                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxonAN[0] + "\t" + "*NONE*" );
+            }
+
+            numberToTaxonFile.printf( "%s\t%s\n", padchar("" + i, '0', 4), taxonAN[0] );
 
 			try {
 				File outfile = new File(outdir, filename + "_" + padchar("" + i, '0', 4));
@@ -164,13 +203,14 @@ public class FindMinSupport {
 //			for (int j = 50; j < 100; j += 10) {
 //				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
 //			}
-
+//
 //			int ssLen = 500;
 //			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
 
 		}
 
-        real_neighborfile.close();
+        realNeighborFile.close();
+        numberToTaxonFile.close();
 	//System.out.printf( "nTT: %d\n", nTT );
 	}
 
@@ -327,12 +367,28 @@ public class FindMinSupport {
 		LN cur = n.next;
 
 		while (cur != start) {
-
+// FIXME: is this right
 			cur = cur.next;
 
 			if (!cur.back.data.isTip) {
 				break;
 			}
+		}
+
+		return cur;
+	}
+
+    static LN getTowardsTip(LN n) {
+		LN start = n;
+		LN cur = n.next;
+
+		while (cur != start) {
+            if (cur.back.data.isTip) {
+				break;
+			}
+			cur = cur.next;
+
+			
 		}
 
 		return cur;
