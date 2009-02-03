@@ -10,9 +10,21 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+
+class ReductionResult {
+
+	String taxon;
+	String taxonNeighbor;
+
+	LN nl;
+	LN nr;
+}
 
 /**
  *
@@ -22,7 +34,7 @@ public class FindMinSupport {
 
 	public static Random rand = new Random();
 
-	public static String[] createNThReducedTree(LN n, int num) {
+	public static ReductionResult createNThReducedTree(LN n, int num) {
 		LN[] nodelist = LN.getAsList(n);
 
 		System.out.printf("nodes: %d\n", nodelist.length);
@@ -48,29 +60,45 @@ public class FindMinSupport {
 
                 System.out.printf("%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
 
-                LN tnt = getTowardsNonTip(node);
+                LN tnt = LN.getTowardsNonTip(node);
                 if( tnt.back.data.isTip ) {
                     throw new RuntimeException("tnt.back.data.isTip is true");
                 }
 
-                String ret[] = new String[2];
+                //String ret[] = new String[2];
+				ReductionResult ret = null;
                 //int c = 2;
                 if (i == num) {
+					ret = new ReductionResult();
+					ret.taxon = tn[1];
+					ret.taxonNeighbor = tn[0];
+					ret.nl = tnt.back;
+					ret.nr = tnt.next.back;
+
                     tnt.back.back = tnt.next.back;
                     tnt.next.back.back = tnt.back;
 
-                    ret[0] = tn[1];
-                    ret[1] = tn[0];
+
+
+//                    ret[0] = tn[1];
+//                    ret[1] = tn[0];
                     //return tn[1];
                     return ret;
                 }
                 i++;
                 if (i == num) {
+					ret = new ReductionResult();
+					ret.taxon = tn[0];
+					ret.taxonNeighbor = tn[1];
+					ret.nl = tnt.back;
+					ret.nr = tnt.next.next.back;
+
+
                     tnt.back.back = tnt.next.next.back;
                     tnt.next.next.back.back = tnt.back;
 
-                    ret[0] = tn[0];
-                    ret[1] = tn[1];
+//                    ret[0] = tn[0];
+//                    ret[1] = tn[1];
                     return ret;
 
                     //return tn[0];
@@ -89,7 +117,7 @@ public class FindMinSupport {
 			int nt = numTips(node);
 
             if( nt == 1 ) {
-                LN tt = getTowardsTip(node);
+                LN tt = LN.getTowardsTip(node);
 
 //                if( tt.back.data.getTipName().equals("poly914")) {
 //                    System.out.printf( "poly914\n" );
@@ -98,14 +126,20 @@ public class FindMinSupport {
                 if( !tt.next.back.data.isTip && !tt.next.next.back.data.isTip && tt.next.backSupport >= 100.0 && tt.next.next.backSupport >= 100.0 ) {
                     if( i == num ) {
 
-                        String ret[] = new String[2];
+                        //String ret[] = new String[2];
+
+						ReductionResult ret = new ReductionResult();
+						ret.taxon = tt.back.data.getTipName();
+						ret.taxonNeighbor = null;
+						ret.nl = tt.next.back;
+						ret.nr = tt.next.next.back;
 
                         // remove the current node (and the branch toward the tip) by retwiddling of the other two nodes
                         tt.next.back.back = tt.next.next.back;
                         tt.next.next.back.back = tt.next.back;
 
-                        ret[0] = tt.back.data.getTipName();
-                        ret[1] = null;
+//                        ret[0] = tt.back.data.getTipName();
+//                        ret[1] = null;
 
                         return ret;
 
@@ -116,7 +150,7 @@ public class FindMinSupport {
             }
 
         }
-		return new String[2];
+		return null;
 	}
 
 	public static void main(String[] args) {
@@ -170,23 +204,25 @@ public class FindMinSupport {
 
 			LN n = tp.parse();
 
-			String[] taxonAN = createNThReducedTree(n, i);
-            String taxon = taxonAN[0];
+			//String[] taxonAN = createNThReducedTree(n, i);
+
+			ReductionResult res = createNThReducedTree(n, i);
 
             
 
-			if (taxon == null) {
+            
+
+			if (res == null) {
 				System.out.printf("finished after %d trees\n", i);
 				break;
 			}
+			String taxon = res.taxon;
+            
 
-            if( taxonAN[1] != null ) {
-                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxonAN[0] + "\t" + taxonAN[1] );
-            } else {
-                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxonAN[0] + "\t" + "*NONE*" );
-            }
+            numberToTaxonFile.printf( "%s\t%s\n", padchar("" + i, '0', 4), taxon );
 
-            numberToTaxonFile.printf( "%s\t%s\n", padchar("" + i, '0', 4), taxonAN[0] );
+
+
 
 			try {
 				File outfile = new File(outdir, filename + "_" + padchar("" + i, '0', 4));
@@ -207,11 +243,48 @@ public class FindMinSupport {
 //			int ssLen = 500;
 //			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
 
+
+			
+			// find the split induced by the tip position, to identify the insertion position in the reduced tree
+			String[] ssl; // smaller split list
+			{
+				LN[] ll = LN.getAsList(res.nl, false);
+				LN[] lr = LN.getAsList(res.nr, false);
+
+				Set<String> sl = LN.getTipSet(ll);
+				Set<String> sr = LN.getTipSet(lr);
+
+				Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
+
+				ssl = new String[smallset.size()];
+				ssl = smallset.toArray(ssl);
+				Arrays.sort(ssl);
+			}
+				
+			
+			if( res.taxonNeighbor != null ) {
+                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxon + "\t" + res.taxonNeighbor + "\t" + commaSeparatedList(ssl));
+            } else {
+                realNeighborFile.println( padchar("" + i, '0', 4) + "\t" + taxon + "\t" + "*NONE*" + "\t" + commaSeparatedList(ssl));
+            }
+
 		}
 
         realNeighborFile.close();
         numberToTaxonFile.close();
 	//System.out.printf( "nTT: %d\n", nTT );
+	}
+
+	private static String commaSeparatedList(String[] ssl) {
+		StringBuilder sb = new StringBuilder();
+		for( int i = 0; i < ssl.length; i++ ) {
+			sb.append(ssl[i]);
+			if( i != ssl.length - 1 ) {
+				sb.append(",");
+			}
+		}
+
+		return sb.toString();
 	}
 
 	
@@ -242,7 +315,7 @@ public class FindMinSupport {
 		}
 
 		if (minGaps == Integer.MAX_VALUE) {
-			throw new RuntimeException("could not find any start position with less infinite gaps (which should not be possible ...)");
+			throw new RuntimeException("could not find any start position with less than infinite gaps (which should not be possible ...)");
 		}
 
 
@@ -362,37 +435,20 @@ public class FindMinSupport {
 		}
 	}
 
-	static LN getTowardsNonTip(LN n) {
-		LN start = n;
-		LN cur = n.next;
-
-		while (cur != start) {
-// FIXME: is this right
-			cur = cur.next;
-
-			if (!cur.back.data.isTip) {
-				break;
-			}
-		}
-
-		return cur;
-	}
-
-    static LN getTowardsTip(LN n) {
-		LN start = n;
-		LN cur = n.next;
-
-		while (cur != start) {
-            if (cur.back.data.isTip) {
-				break;
-			}
-			cur = cur.next;
-
-			
-		}
-
-		return cur;
-	}
+	
+//	static LN getTowardsTree( LN n ) {
+//		if( !n.data.isTip ) {
+//			throw new RuntimeException( "parameter is not a tip" );
+//		}
+//
+//		for( int i = 0; i < 3; i++, n = n.next ) {
+//			if( n.back != null ) {
+//				return n;
+//			}
+//		}
+//
+//		throw new RuntimeException( "at tip: could not find LN pointing towards the tree" );
+//	}
 
 	static String[] getTipNames(LN n) {
 		ArrayList<String> tipnames = new ArrayList<String>();

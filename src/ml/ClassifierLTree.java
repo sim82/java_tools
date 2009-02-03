@@ -29,7 +29,7 @@ public class ClassifierLTree {
         File rnFile = new File( args[1] );
 
         Map<String,String> rnm = parseRealNeighbors( rnFile );
-
+		Map<String,String[]> splitmap = parseSplits( rnFile );
 
         File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
         File classFile = new File( dir, "RAxML_classification." + args[2] );
@@ -55,23 +55,43 @@ public class ClassifierLTree {
 
                     int support = Integer.parseInt(supports);
 
+					System.out.printf( "seq: '%s'\n", seq );
+
+                    
 
 
-                    String realNeighbor = rnm.get(seq);
-                    assert( realNeighbor != null );
+					if( false ) {
+						String realNeighbor = rnm.get(seq);
+						assert( realNeighbor != null );
 
-                    LN rnTip = findTip( lnl, realNeighbor );
+						LN rnTip = findTip( lnl, realNeighbor );
 
-                    if( rnTip == null ) {
-                        throw new RuntimeException("could not find LN for tip '" + realNeighbor  + "'");
-                    }
+						if( rnTip == null ) {
+							throw new RuntimeException("could not find LN for tip '" + realNeighbor  + "'");
+						}
 
-                    double len = getPathLenToNamedBranch(rnTip, branch);
+						double len = getPathLenToNamedBranch(rnTip, branch);
 
-//                    LN neighborTip = findTipWithNamedBranch( lnl, branch );
-//
-//                    System.out.printf( "%s %s %d %s %s %f\n", seq, branch, support, realNeighbor, neighborTip.data.getTipName(), len );
-                    System.out.printf( "%s %s %d %s %f\n", seq, branch, support, realNeighbor, len );
+	//                    LN neighborTip = findTipWithNamedBranch( lnl, branch );
+	//
+	//                    System.out.printf( "%s %s %d %s %s %f\n", seq, branch, support, realNeighbor, neighborTip.data.getTipName(), len );
+						System.out.printf( "%s %s %d %s %f\n", seq, branch, support, realNeighbor, len );
+					} else {
+						String[] split = splitmap.get(seq);
+						LN[] realBranch = LN.findBranchBySplit(n, split);
+
+
+						// get path len between real position and current insertion position
+						double len = getPathLenToNamedBranch(realBranch[0], branch, false);
+						if( len < 0 ) {
+							len = getPathLenToNamedBranch(realBranch[1], branch, false);
+						}
+
+
+						System.out.printf( "%s %s %s %d %f\n", seq, branch, realBranch[0].backLabel, support, len );
+						//System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
+
+					}
 
                 } catch (NoSuchElementException x) {
                     System.out.printf( "bad line in raxml classifier output: " + line );
@@ -137,7 +157,7 @@ public class ClassifierLTree {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-
+					String seq = st.nextToken();
                     String k = st.nextToken();
                     String v = st.nextToken();
 
@@ -151,6 +171,12 @@ public class ClassifierLTree {
             }
 
             r.close();
+
+//			for( Map.Entry<String,String> e : map.entrySet() ) {
+//				System.out.printf( "rnm: '%s' => '%s'\n", e.getKey(), e.getValue() );
+//
+//			}
+
             return map;
 
         } catch (IOException ex) {
@@ -160,6 +186,73 @@ public class ClassifierLTree {
         }
     }
 
+	private static Map<String, String[]> parseSplits(File rnFile) {
+        try {
+            BufferedReader r = new BufferedReader(new FileReader(rnFile));
+
+            Map<String,String[]> map = new HashMap<String, String[]>();
+
+
+            String line;
+
+            while( (line = r.readLine()) != null ) {
+
+
+                try {
+                    StringTokenizer st = new StringTokenizer(line);
+					String seq = st.nextToken();
+                    String k = st.nextToken();
+					st.nextToken(); // skip the 'real neighbor'
+                    String v = st.nextToken();
+
+
+					//
+					// parse the 'split list' (comma separated list of tips names)
+					//
+
+					StringTokenizer st2 = new StringTokenizer(v, ",");
+					String tip;
+					
+					int num = st2.countTokens();
+					if( num < 1 ) {
+						throw new RuntimeException("could not parse split list from real neighbor file");
+					}
+
+					String[] split = new String[num];
+
+
+//					System.out.printf( "split: %s\n", k );
+					for( int i = 0; i < num; i++ ) {
+						split[i] = st2.nextToken();
+//						System.out.printf( " '%s'", split[i] );
+					}
+					//split[num] = k;
+//					System.out.println();
+					
+                    map.put(k,split);
+                } catch( NoSuchElementException x ) {
+
+                    System.out.printf( "bad line in tsv file: " + line );
+                    x.printStackTrace();
+                    throw new RuntimeException("bailing out");
+                }
+            }
+
+            r.close();
+
+//			for( Map.Entry<String,String> e : map.entrySet() ) {
+//				System.out.printf( "rnm: '%s' => '%s'\n", e.getKey(), e.getValue() );
+//
+//			}
+
+            return map;
+
+        } catch (IOException ex) {
+            Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
+
+            throw new RuntimeException( "bailing out");
+        }
+    }
 
 //    public static LN findTip( LN start, String name ) {
 //        if( start.data.isTip ) {

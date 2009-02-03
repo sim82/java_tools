@@ -1,5 +1,10 @@
 package ml;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 
 public class LN {
 
@@ -25,12 +30,16 @@ public class LN {
 	}
 
     public static LN[] getAsList(LN n) {
-		int nNodes = countNodes(n);
+		return getAsList(n, true);
+	}
+
+	public static LN[] getAsList(LN n, boolean back) {
+		int nNodes = countNodes(n, back);
 		LN[] list = new LN[nNodes];
 
 
 
-		int xpos = insertDFS(n, list, 0, true );
+		int xpos = insertDFS(n, list, 0, back );
 
 		if (xpos != nNodes) {
 			throw new RuntimeException("xpos != nNodes");
@@ -104,4 +113,183 @@ public class LN {
 
         throw new RuntimeException( "this seems to be a completely unlinked LN (all LNs in ring have no back pointer" );
     }
+
+	static LN getTowardsNonTip(LN n) {
+		LN start = n;
+		LN cur = n.next;
+
+		while (cur != start) {
+// FIXME: is this right
+			cur = cur.next;
+
+			if (!cur.back.data.isTip) {
+				break;
+			}
+		}
+
+		return cur;
+	}
+
+    static LN getTowardsTip(LN n) {
+		LN start = n;
+		LN cur = n.next;
+
+		while (cur != start) {
+            if (cur.back.data.isTip) {
+				break;
+			}
+			cur = cur.next;
+
+
+		}
+
+		return cur;
+	}
+
+
+	static Set<String> getTipSet(LN[] list) {
+		HashSet<String> set = new HashSet<String>();
+
+		for( LN n : list ) {
+			if( n.data.isTip) {
+				set.add(n.data.getTipName());
+			}
+		}
+
+		return set;
+	}
+
+	static LN[] findBranchBySplitTrivial( LN n, String tipName ) {
+		LN[] list = getAsList(n);
+
+		
+		for( LN ln : list ) {
+			if( ln.data.isTip && ln.data.getTipName().equals(tipName)) {
+				LN[] ret = {ln, ln.back};
+				return ret;
+			}
+		}
+
+		throw new RuntimeException( "could not find node for tip '" + tipName + "'" );
+
+	}
+	
+	static LN[] findBranchBySplit( LN n, String[] split ) {
+		if( split.length == 1 ) {
+			// trivial case, won't work with the algorithm below
+
+			return findBranchBySplitTrivial( n, split[0] );
+		}
+
+
+		LN[] list = getAsList(n);
+
+		Map<String,LN> tipIndex = new HashMap<String,LN>();
+		Map<Integer,LN> nodeIndex = new HashMap<Integer,LN>();
+		
+		// build indices: tipname => LN and node-serialnumber => LN
+		for( LN ln : list ) {
+			if( ln.data.isTip ) {
+				tipIndex.put(ln.data.getTipName(), ln);
+			}
+
+			if( !nodeIndex.containsKey(n.data.serial)) {
+				nodeIndex.put(ln.data.serial, ln);
+			}
+		}
+
+		//
+		// at-hoc algorithm for finding the separating branch, given one split-set: 
+		// flood the tree from the tips of the split-set:
+		//
+		// nodes get 'marked' if they have two marked
+		// neighbors. At the beginning only the leafs from one split-set are marked.
+		// The recursion stops at the branch that separates the two split-sets
+		// (this description is rubbish)
+		//
+		Set<Integer>markedNodes = new HashSet<Integer>();
+		Set<Integer>openNodes = new HashSet<Integer>(markedNodes);
+
+		for( String name : split ) {
+			LN tip = tipIndex.get(name);
+
+			if( tip == null ) {
+				throw new RuntimeException("tip '" + name + "' not found in tip index" );
+			}
+
+			markedNodes.add( tip.data.serial );
+
+			tip = LN.getTowardsTree(tip);
+
+			openNodes.add( tip.back.data.serial );
+		}
+
+		while( openNodes.size() > 1 ) {
+
+			int lastNode = -1;
+			LN lastLN = null;
+
+			// if this is too slow, we could keep track of the mark-count
+			// and use a priority queue:
+			
+			for( int next : openNodes ) {
+				LN oln = nodeIndex.get(next);
+
+				int markedCount = 0;
+				for( int i = 0; i < 3; i++, oln = oln.next ) {
+					if( markedNodes.contains(oln.back.data.serial)) {
+						markedCount++;
+					}
+				}
+
+
+				if( markedCount == 2 ) {
+					lastNode = next;
+					lastLN = oln;
+					break;
+				}
+			}
+
+			if( lastNode < 0 ) {
+				throw new RuntimeException("no open node with two marked neighbors found. looks like a bad split" );
+			}
+
+			openNodes.remove(lastNode);
+			markedNodes.add(lastNode);
+
+			for( int i = 0; i < 3; i++, lastLN = lastLN.next ) {
+				if( !markedNodes.contains(lastLN.back.data.serial)) {
+					openNodes.add(lastLN.back.data.serial);
+				}
+			}
+
+		}
+
+		if( openNodes.size() != 1 ) {
+			throw new RuntimeException( "split finder finished but openNodes.size != 1 !?" );
+		}
+
+		
+
+		LN[] ret = new LN[2];
+
+		// the last node on the open list is on one side of the separating
+		LN n1 = nodeIndex.get(openNodes.iterator().next());
+
+		// the neighbor that is not in the 'marked' set is the other half of the
+		// separating branch
+		
+		for( int i = 0; i < 3; i++, n1 = n1.next ) {
+			if( !markedNodes.contains(n1.back.data.serial) ) {
+				ret[0] = n1;
+				ret[1] = n1.back;
+				return ret;
+			}
+		}
+		
+		throw new RuntimeException("the node next to the split does not have an unmarked neighbor" );
+
+
+	}
+
 }

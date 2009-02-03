@@ -2,11 +2,15 @@ package ml;
 
 public class ANode {
 
+	static int serialCount = 1;
+
+	public final int serial = serialCount++;
+
 	boolean isTip;
 	private String tipName;
     private double support;
 	public void setTipName(String name) {
-		assert( isTip && name != null );
+		assert( !isTip && name != null );
 		tipName = name;
 	}
 
