@@ -301,16 +301,16 @@ public class LN {
         LN[] nodelist = getAsList(n);
 
         for( LN node : nodelist ) {
-            if( node.data.isTip ) {
-                System.out.printf( "tip: %s\n", node.data.getTipName() );
-            }
+//            if( node.data.isTip ) {
+//                System.out.printf( "tip: %s\n", node.data.getTipName() );
+//            }
             if( node.data.isTip(taxon) ) {
                 node = getTowardsTree(node);
 
-                node.next.back.back = node.next.next.back;
-                node.next.next.back.back = node.next.back;
+                node.back.next.back.back = node.back.next.next.back;
+                node.back.next.next.back.back = node.back.next.back;
 
-                LN[] ret = {node.next.back, node.next.next.back};
+                LN[] ret = {node.back.next.back, node.back.next.next.back};
                 return ret;
             }
         }
@@ -318,4 +318,28 @@ public class LN {
         throw new RuntimeException( "could not find tip with name '" + taxon + "'" );
     }
 
+
+	public static double longestPath( LN n ) {
+		if( !n.data.isTip ) {
+			throw new RuntimeException("this method is only for tips");
+		}
+
+
+		n = LN.getTowardsTree(n);
+
+		return n.backLen + longestPathRec( n.back );
+	}
+
+
+	public static double longestPathRec( LN n ) {
+		if( n.data.isTip ) {
+			return 0.0;
+		} else {
+			double len1 = longestPathRec(n.next.back) + n.next.backLen;
+			double len2 = longestPathRec(n.next.next.back) + n.next.next.backLen;
+
+			return Math.max(len1, len2);
+
+		}
+	}
 }
