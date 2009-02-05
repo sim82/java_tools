@@ -33,7 +33,7 @@ public class ClassifierLTree {
 
         File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
         File classFile = new File( dir, "RAxML_classification." + args[2] );
-
+        File originalFile = new File( dir, args[3] );
 
         TreeParser tp = new TreeParser(oltFile);
         LN n = tp.parse();
@@ -60,38 +60,57 @@ public class ClassifierLTree {
                     
 
 
-					if( false ) {
-						String realNeighbor = rnm.get(seq);
-						assert( realNeighbor != null );
-
-						LN rnTip = findTip( lnl, realNeighbor );
-
-						if( rnTip == null ) {
-							throw new RuntimeException("could not find LN for tip '" + realNeighbor  + "'");
-						}
-
-						double len = getPathLenToNamedBranch(rnTip, branch);
-
-	//                    LN neighborTip = findTipWithNamedBranch( lnl, branch );
-	//
-	//                    System.out.printf( "%s %s %d %s %s %f\n", seq, branch, support, realNeighbor, neighborTip.data.getTipName(), len );
-						System.out.printf( "%s %s %d %s %f\n", seq, branch, support, realNeighbor, len );
-					} else {
-						String[] split = splitmap.get(seq);
-						LN[] realBranch = LN.findBranchBySplit(n, split);
-
-
-						// get path len between real position and current insertion position
-						double len = getPathLenToNamedBranch(realBranch[0], branch, false);
-						if( len < 0 ) {
-							len = getPathLenToNamedBranch(realBranch[1], branch, false);
-						}
+//					if( false ) {
+//						String realNeighbor = rnm.get(seq);
+//						assert( realNeighbor != null );
+//
+//						LN rnTip = findTip( lnl, realNeighbor );
+//
+//						if( rnTip == null ) {
+//							throw new RuntimeException("could not find LN for tip '" + realNeighbor  + "'");
+//						}
+//
+//						double len = getPathLenToNamedBranch(rnTip, branch);
+//
+//
+//
+//	//                    LN neighborTip = findTipWithNamedBranch( lnl, branch );
+//	//
+//	//                    System.out.printf( "%s %s %d %s %s %f\n", seq, branch, support, realNeighbor, neighborTip.data.getTipName(), len );
+//						System.out.printf( "%s %s %d %s %f\n", seq, branch, support, realNeighbor, len );
+//					} else {
+                    String[] split = splitmap.get(seq);
+                    LN[] realBranch = LN.findBranchBySplit(n, split);
 
 
-						System.out.printf( "%s %s %s %d %f\n", seq, branch, realBranch[0].backLabel, support, len );
-						//System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
+                    double lenOT;
+                    {
+                        TreeParser tpo = new TreeParser(oltFile);
+                        LN origTree = tpo.parse();
+                        
+                        // original position branch
+                        LN[] opb = origTree.removeTaxon(origTree, seq);
 
-					}
+                        // origTree can never be removed by removeTaxon so it's ok to use it as pseudo root
+                        LN[] ipb = LN.findBranchBySplit(origTree, split);
+
+                        double lenOT0 = getBranchBranchDistance(opb[0], ipb);
+                        double lenOT1 = getBranchBranchDistance(opb[1], ipb);
+
+                        lenOT = Math.max( lenOT0, lenOT1 );
+                        
+                    }
+                    // get path len between real position and current insertion position
+                    double len = getPathLenToNamedBranch(realBranch[0], branch, false);
+                    if( len < 0 ) {
+                        len = getPathLenToNamedBranch(realBranch[1], branch, false);
+                    }
+
+
+                    System.out.printf( "%s %s %s %d %f %f\n", seq, branch, realBranch[0].backLabel, support, len, lenOT );
+                    //System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
+
+//					}
 
                 } catch (NoSuchElementException x) {
                     System.out.printf( "bad line in raxml classifier output: " + line );
@@ -141,6 +160,31 @@ public class ClassifierLTree {
         }
         System.out.printf( "\n" );
         return null;
+    }
+
+    static boolean branchEquals( LN[] b1, LN[] b2 ) {
+        return (b1[0].data.serial == b2[0].data.serial && b1[1].data.serial == b2[1].data.serial) ||
+               (b1[0].data.serial == b2[1].data.serial && b1[1].data.serial == b2[0].data.serial);
+    }
+
+    private static double getBranchBranchDistance(LN n, LN[] b) {
+        if( n.data.serial == b[0].data.serial || n.data.serial == b[1].data.serial ) {
+            return 0.0;
+        } else {
+            double len = getBranchBranchDistance(n.next.back, b);
+            if( len >= 0 ) {
+                return len + n.next.backLen;
+            } else {
+                len = getBranchBranchDistance(n.next.next.back, b);
+
+                if( len >= 0 ) {
+                    return len + n.next.next.backLen;
+                }
+            }
+
+            return -1;
+
+        }
     }
 
     private static Map<String, String> parseRealNeighbors(File rnFile) {

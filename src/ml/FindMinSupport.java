@@ -168,10 +168,10 @@ public class FindMinSupport {
 
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-	createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+	//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 //	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
-//    createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+    createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );

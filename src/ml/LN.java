@@ -292,4 +292,30 @@ public class LN {
 
 	}
 
+    public static LN[] removeTaxon( LN n, String taxon ) {
+        if( n.data.isTip(taxon)) {
+            // keep it simple
+            throw new RuntimeException( "ooops! the tip to be removed is used as pseudo root. bailing out" );
+        }
+
+        LN[] nodelist = getAsList(n);
+
+        for( LN node : nodelist ) {
+            if( node.data.isTip ) {
+                System.out.printf( "tip: %s\n", node.data.getTipName() );
+            }
+            if( node.data.isTip(taxon) ) {
+                node = getTowardsTree(node);
+
+                node.next.back.back = node.next.next.back;
+                node.next.next.back.back = node.next.back;
+
+                LN[] ret = {node.next.back, node.next.next.back};
+                return ret;
+            }
+        }
+
+        throw new RuntimeException( "could not find tip with name '" + taxon + "'" );
+    }
+
 }

@@ -33,6 +33,11 @@ public class ANode {
     double getSupport() {
         return support;
     }
+
+
+    boolean isTip(String taxon) {
+        return isTip && getTipName().equals(taxon);
+    }
 }
 
 
