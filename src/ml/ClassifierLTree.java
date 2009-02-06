@@ -40,6 +40,9 @@ public class ClassifierLTree {
         TreeParser tp = new TreeParser(oltFile);
         LN n = tp.parse();
         LN[] lnl = LN.getAsList(n);
+
+        double oltDiameter = treeDiameter(n);
+
         try {
 
             BufferedReader r = new BufferedReader(new FileReader(classFile));
@@ -122,19 +125,20 @@ public class ClassifierLTree {
                         // origTree can never be removed by removeTaxon so it's ok to use it as pseudo root
                         LN[] ipb = LN.findBranchBySplit(origTree, insertSplit);
 
-						if( false ) {
-	//						System.out.printf( ">>>\n" );
-							double lenOT0 = getBranchBranchDistance(opb[0], ipb);
-	//						System.out.printf( "<<<\n>>>" );
-							double lenOT1 = getBranchBranchDistance(opb[1], ipb);
-	//						System.out.printf( "<<<\n" );
-
-							lenOT = Math.min( lenOT0, lenOT1 );
-						} else {
-							double lenOT1 = getBranchBranchDistancex(opb, ipb);
+//						if( false ) {
+//	//						System.out.printf( ">>>\n" );
+//							double lenOT0 = getPathLenToBranch(opb[0], ipb);
+//	//						System.out.printf( "<<<\n>>>" );
+//							double lenOT1 = getPathLenToBranch(opb[1], ipb);
+//	//						System.out.printf( "<<<\n" );
+//
+//							lenOT = Math.min( lenOT0, lenOT1 );
+//						} else {
+                        {
+							double lenOT1 = getPathLenBranchToBranch(opb, ipb);
 							
 							LN[] opbflip = {opb[1], opb[0]};
-							double lenOT2 = getBranchBranchDistancex(opbflip, ipb);
+							double lenOT2 = getPathLenBranchToBranch(opbflip, ipb);
 
 
 							System.out.printf( "opb: %f %f\n", lenOT1, lenOT2 );
@@ -149,7 +153,14 @@ public class ClassifierLTree {
                     }
 
 
-                    System.out.printf( "%s %s %s %d %f %f %f\n", seq, branch, realBranch[0].backLabel, support, len, lenOT, lenOT / origDiameter );
+
+                    int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
+                    if( lenUW == Integer.MAX_VALUE ) {
+                        lenUW = getUnweightedPathLenToNamedBranch(realBranch[1], branch, false);
+                    }
+
+
+                    System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / origDiameter, origDiameter, oltDiameter );
                     //System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
 
 //					}
@@ -225,7 +236,7 @@ public class ClassifierLTree {
                (b1[0].data.serial == b2[1].data.serial && b1[1].data.serial == b2[0].data.serial);
     }
 
-    private static double getBranchBranchDistance(LN n, LN[] b) {
+    private static double getPathLenToBranch(LN n, LN[] b) {
 		if( n == null ) {
 			return Double.POSITIVE_INFINITY;
 		}
@@ -235,11 +246,11 @@ public class ClassifierLTree {
         if( n.data.serial == b[0].data.serial || n.data.serial == b[1].data.serial ) {
             return 0.0;
         } else {
-            double len = getBranchBranchDistance(n.next.back, b);
+            double len = getPathLenToBranch(n.next.back, b);
             if( len < Double.POSITIVE_INFINITY ) {
                 return len + n.next.backLen;
             } else {
-                len = getBranchBranchDistance(n.next.next.back, b);
+                len = getPathLenToBranch(n.next.next.back, b);
 
                 if( len < Double.POSITIVE_INFINITY ) {
                     return len + n.next.next.backLen;
@@ -251,7 +262,7 @@ public class ClassifierLTree {
         }
     }
 
-	private static double getBranchBranchDistancex(LN n[], LN[] b) {
+	private static double getPathLenBranchToBranch(LN n[], LN[] b) {
 		
 
 		//System.out.printf( "bbd: %d (%d %d) --- ", n[0].data.serial, n[1].data.serial, b[0].data.serial, b[1].data.serial );
@@ -265,7 +276,7 @@ public class ClassifierLTree {
 				{
 					LN[] next = {n[0].next.back, n[0].next};
 
-					double len = getBranchBranchDistancex( next, b);
+					double len = getPathLenBranchToBranch( next, b);
 
 					if( len < Double.POSITIVE_INFINITY ) {
 						return len + n[0].backLen;
@@ -275,7 +286,7 @@ public class ClassifierLTree {
 				{
 					LN[] next = {n[0].next.next.back, n[0].next.next};
 
-					double len = getBranchBranchDistancex( next, b);
+					double len = getPathLenBranchToBranch( next, b);
 
 					if( len < Double.POSITIVE_INFINITY ) {
 						return len + n[0].backLen;
@@ -463,30 +474,60 @@ public class ClassifierLTree {
     public static double getPathLenToNamedBranch( LN node, String name) {
         return getPathLenToNamedBranch(node, name, true);
     }
+//    public static double getPathLenToNamedBranch( LN node, String name, boolean back ) {
+//
+//        if( node.backLabel.equals(name)) {
+//            return 0.0;
+//        }
+//        if( back && node.back != null ) {
+//            double len = getPathLenToNamedBranch(node.back, name, false);
+//
+//            if( len >= 0 ) {
+//                return len + node.backLen;
+//            }
+//        }
+//        if( node.next.back != null ) {
+//            double len = getPathLenToNamedBranch(node.next.back, name, false);
+//
+//            if( len >= 0 ) {
+//                return len + node.next.backLen;
+//            }
+//        }
+//        if( node.next.next.back != null ) {
+//            double len = getPathLenToNamedBranch(node.next.next.back, name, false);
+//
+//            if( len >= 0 ) {
+//                return len + node.next.next.backLen;
+//            }
+//        }
+//
+//        return -1;
+//
+//    }
+
     public static double getPathLenToNamedBranch( LN node, String name, boolean back ) {
-        
+
+        if( back ) {
+            throw new RuntimeException( "the 'back' flag is not supported for this opperation.bailing out." );
+        }
+
+
         if( node.backLabel.equals(name)) {
             return 0.0;
         }
-        if( back && node.back != null ) {
-            double len = getPathLenToNamedBranch(node.back, name, false);
-
-            if( len >= 0 ) {
-                return len + node.backLen;
-            }
-        }
+        
         if( node.next.back != null ) {
             double len = getPathLenToNamedBranch(node.next.back, name, false);
 
             if( len >= 0 ) {
-                return len + node.next.backLen;
+                return len + node.backLen;
             }
         }
         if( node.next.next.back != null ) {
             double len = getPathLenToNamedBranch(node.next.next.back, name, false);
 
             if( len >= 0 ) {
-                return len + node.next.next.backLen;
+                return len + node.backLen;
             }
         }
 
@@ -494,6 +535,35 @@ public class ClassifierLTree {
 
     }
 
+    public static int getUnweightedPathLenToNamedBranch( LN node, String name, boolean back ) {
+
+        if( back ) {
+            throw new RuntimeException( "the 'back' flag is not supported for this opperation.bailing out." );
+        }
+
+
+        if( node.backLabel.equals(name)) {
+            return 0;
+        }
+
+        if( node.next.back != null ) {
+            int len = getUnweightedPathLenToNamedBranch(node.next.back, name, false);
+
+            if( len < Integer.MAX_VALUE ) {
+                return len + 1;
+            }
+        }
+        if( node.next.next.back != null ) {
+            int len = getUnweightedPathLenToNamedBranch(node.next.next.back, name, false);
+
+            if( len < Integer.MAX_VALUE ) {
+                return len + 1;
+            }
+        }
+
+        return Integer.MAX_VALUE;
+
+    }
 
 	public static double treeDiameter( LN n ) {
 		LN[] list = LN.getAsList(n);
