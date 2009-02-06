@@ -9,6 +9,26 @@ public class ANode {
 	boolean isTip;
 	private String tipName;
     private double support;
+
+    public boolean contentEquals( ANode other ) {
+        if( this.isTip) {
+            return other.isTip && this.tipName.equals(other.tipName) && this.support == other.support;
+        } else {
+            return !other.isTip && this.support == other.support;
+        }
+    }
+
+
+
+    public ANode() {
+    }
+
+    public ANode( ANode other ) {
+        this.isTip = other.isTip;
+        this.tipName = other.tipName;
+        this.support = other.support;
+    }
+
 	public void setTipName(String name) {
 		assert( !isTip && name != null );
 		tipName = name;

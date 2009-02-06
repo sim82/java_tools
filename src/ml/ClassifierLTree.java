@@ -43,6 +43,14 @@ public class ClassifierLTree {
 
         double oltDiameter = treeDiameter(n);
 
+        LN[] list1 = LN.getAsList(n);
+        LN nn = LN.deepCloneDirected(n, true);
+
+        LN[] list2 = LN.getAsList(n);
+        LN[] list3 = LN.getAsList(nn);
+
+        System.out.printf( "cmp: %s %s %s\n", cmpLNList( list1, list2 ), cmpLNList( list1, list3 ), cmpLNList( list2, list3 ));
+
         try {
 
             BufferedReader r = new BufferedReader(new FileReader(classFile));
@@ -51,7 +59,8 @@ public class ClassifierLTree {
             String line;
 
             while( ( line = r.readLine() ) != null ) {
-				double origDiameter = Double.NaN;
+                // highest path weight in reference tree (=path with the highest sum of edge weights, no necessarily the longest path)
+				double reftreeDiameter = Double.NaN;
 
                 try {
                     StringTokenizer ts = new StringTokenizer(line);
@@ -67,25 +76,6 @@ public class ClassifierLTree {
                     
 
 
-//					if( false ) {
-//						String realNeighbor = rnm.get(seq);
-//						assert( realNeighbor != null );
-//
-//						LN rnTip = findTip( lnl, realNeighbor );
-//
-//						if( rnTip == null ) {
-//							throw new RuntimeException("could not find LN for tip '" + realNeighbor  + "'");
-//						}
-//
-//						double len = getPathLenToNamedBranch(rnTip, branch);
-//
-//
-//
-//	//                    LN neighborTip = findTipWithNamedBranch( lnl, branch );
-//	//
-//	//                    System.out.printf( "%s %s %d %s %s %f\n", seq, branch, support, realNeighbor, neighborTip.data.getTipName(), len );
-//						System.out.printf( "%s %s %d %s %f\n", seq, branch, support, realNeighbor, len );
-//					} else {
                     String[] split = splitmap.get(seq);
                     LN[] realBranch = LN.findBranchBySplit(n, split);
 
@@ -112,12 +102,12 @@ public class ClassifierLTree {
                         LN origTree = tpo.parse();
 
 
-						if( Double.isNaN(origDiameter)) {
-							origDiameter = treeDiameter(origTree);
+						if( Double.isNaN(reftreeDiameter)) {
+							reftreeDiameter = treeDiameter(origTree);
 						}
 						
 
-						System.out.printf( "diameter: %f\n", origDiameter );
+						System.out.printf( "diameter: %f\n", reftreeDiameter );
 
                         // original position branch
                         LN[] opb = LN.removeTaxon(origTree, seq);
@@ -125,15 +115,6 @@ public class ClassifierLTree {
                         // origTree can never be removed by removeTaxon so it's ok to use it as pseudo root
                         LN[] ipb = LN.findBranchBySplit(origTree, insertSplit);
 
-//						if( false ) {
-//	//						System.out.printf( ">>>\n" );
-//							double lenOT0 = getPathLenToBranch(opb[0], ipb);
-//	//						System.out.printf( "<<<\n>>>" );
-//							double lenOT1 = getPathLenToBranch(opb[1], ipb);
-//	//						System.out.printf( "<<<\n" );
-//
-//							lenOT = Math.min( lenOT0, lenOT1 );
-//						} else {
                         {
 							double lenOT1 = getPathLenBranchToBranch(opb, ipb);
 							
@@ -160,7 +141,7 @@ public class ClassifierLTree {
                     }
 
 
-                    System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / origDiameter, origDiameter, oltDiameter );
+                    System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
                     //System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
 
 //					}
@@ -585,5 +566,25 @@ public class ClassifierLTree {
 
 		return longestPath;
 	}
-    
+
+    static boolean cmpLNList( LN[] l1, LN[] l2 ) {
+        
+
+        if( l1.length != l2.length ) {
+            return false;
+        } else {
+            boolean equal = true;
+
+            for( int i = 0; i < l1.length && equal; i++ ) {
+                equal = equal &&
+                        l1[i].backLabel.equals(l2[i].backLabel) &&
+                        l1[i].backLen == l2[i].backLen &&
+                        l1[i].backSupport == l2[i].backSupport &&
+                        l1[i].data.contentEquals(l2[i].data);
+            }
+
+            return equal;
+        }
+    }
+
 }

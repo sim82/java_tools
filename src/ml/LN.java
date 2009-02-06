@@ -342,4 +342,39 @@ public class LN {
 
 		}
 	}
+
+    public static LN deepCloneDirected( LN n, boolean back ) {
+        assert( n.data == n.next.data && n.data == n.next.next.data );
+
+        ANode data = new ANode(n.data);
+
+        LN nn = new LN(data);
+        nn.next = new LN(data);
+        nn.next.next = new LN(data);
+        nn.next.next.next = nn;
+
+
+        if( back ) {
+            nn.back = (n.back != null) ? deepCloneDirected(n.back, false) : null;
+        }
+
+        nn.next.back = (n.next.back != null) ? deepCloneDirected(n.next.back, false) : null;
+        nn.next.next.back = (n.next.next.back != null) ? deepCloneDirected(n.next.next.back, false) : null;
+
+        nn.backLabel = n.backLabel;
+        nn.backLen = n.backLen;
+        nn.backSupport = n.backSupport;
+
+        nn.next.backLabel = n.next.backLabel;
+        nn.next.backLen = n.next.backLen;
+        nn.next.backSupport = n.next.backSupport;
+
+        nn.next.next.backLabel = n.next.next.backLabel;
+        nn.next.next.backLen = n.next.next.backLen;
+        nn.next.next.backSupport = n.next.next.backSupport;
+
+
+        return nn;
+    }
+
 }
