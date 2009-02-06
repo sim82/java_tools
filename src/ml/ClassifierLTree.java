@@ -35,22 +35,40 @@ public class ClassifierLTree {
 
         File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
         File classFile = new File( dir, "RAxML_classification." + args[2] );
-        File originalFile = new File( args[3] );
+        File reftreeFile = new File( args[3] );
 
-        TreeParser tp = new TreeParser(oltFile);
-        LN n = tp.parse();
+        // parse 'original labelled tree'
+        LN n;
+        {
+            TreeParser tp = new TreeParser(oltFile);
+            n = tp.parse();
+        }
         LN[] lnl = LN.getAsList(n);
 
         double oltDiameter = treeDiameter(n);
 
-        LN[] list1 = LN.getAsList(n);
-        LN nn = LN.deepCloneDirected(n, true);
+        // parse reference tree used for weighted branch difference stuff
+        LN reftree;
+        {
+            TreeParser tpreftree = new TreeParser(reftreeFile);
+            reftree = tpreftree.parse();
+        }
 
-        LN[] list2 = LN.getAsList(n);
-        LN[] list3 = LN.getAsList(nn);
+// highest path weight in reference tree (=path with the highest sum of edge weights, no necessarily the longest path)
+        double reftreeDiameter = treeDiameter(reftree);
 
-        System.out.printf( "cmp: %s %s %s\n", cmpLNList( list1, list2 ), cmpLNList( list1, list3 ), cmpLNList( list2, list3 ));
+        // some 'anal' tests for the deep-clone stuff
+        {
+            LN[] list1 = LN.getAsList(n);
+            LN nn = LN.deepClone(n);
 
+            LN[] list2 = LN.getAsList(n);
+            LN[] list3 = LN.getAsList(nn);
+
+            System.out.printf( "cmp: %s %s %s %s %s %s\n", LN.cmpLNList( list1, list2 ), LN.cmpLNList( list1, list3 ), LN.cmpLNList( list2, list3 ), LN.cmpLNListObjectIdentity( list1, list2 ), LN.cmpLNListObjectIdentity( list1, list3 ), LN.cmpLNListObjectIdentity( list2, list3 ));
+            System.out.printf( "sym: %s %s\n", LN.checkLinkSymmetry(n), LN.checkLinkSymmetry(nn) );
+        }
+        
         try {
 
             BufferedReader r = new BufferedReader(new FileReader(classFile));
@@ -59,27 +77,31 @@ public class ClassifierLTree {
             String line;
 
             while( ( line = r.readLine() ) != null ) {
-                // highest path weight in reference tree (=path with the highest sum of edge weights, no necessarily the longest path)
-				double reftreeDiameter = Double.NaN;
+                
+		
 
                 try {
+                    // parse line from raxml classification output
                     StringTokenizer ts = new StringTokenizer(line);
 
+                    // the name of the classified taxon
                     String seq = ts.nextToken();
-                    String branch = ts.nextToken();
-                    String supports = ts.nextToken();
 
+                    // name of the branch, the classifier has put the taxon in (= current insertion position)
+                    String branch = ts.nextToken();
+
+                    // boostrap support of this classification
+                    String supports = ts.nextToken();
                     int support = Integer.parseInt(supports);
 
 					System.out.printf( "seq: '%s'\n", seq );
 
-                    
 
-
+                    // get the split that identifies the original insertion position
                     String[] split = splitmap.get(seq);
                     LN[] realBranch = LN.findBranchBySplit(n, split);
 
-					
+					// find the split that identifies the current insertion position
 					String[] insertSplit;
 					{
 						LN[] insertBranch = findBranchByName( n, branch );
@@ -96,25 +118,32 @@ public class ClassifierLTree {
 						insertSplit = smallset.toArray(insertSplit);
 						Arrays.sort(insertSplit);
 					}
+
+                    // get the weighted path length between current and original insertion position
+                    // in the reference tree
                     double lenOT;
                     {
-                        TreeParser tpo = new TreeParser(originalFile);
-                        LN origTree = tpo.parse();
 
-
-						if( Double.isNaN(reftreeDiameter)) {
-							reftreeDiameter = treeDiameter(origTree);
-						}
-						
-
-						System.out.printf( "diameter: %f\n", reftreeDiameter );
+						//System.out.printf( "diameter: %f\n", reftreeDiameter );
 
                         // original position branch
-                        LN[] opb = LN.removeTaxon(origTree, seq);
+                        LN reftreePruned = LN.deepClone(reftree);
 
-                        // origTree can never be removed by removeTaxon so it's ok to use it as pseudo root
-                        LN[] ipb = LN.findBranchBySplit(origTree, insertSplit);
+                        // this call has two important effects:
+                        // - remove the current taxon from the reference tree (copy), so that its topology
+                        //   resembles the pruned tree from the current classification
+                        // - return the branch from the reference tree that corresponds to the original taxon position
+                        LN[] opb = LN.removeTaxon(reftreePruned, seq);
 
+
+                        // identify the current insertion position from the pruned tree in the
+                        // reference tree. The position is identified by the split set (or how ever this thin is called)
+
+                        // the LN referenced by reftreePruned can (!?) never be removed by removeTaxon so it's ok to use it as pseudo root
+                        LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
+
+
+                        // calculate weighted path length beween original and current insertion branches
                         {
 							double lenOT1 = getPathLenBranchToBranch(opb, ipb);
 							
@@ -127,6 +156,8 @@ public class ClassifierLTree {
 						}
                         
                     }
+
+                    // for comparison: get the path length in the (possibly unweighted) pruned tree
                     // get path len between real position and current insertion position
                     double len = getPathLenToNamedBranch(realBranch[0], branch, false);
                     if( len < 0 ) {
@@ -567,24 +598,6 @@ public class ClassifierLTree {
 		return longestPath;
 	}
 
-    static boolean cmpLNList( LN[] l1, LN[] l2 ) {
-        
-
-        if( l1.length != l2.length ) {
-            return false;
-        } else {
-            boolean equal = true;
-
-            for( int i = 0; i < l1.length && equal; i++ ) {
-                equal = equal &&
-                        l1[i].backLabel.equals(l2[i].backLabel) &&
-                        l1[i].backLen == l2[i].backLen &&
-                        l1[i].backSupport == l2[i].backSupport &&
-                        l1[i].data.contentEquals(l2[i].data);
-            }
-
-            return equal;
-        }
-    }
+    
 
 }

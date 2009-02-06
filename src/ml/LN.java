@@ -203,8 +203,9 @@ public class LN {
 		// flood the tree from the tips of the split-set:
 		//
 		// nodes get 'marked' if they have two marked
-		// neighbors. At the beginning only the leafs from one split-set are marked.
-		// The recursion stops at the branch that separates the two split-sets
+		// neighbors (ancetors). At the beginning only the leafs from one split-set are marked.
+		// The recursion stops at the branch that separates the two split-sets (which can never have two
+        // marked ancestors (at least this is my theory...))
 		// (this description is rubbish)
 		//
 		Set<Integer>markedNodes = new HashSet<Integer>();
@@ -343,7 +344,7 @@ public class LN {
 		}
 	}
 
-    public static LN deepCloneDirected( LN n, boolean back ) {
+    public static LN deepCloneDirected( LN n, LN prev ) {
         assert( n.data == n.next.data && n.data == n.next.next.data );
 
         ANode data = new ANode(n.data);
@@ -353,13 +354,16 @@ public class LN {
         nn.next.next = new LN(data);
         nn.next.next.next = nn;
 
-
-        if( back ) {
-            nn.back = (n.back != null) ? deepCloneDirected(n.back, false) : null;
+        // if we are at the pseudo root (prev == null), also clone n.back
+        // in the other case, let it point to prev, which is the previously cloned portion of the tree.
+        if( prev == null ) {
+            nn.back = (n.back != null) ? deepCloneDirected(n.back, nn) : null;
+        } else {
+            nn.back = prev;
         }
 
-        nn.next.back = (n.next.back != null) ? deepCloneDirected(n.next.back, false) : null;
-        nn.next.next.back = (n.next.next.back != null) ? deepCloneDirected(n.next.next.back, false) : null;
+        nn.next.back = (n.next.back != null) ? deepCloneDirected(n.next.back, nn.next) : null;
+        nn.next.next.back = (n.next.next.back != null) ? deepCloneDirected(n.next.next.back, nn.next.next) : null;
 
         nn.backLabel = n.backLabel;
         nn.backLen = n.backLen;
@@ -375,6 +379,61 @@ public class LN {
 
 
         return nn;
+    }
+
+
+    public static LN deepClone( LN n ) {
+        return deepCloneDirected(n, null);
+    }
+
+    public static boolean checkLinkSymmetry( LN n ) {
+        LN[] list = getAsList(n);
+
+        boolean consistent = true;
+
+        for( int i = 0; i < list.length && consistent; i++ ) {
+            consistent = consistent &&
+                    (list[i].back == null || (list[i].back.back != null && list[i] == list[i].back.back));
+        }
+
+
+        return consistent;
+    }
+
+    static boolean cmpLNList( LN[] l1, LN[] l2 ) {
+
+
+        if( l1.length != l2.length ) {
+            return false;
+        } else {
+            boolean equal = true;
+
+            for( int i = 0; i < l1.length && equal; i++ ) {
+                equal = equal &&
+                        l1[i].backLabel.equals(l2[i].backLabel) &&
+                        l1[i].backLen == l2[i].backLen &&
+                        l1[i].backSupport == l2[i].backSupport &&
+                        l1[i].data.contentEquals(l2[i].data);
+            }
+
+            return equal;
+        }
+    }
+
+    static boolean cmpLNListObjectIdentity( LN[] l1, LN[] l2 ) {
+        if( l1.length != l2.length ) {
+            return false;
+        } else {
+            boolean equal = true;
+
+            for( int i = 0; i < l1.length && equal; i++ ) {
+                equal = equal &&
+                        l1[i] == l2[i];
+
+            }
+
+            return equal;
+        }
     }
 
 }
