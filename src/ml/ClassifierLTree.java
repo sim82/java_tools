@@ -154,7 +154,9 @@ public class ClassifierLTree {
 							System.out.printf( "opb: %f %f\n", lenOT1, lenOT2 );
 							lenOT = Math.min( lenOT1, lenOT2 );
 						}
-                        
+
+                        lenOT += opb[0].backLen;
+
                     }
 
                     // for comparison: get the path length in the (possibly unweighted) pruned tree
@@ -163,7 +165,7 @@ public class ClassifierLTree {
                     if( len < 0 ) {
                         len = getPathLenToNamedBranch(realBranch[1], branch, false);
                     }
-
+                    len += realBranch[0].backLen;
 
 
                     int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
