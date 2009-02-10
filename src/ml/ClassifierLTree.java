@@ -166,8 +166,8 @@ public class ClassifierLTree {
                         len = getPathLenToNamedBranch(realBranch[1], branch, false);
                     }
                     len += realBranch[0].backLen;
-
-
+                    
+                    
                     int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
                     if( lenUW == Integer.MAX_VALUE ) {
                         lenUW = getUnweightedPathLenToNamedBranch(realBranch[1], branch, false);

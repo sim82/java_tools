@@ -307,7 +307,13 @@ public class LN {
 //            }
             if( node.data.isTip(taxon) ) {
                 node = getTowardsTree(node);
-
+                
+                // removing one branch means to join the two adjacent branches.
+                // use the sum of the two branch length as approximation for the length of the joined branch.
+                double newLen = node.back.next.back.backLen + node.back.next.next.back.backLen;
+                node.back.next.back.backLen = newLen;
+                node.back.next.next.back.backLen = newLen;
+                
                 node.back.next.back.back = node.back.next.next.back;
                 node.back.next.next.back.back = node.back.next.back;
 
