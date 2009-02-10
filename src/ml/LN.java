@@ -302,9 +302,6 @@ public class LN {
         LN[] nodelist = getAsList(n);
 
         for( LN node : nodelist ) {
-//            if( node.data.isTip ) {
-//                System.out.printf( "tip: %s\n", node.data.getTipName() );
-//            }
             if( node.data.isTip(taxon) ) {
                 node = getTowardsTree(node);
                 
