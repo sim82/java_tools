@@ -24,8 +24,13 @@ import java.util.logging.Logger;
  * @author sim
  */
 public class ClassifierLTree {
+	
+	
     public static void main( String[] args ) {
 
+    	
+    	
+    	
         File dir = new File( args[0] );
 
         File rnFile = new File( args[1] );
@@ -58,6 +63,7 @@ public class ClassifierLTree {
         double reftreeDiameter = treeDiameter(reftree);
 
         // some 'anal' tests for the deep-clone stuff
+        if( false )
         {
             LN[] list1 = LN.getAsList(n);
             LN nn = LN.deepClone(n);
@@ -70,7 +76,7 @@ public class ClassifierLTree {
         }
         
         try {
-
+        	
             BufferedReader r = new BufferedReader(new FileReader(classFile));
 
 
@@ -94,7 +100,7 @@ public class ClassifierLTree {
                     String supports = ts.nextToken();
                     int support = Integer.parseInt(supports);
 
-					System.out.printf( "seq: '%s'\n", seq );
+//////					System.out.printf( "seq: '%s'\n", seq );
 
 
                     // get the split that identifies the original insertion position
@@ -122,13 +128,17 @@ public class ClassifierLTree {
                     // get the weighted path length between current and original insertion position
                     // in the reference tree
                     double lenOT;
+                    //double lenOTalt;
                     {
 
 						//System.out.printf( "diameter: %f\n", reftreeDiameter );
 
+                    	
+                    	
                         // original position branch
                         LN reftreePruned = LN.deepClone(reftree);
 
+                        
                         // this call has two important effects:
                         // - remove the current taxon from the reference tree (copy), so that its topology
                         //   resembles the pruned tree from the current classification
@@ -138,34 +148,41 @@ public class ClassifierLTree {
 
                         // identify the current insertion position from the pruned tree in the
                         // reference tree. The position is identified by the split set (or how ever this thin is called)
-
+                        //long time1 = System.currentTimeMillis();
                         // the LN referenced by reftreePruned can (!?) never be removed by removeTaxon so it's ok to use it as pseudo root
+                        
                         LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
 
+                        //System.out.printf( "time: %d\n", System.currentTimeMillis() - time1 );
 
-                        // calculate weighted path length beween original and current insertion branches
-                        {
-							double lenOT1 = getPathLenBranchToBranch(opb, ipb);
-							
-							LN[] opbflip = {opb[1], opb[0]};
-							double lenOT2 = getPathLenBranchToBranch(opbflip, ipb);
+                        // calculate weighted path length between original and current insertion branches
+                        // the lengths of the current and original branches contribute half of their weight.
+                        // if the branches are identical the path has zero length
+                        lenOT = getPathLenBranchToBranch(opb, ipb, 0.5);
+                        
+//                        {
+//                        	double lenOT1alt = getPathLenToBranch(opb[0], ipb);
+//                        	double lenOT2alt = getPathLenToBranch(opb[1], ipb);
+//                        	
+//                        	lenOT = Math.min(lenOT1alt, lenOT2alt);// + opb[0].backLen;
+//                        	
+//                        }
 
-
-							System.out.printf( "opb: %f %f\n", lenOT1, lenOT2 );
-							lenOT = Math.min( lenOT1, lenOT2 );
-						}
-
-                        lenOT += opb[0].backLen;
-
+                       // lenOT += opb[0].backLen;
+                        
                     }
 
+                    
+                    
                     // for comparison: get the path length in the (possibly unweighted) pruned tree
                     // get path len between real position and current insertion position
+                    
+                    
                     double len = getPathLenToNamedBranch(realBranch[0], branch, false);
                     if( len < 0 ) {
                         len = getPathLenToNamedBranch(realBranch[1], branch, false);
                     }
-                    len += realBranch[0].backLen;
+                    //len += realBranch[0].backLen;
                     
                     
                     int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
@@ -174,7 +191,8 @@ public class ClassifierLTree {
                     }
 
 
-                    System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+    //                System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+                    System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
                     //System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
 
 //					}
@@ -186,9 +204,7 @@ public class ClassifierLTree {
                     throw new RuntimeException( "bailing out" );
 
                 }
-                
-            }
-
+        	}
         } catch (IOException ex) {
             Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("bailing out");
@@ -245,6 +261,10 @@ public class ClassifierLTree {
         return null;
     }
 
+    static boolean belongsToBranch( LN n, LN[] b ) {
+    	return (n.data.serial == b[0].data.serial) || (n.data.serial == b[1].data.serial );
+    }
+    
     static boolean branchEquals( LN[] b1, LN[] b2 ) {
         return (b1[0].data.serial == b2[0].data.serial && b1[1].data.serial == b2[1].data.serial) ||
                (b1[0].data.serial == b2[1].data.serial && b1[1].data.serial == b2[0].data.serial);
@@ -257,14 +277,17 @@ public class ClassifierLTree {
 
 //		System.out.printf( "bbd: %d (%d %d)\n", n.data.serial, b[0].data.serial, b[1].data.serial );
 
-        if( n.data.serial == b[0].data.serial || n.data.serial == b[1].data.serial ) {
+        if( belongsToBranch( n, b ) ) {
             return 0.0;
         } else {
-            double len = getPathLenToBranch(n.next.back, b);
-            if( len < Double.POSITIVE_INFINITY ) {
-                return len + n.next.backLen;
-            } else {
-                len = getPathLenToBranch(n.next.next.back, b);
+        	{
+        		double len = getPathLenToBranch(n.next.back, b);
+        		if( len < Double.POSITIVE_INFINITY ) {
+        			return len + n.next.backLen;
+        		} 
+        	}
+        	{
+                double len = getPathLenToBranch(n.next.next.back, b);
 
                 if( len < Double.POSITIVE_INFINITY ) {
                     return len + n.next.next.backLen;
@@ -276,68 +299,89 @@ public class ClassifierLTree {
         }
     }
 
-	private static double getPathLenBranchToBranch(LN n[], LN[] b) {
-		
-
-		//System.out.printf( "bbd: %d (%d %d) --- ", n[0].data.serial, n[1].data.serial, b[0].data.serial, b[1].data.serial );
-
-        if( branchEquals(n, b) ) {
-            return 0.0;
-        } else {
-            //double len = Double.POSITIVE_INFINITY;
-
-			if( !n[0].data.isTip ) {
-				{
-					LN[] next = {n[0].next.back, n[0].next};
-
-					double len = getPathLenBranchToBranch( next, b);
-
-					if( len < Double.POSITIVE_INFINITY ) {
-						return len + n[0].backLen;
-					}
-				}
-
-				{
-					LN[] next = {n[0].next.next.back, n[0].next.next};
-
-					double len = getPathLenBranchToBranch( next, b);
-
-					if( len < Double.POSITIVE_INFINITY ) {
-						return len + n[0].backLen;
-					}
-				}
-
-			}
-
-//            if( !n[1].data.isTip ) {
-//				{
-//					LN[] next = {n[1].next.back, n[1].next};
+    private static double getPathLenBranchToBranch(LN n[], LN[] b, double seScale) {
+    	assert( n[0].backLen == n[1].backLen);
+    	assert( b[0].backLen == b[1].backLen);
+    	
+    	if( branchEquals(n, b)) {
+    		return 0.0;
+    	}
+    	
+    	
+    	double len1 = getPathLenToBranch(n[0], b);
+    	double len2 = getPathLenToBranch(n[1], b);
+    	
+    	double len = Math.min(len1, len2);
+    	len += (n[0].backLen + b[0].backLen) * seScale;
+//    	
+    	return len;
+    }
+	
+//	private static double getPathLenBranchToBranch(LN n[], LN[] b) {
+//		
 //
-//					double len = getBranchBranchDistancex( next, b);
+//		//System.out.printf( "bbd: %d (%d %d) --- ", n[0].data.serial, n[1].data.serial, b[0].data.serial, b[1].data.serial );
+//
+//        if( branchEquals(n, b) ) {
+//            return 0.0;
+//        } else {
+//            //double len = Double.POSITIVE_INFINITY;
+//
+//			if( !n[0].data.isTip ) {
+//				{
+//					LN[] next = {n[0].next.back, n[0].next};
+//
+//					double len = getPathLenBranchToBranch( next, b);
 //
 //					if( len < Double.POSITIVE_INFINITY ) {
-//						return len + 1;//n[1].backLen;
+//						return len + n[0].backLen;
 //					}
 //				}
 //
 //				{
-//					LN[] next = {n[1].next.next.back, n[1].next.next};
+//					LN[] next = {n[0].next.next.back, n[0].next.next};
 //
-//					double len = getBranchBranchDistancex( next, b);
+//					double len = getPathLenBranchToBranch( next, b);
 //
 //					if( len < Double.POSITIVE_INFINITY ) {
-//						return len + 1;//n[1].backLen;
+//						return len + n[0].backLen;
 //					}
 //				}
 //
 //			}
-
-
-            return Double.POSITIVE_INFINITY;
-
-        }
-    }
-
+//
+////            if( !n[1].data.isTip ) {
+////				{
+////					LN[] next = {n[1].next.back, n[1].next};
+////
+////					double len = getBranchBranchDistancex( next, b);
+////
+////					if( len < Double.POSITIVE_INFINITY ) {
+////						return len + 1;//n[1].backLen;
+////					}
+////				}
+////
+////				{
+////					LN[] next = {n[1].next.next.back, n[1].next.next};
+////
+////					double len = getBranchBranchDistancex( next, b);
+////
+////					if( len < Double.POSITIVE_INFINITY ) {
+////						return len + 1;//n[1].backLen;
+////					}
+////				}
+////
+////			}
+//
+//
+//            return Double.POSITIVE_INFINITY;
+//
+//        }
+//    }
+	
+    
+    
+    
     private static Map<String, String> parseRealNeighbors(File rnFile) {
         try {
             BufferedReader r = new BufferedReader(new FileReader(rnFile));
@@ -526,22 +570,27 @@ public class ClassifierLTree {
         }
 
 
-        if( node.backLabel.equals(name)) {
-            return 0.0;
+//        if( node.backLabel.equals(name)) {
+//            return 0.0;
+//        }
+        
+        
+        if( LN.hasOutgoingBranchLabel( node, name )) {
+        	return 0.0;
         }
         
         if( node.next.back != null ) {
             double len = getPathLenToNamedBranch(node.next.back, name, false);
 
             if( len >= 0 ) {
-                return len + node.backLen;
+                return len + node.next.backLen;
             }
         }
         if( node.next.next.back != null ) {
             double len = getPathLenToNamedBranch(node.next.next.back, name, false);
 
             if( len >= 0 ) {
-                return len + node.backLen;
+                return len + node.next.next.backLen;
             }
         }
 
@@ -595,7 +644,7 @@ public class ClassifierLTree {
 		}
 
 
-		System.out.printf( "cnt: %d\n", cnt );
+		//System.out.printf( "cnt: %d\n", cnt );
 
 		return longestPath;
 	}

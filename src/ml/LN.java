@@ -439,4 +439,19 @@ public class LN {
         }
     }
 
+	public static boolean hasOutgoingBranchLabel(LN node, String name) {
+		// acually start at the node next to us (because 'node' is most likely the ingoing node in the
+		// current tree traversal, so it is likely that its lable has already been compared)
+		
+		node = node.next;
+		
+		for( int i = 0; i < 3; i++, node = node.next ) {
+			if( node.backLabel != null && node.backLabel.equals(name )) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 }

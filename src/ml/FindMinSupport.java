@@ -168,7 +168,7 @@ public class FindMinSupport {
 
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-	//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+//	createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 //	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
     createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
@@ -236,9 +236,9 @@ public class FindMinSupport {
 			System.out.printf("dropped taxon: %s\n", taxon);
 
 
-//			for (int j = 50; j < 100; j += 10) {
-//				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
-//			}
+			for (int j = 0; j < 50; j += 10) {
+				createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, j);
+			}
 //
 //			int ssLen = 500;
 //			createSubseqAlignment(new File(alignmentdir, alignName), new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen), taxon, ssLen);
