@@ -128,6 +128,7 @@ public class ClassifierLTree {
                     // get the weighted path length between current and original insertion position
                     // in the reference tree
                     double lenOT;
+                    int ndOT;
                     //double lenOTalt;
                     {
 
@@ -158,8 +159,10 @@ public class ClassifierLTree {
                         // calculate weighted path length between original and current insertion branches
                         // the lengths of the current and original branches contribute half of their weight.
                         // if the branches are identical the path has zero length
-                        lenOT = getPathLenBranchToBranch(opb, ipb, 0.5);
-                        
+
+                        int[] fuck = new int[1]; // some things (like 'multiple return values') are soo painful in java ...
+                        lenOT = getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
+                        ndOT = fuck[0];
 //                        {
 //                        	double lenOT1alt = getPathLenToBranch(opb[0], ipb);
 //                        	double lenOT2alt = getPathLenToBranch(opb[1], ipb);
@@ -172,30 +175,36 @@ public class ClassifierLTree {
                         
                     }
 
+                    boolean PRINT_LEGACY_STUFF = false;
                     
                     
-                    // for comparison: get the path length in the (possibly unweighted) pruned tree
-                    // get path len between real position and current insertion position
-                    
-                    
-                    double len = getPathLenToNamedBranch(realBranch[0], branch, false);
-                    if( len < 0 ) {
-                        len = getPathLenToNamedBranch(realBranch[1], branch, false);
+                    if( !PRINT_LEGACY_STUFF ) {
+                    	
+                    	
+                    	System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+                   	
+                    } else {
+                    	
+	                    // for comparison: get the path length in the (possibly unweighted) pruned tree
+	                    // get path len between real position and current insertion position
+	                    
+	                    
+	                    double len = getPathLenToNamedBranch(realBranch[0], branch, false);
+	                    if( len < 0 ) {
+	                        len = getPathLenToNamedBranch(realBranch[1], branch, false);
+	                    }
+	                    //len += realBranch[0].backLen;
+	                    
+	                    
+	                    int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
+	                    if( lenUW == Integer.MAX_VALUE ) {
+	                        lenUW = getUnweightedPathLenToNamedBranch(realBranch[1], branch, false);
+	                    }
+	
+	
+	    //                System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+	                    System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
                     }
-                    //len += realBranch[0].backLen;
-                    
-                    
-                    int lenUW = getUnweightedPathLenToNamedBranch(realBranch[0], branch, false);
-                    if( lenUW == Integer.MAX_VALUE ) {
-                        lenUW = getUnweightedPathLenToNamedBranch(realBranch[1], branch, false);
-                    }
-
-
-    //                System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
-                    System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
-                    //System.out.printf( "branch: %s '%s' '%s'\n", b[0].backLabel, b[0].data.isTip ? b[0].data.getTipName() : "*NOTIP*", b[1].data.isTip ? b[1].data.getTipName() : "*NOTIP*");
-
-//					}
 
                 } catch (NoSuchElementException x) {
                     System.out.printf( "bad line in raxml classifier output: " + line );
@@ -269,116 +278,80 @@ public class ClassifierLTree {
         return (b1[0].data.serial == b2[0].data.serial && b1[1].data.serial == b2[1].data.serial) ||
                (b1[0].data.serial == b2[1].data.serial && b1[1].data.serial == b2[0].data.serial);
     }
-
-    private static double getPathLenToBranch(LN n, LN[] b) {
+    
+    
+    private static double getPathLenToBranch(LN n, LN[] b, int[] nd ) {
 		if( n == null ) {
+			nd[0] = -1;
 			return Double.POSITIVE_INFINITY;
 		}
 
 //		System.out.printf( "bbd: %d (%d %d)\n", n.data.serial, b[0].data.serial, b[1].data.serial );
 
         if( belongsToBranch( n, b ) ) {
+        	nd[0] = 0;
             return 0.0;
         } else {
         	{
-        		double len = getPathLenToBranch(n.next.back, b);
+        		double len = getPathLenToBranch(n.next.back, b, nd);
         		if( len < Double.POSITIVE_INFINITY ) {
+        			nd[0]++;
         			return len + n.next.backLen;
         		} 
         	}
         	{
-                double len = getPathLenToBranch(n.next.next.back, b);
+                double len = getPathLenToBranch(n.next.next.back, b, nd);
 
                 if( len < Double.POSITIVE_INFINITY ) {
+                	nd[0]++;
                     return len + n.next.next.backLen;
                 }
             }
-
+        	nd[0] = -1;
             return Double.POSITIVE_INFINITY;
 
         }
     }
 
-    private static double getPathLenBranchToBranch(LN n[], LN[] b, double seScale) {
+    private static double getPathLenBranchToBranch(LN n[], LN[] b, double seScale, int[] nodedist ) {
     	assert( n[0].backLen == n[1].backLen);
     	assert( b[0].backLen == b[1].backLen);
     	
     	if( branchEquals(n, b)) {
+    		if( nodedist != null ) {
+    			nodedist[0] = 0;
+    		}
     		return 0.0;
     	}
     	
     	
-    	double len1 = getPathLenToBranch(n[0], b);
-    	double len2 = getPathLenToBranch(n[1], b);
+    	int[] nd1 = new int[1];
+    	int[] nd2 = new int[1];
     	
-    	double len = Math.min(len1, len2);
+    	double len1 = getPathLenToBranch(n[0], b, nd1);
+    	double len2 = getPathLenToBranch(n[1], b, nd2);
+    	
+    	
+    	
+    	double len;
+    	if( len1 <= len2 ) {
+    		len = len1;
+    		if( nodedist != null ) {
+    			nodedist[0] = nd1[0] + 1;
+    		}
+    	} else {
+    		len = len2;
+    		if( nodedist != null ) {
+    			nodedist[0] = nd2[0] + 1;
+    		}
+    	}
+    	
     	len += (n[0].backLen + b[0].backLen) * seScale;
 //    	
     	return len;
     }
 	
-//	private static double getPathLenBranchToBranch(LN n[], LN[] b) {
-//		
-//
-//		//System.out.printf( "bbd: %d (%d %d) --- ", n[0].data.serial, n[1].data.serial, b[0].data.serial, b[1].data.serial );
-//
-//        if( branchEquals(n, b) ) {
-//            return 0.0;
-//        } else {
-//            //double len = Double.POSITIVE_INFINITY;
-//
-//			if( !n[0].data.isTip ) {
-//				{
-//					LN[] next = {n[0].next.back, n[0].next};
-//
-//					double len = getPathLenBranchToBranch( next, b);
-//
-//					if( len < Double.POSITIVE_INFINITY ) {
-//						return len + n[0].backLen;
-//					}
-//				}
-//
-//				{
-//					LN[] next = {n[0].next.next.back, n[0].next.next};
-//
-//					double len = getPathLenBranchToBranch( next, b);
-//
-//					if( len < Double.POSITIVE_INFINITY ) {
-//						return len + n[0].backLen;
-//					}
-//				}
-//
-//			}
-//
-////            if( !n[1].data.isTip ) {
-////				{
-////					LN[] next = {n[1].next.back, n[1].next};
-////
-////					double len = getBranchBranchDistancex( next, b);
-////
-////					if( len < Double.POSITIVE_INFINITY ) {
-////						return len + 1;//n[1].backLen;
-////					}
-////				}
-////
-////				{
-////					LN[] next = {n[1].next.next.back, n[1].next.next};
-////
-////					double len = getBranchBranchDistancex( next, b);
-////
-////					if( len < Double.POSITIVE_INFINITY ) {
-////						return len + 1;//n[1].backLen;
-////					}
-////				}
-////
-////			}
-//
-//
-//            return Double.POSITIVE_INFINITY;
-//
-//        }
-//    }
-	
+
     
     
     

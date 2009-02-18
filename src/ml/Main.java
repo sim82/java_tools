@@ -5,15 +5,10 @@
 package ml;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -255,8 +250,8 @@ public class Main {
        
         System.out.println();
         
-		System.out.printf( "num leafs: %d\n", tp.nLeafs );
-		System.out.printf( "num inner nodes: %d\n", tp.nInnerNodes );
+		System.out.printf( "num leafs: %d\n", tp.getNTips() );
+		System.out.printf( "num inner nodes: %d\n", tp.getNInnerNodes() );
 	}
 	static String test = "((((caaa[0]:0.0162412,haaa[0]:0.0162412):0.121338,(((raaa[1]:0.00150384,(dbaa[1]:0.000772447,(yaaa[1]:0.000246929,qaaa[1]:0.000246929):0.000525518):0.000731395):0.00125391,(oaaa[1]:0.00053079,bbaa[1]:0.00053079):0.00222696):0.0459541,(((taaa[1]:0.00427759,abaa[1]:0.00427759):0.000117345,(kaaa[1]:0.00226356,(((uaaa[1]:0.00103836,xaaa[1]:0.00103836):7.33073e-06,naaa[1]:0.00104569):0.000400717,ebaa[1]:0.0014464):0.000817163):0.00213137):0.000170342,(paaa[1]:0.000765108,maaa[1]:0.000765108):0.00380017):0.0441466):0.0888671):0.128575,((((cbaa[1]:0.00896541,(waaa[1]:0.000987231,vaaa[1]:0.000987231):0.00797818):0.00521325,saaa[1]:0.0141787):0.0154227,((kbaa[2]:0.00113176,mbaa[2]:0.00113176):0.00128529,jbaa[2]:0.00241706):0.0271843):0.0459589,((((ibaa[2]:0.00420465,(lbaa[2]:0.00256841,obaa[2]:0.00256841):0.00163624):0.000641241,gbaa[2]:0.00484589):0.00297421,hbaa[2]:0.00782011):0.0144918,(fbaa[2]:0.00289432,nbaa[2]:0.00289432):0.0194176):0.0532484):0.190593):0.883064,(((eaaa[0]:0.00321491,faaa[0]:0.00321491):0.0169111,(iaaa[0]:0.00625661,((laaa[1]:0.00271183,baaa[0]:0.00271183):0.00108033,jaaa[0]:0.00379216):0.00246445):0.0138694):0.181314,(daaa[0]:0.0430344,(gaaa[0]:0.0358183,aaaa[0]:0.0358183):0.00721605):0.158406):0.947778);";
 }

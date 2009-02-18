@@ -10,6 +10,8 @@ public class ANode {
 	private String tipName;
     private double support;
 
+	private int tipSerial;
+
     public boolean contentEquals( ANode other ) {
         if( this.isTip) {
             return other.isTip && this.tipName.equals(other.tipName) && this.support == other.support;
@@ -58,6 +60,17 @@ public class ANode {
     boolean isTip(String taxon) {
         return isTip && getTipName().equals(taxon);
     }
+
+
+
+	public void setTipSerial(int serial) {
+		this.tipSerial = serial;
+	}
+	
+	public int getTipSerial() {
+		return this.tipSerial;
+	}
+	
 }
 
 

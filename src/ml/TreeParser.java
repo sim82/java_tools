@@ -1,8 +1,6 @@
 package ml;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,13 +15,13 @@ public class TreeParser {
 	//String input;
 
 	// input as char array
-	char[] inputA;
+	private char[] inputA;
 
 	// pointer to next char in input string
-	int ptr = 0;
+	private int ptr = 0;
 
-	int nLeafs = 0;
-	int nInnerNodes = 0;
+	private int nLeafs = 0;
+	private int nInnerNodes = 0;
 
 	public TreeParser(String input) {
 	//	this.input = input;
@@ -38,7 +36,7 @@ public class TreeParser {
         ptr = 0;
 	}
 
-	static char[] readFile(File f) {
+	private static char[] readFile(File f) {
 
 		try {
 
@@ -82,7 +80,7 @@ public class TreeParser {
 		System.out.println("^");
 	}
 
-	void skipWhitespace() {
+	private void skipWhitespace() {
 		while ( ptr < inputA.length && Character.isWhitespace(inputA[ptr])) {// || inputA[ptr] == '\n' || inputA[ptr] == '\r') ) {
            // System.out.printf( "skip ws: %d\n", (int) inputA[ptr]);
 			ptr++;
@@ -90,6 +88,11 @@ public class TreeParser {
 
 	}
 
+	/**
+	 * Call this after object construction to parse the complete tree,
+	 * @return pseudo root of the tree
+	 */
+	
 	public LN parse() {
 		nLeafs = 0;
         nInnerNodes = 0;
@@ -319,6 +322,7 @@ public class TreeParser {
 	//	System.out.printf("leaf: %s\n", ld);
 		LN n = LN.create();
 		n.data.setTipName(ld);
+		n.data.setTipSerial(nLeafs);
 		//n.data = ld;
 		n.data.isTip = true; // fake
 
@@ -350,6 +354,17 @@ public class TreeParser {
 		}
 
 		return pos;
+	}
+
+	
+
+	public int getNTips() {
+		return nLeafs;
+	}
+
+	
+	public int getNInnerNodes() {
+		return nInnerNodes;
 	}
 
 
