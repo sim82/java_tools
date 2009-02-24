@@ -1,0 +1,1 @@
+ for i in ~/mnt_ibc/data/out_855_GTRGAMMA_y/RAxML_classification.*_60; do j=${i: -22}; java -cp ~/workspace/java_tools/bin/ ml.ClassifierLTree ~/mnt_ibc/data/out_855_GTRGAMMA_y /space/degen_alignments/real_neighbors_855.txt $j /space/raxml/VINCENT/RAxML_bipartitions.855.BEST.WITH; done > out_855_GTRGAMMA_y_60.txt

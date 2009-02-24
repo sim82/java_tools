@@ -398,7 +398,7 @@ public class ClassifierLTree {
         }
     }
 
-	private static Map<String, String[]> parseSplits(File rnFile) {
+	static Map<String, String[]> parseSplits(File rnFile) {
         try {
             BufferedReader r = new BufferedReader(new FileReader(rnFile));
 

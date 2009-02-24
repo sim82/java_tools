@@ -35,10 +35,10 @@ class ReductionResult {
  */
 public class FindMinSupport {
 
-	private static boolean CREATE_REDUCED_ALIGNMENTS = false;
+	private static boolean CREATE_REDUCED_ALIGNMENTS = true;
 	private static boolean CREATE_SUBSEQ_ALGNMENTS = true;
-	private static boolean CREATE_REDUCED_TREES = false;
-	private static boolean CREATE_MAPPING_FILES = false;
+	private static boolean CREATE_REDUCED_TREES = true;
+	private static boolean CREATE_MAPPING_FILES = true;
 	public static final Random rand = new Random();
 
 	public static ReductionResult createNThReducedTree(LN n, int num) {
@@ -163,10 +163,10 @@ public class FindMinSupport {
 	public static void main(String[] args) {
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-//	createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+		//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
-//	createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
-		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
+//		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
