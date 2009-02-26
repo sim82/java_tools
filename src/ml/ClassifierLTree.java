@@ -9,7 +9,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,63 +24,152 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.naming.spi.DirectoryManager;
+
 /**
  *
  * @author sim
  */
 public class ClassifierLTree {
+	//final double oltDiameter;
+	final double reftreeDiameter;
+	final LN	reftree;
+	//final LN	oltree;
+	final Map<String,String> rnm;
+	final Map<String,String[]> splitmap;
+	
+
+	
+    public static void main( String[] args ) throws FileNotFoundException, UnsupportedEncodingException {
+    	if( !args[0].equals("--auto")) {
+	    	
+    		// classic mode
+    		
+	        File dir = new File( args[0] );
+	        File rnFile = new File( args[1] );
+	
+	        File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
+	        File reftreeFile = new File( args[3] );
+	
+	        ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
+	        
+	        
+	        File classFile = new File( dir, "RAxML_classification." + args[2] );
+	
+	             
+	        clt.output( System.out, classFile, oltFile );
+    	} else {
+    
+    		// auto mode: convert all raxml output files in this directory
+    		
+    		File rnFile = new File( args[1] );
+    		File reftreeFile = new File( args[2] );
+    		
+    		ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
+    		
+	        File cwd = new File( "." );
+	        
+	        File[] classFiles = cwd.listFiles(new FilenameFilter() {
+	
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.startsWith("RAxML_classification" ); 
+				} });
+	        
+	        
+	        for( File classFile : classFiles ) {
+	        	String suffix = classFile.getName().substring(21);
+	        	
+	        	File oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix );
+	        	
+	        	//System.out.printf( "file: %s %s\n", file.getName(), suffix);
+	        	
+	        	File outDir = new File( classFile.getParent(), "ext/" );
+	        	
+	        	
+	        	PrintStream out = new PrintStream( new File(outDir, classFile.getName() ));
+	        	clt.output( out, classFile, oltFile );
+	        	
+	        	out.close();
+	        }
+	
+    	}
+    }
+
+
 	
 	
-    public static void main( String[] args ) {
-
-    	
-    	
-    	
-        File dir = new File( args[0] );
-
-        File rnFile = new File( args[1] );
-
-        Map<String,String> rnm = parseRealNeighbors( rnFile );
-		Map<String,String[]> splitmap = parseSplits( rnFile );
-
-        File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
-        File classFile = new File( dir, "RAxML_classification." + args[2] );
-        File reftreeFile = new File( args[3] );
-
-        // parse 'original labelled tree'
-        LN n;
-        {
-            TreeParser tp = new TreeParser(oltFile);
-            n = tp.parse();
-        }
-        LN[] lnl = LN.getAsList(n);
-
-        double oltDiameter = treeDiameter(n);
-
+	public ClassifierLTree( File reftreeFile, File rnFile ) {
+		rnm = parseRealNeighbors( rnFile );
+		splitmap = parseSplits( rnFile );
+		
+        
         // parse reference tree used for weighted branch difference stuff
-        LN reftree;
+        
         {
             TreeParser tpreftree = new TreeParser(reftreeFile);
             reftree = tpreftree.parse();
         }
 
 // highest path weight in reference tree (=path with the highest sum of edge weights, no necessarily the longest path)
-        double reftreeDiameter = treeDiameter(reftree);
+        reftreeDiameter = treeDiameter(reftree);
 
         // some 'anal' tests for the deep-clone stuff
-        if( false )
+//        if( false )
+//        {
+//            LN[] list1 = LN.getAsList(n);
+//            LN nn = LN.deepClone(n);
+//
+//            LN[] list2 = LN.getAsList(n);
+//            LN[] list3 = LN.getAsList(nn);
+//
+//            System.out.printf( "cmp: %s %s %s %s %s %s\n", LN.cmpLNList( list1, list2 ), LN.cmpLNList( list1, list3 ), LN.cmpLNList( list2, list3 ), LN.cmpLNListObjectIdentity( list1, list2 ), LN.cmpLNListObjectIdentity( list1, list3 ), LN.cmpLNListObjectIdentity( list2, list3 ));
+//            System.out.printf( "sym: %s %s\n", LN.checkLinkSymmetry(n), LN.checkLinkSymmetry(nn) );
+//        }
+
+	}
+    
+	
+//	File oltFile_cached = null;
+//	LN oltree_cached;
+//	double oltDiameter_cached;
+	
+    private void output(PrintStream out, File classFile, File oltFile) {
+    	// parse 'original labelled tree'
+//    	LN oltree;
+//    	double oltDiameter;
+//    	if( oltFile_cached != null && oltFile_cached.equals(oltFile)) {
+//    		oltree = oltree_cached;
+//    		oltDiameter = oltDiameter_cached;
+//    		System.out.printf( "hit\n" );
+//    	} else {
+//    		System.out.printf( "miss\n" );
+//	        {
+//	            TreeParser tp = new TreeParser(oltFile);
+//	            oltree = tp.parse();
+//	        }
+//	        LN[] lnl = LN.getAsList(oltree);
+//	
+//	        oltDiameter = treeDiameter(oltree);
+//	        
+//	        oltFile_cached = oltFile;
+//	        oltree_cached = oltree;
+//	        oltDiameter_cached = oltDiameter;
+//    	} 
+    	
+
+    	LN oltree;
+//    	double oltDiameter;
+
         {
-            LN[] list1 = LN.getAsList(n);
-            LN nn = LN.deepClone(n);
-
-            LN[] list2 = LN.getAsList(n);
-            LN[] list3 = LN.getAsList(nn);
-
-            System.out.printf( "cmp: %s %s %s %s %s %s\n", LN.cmpLNList( list1, list2 ), LN.cmpLNList( list1, list3 ), LN.cmpLNList( list2, list3 ), LN.cmpLNListObjectIdentity( list1, list2 ), LN.cmpLNListObjectIdentity( list1, list3 ), LN.cmpLNListObjectIdentity( list2, list3 ));
-            System.out.printf( "sym: %s %s\n", LN.checkLinkSymmetry(n), LN.checkLinkSymmetry(nn) );
+            TreeParser tp = new TreeParser(oltFile);
+            oltree = tp.parse();
         }
-        
-        try {
+//        LN[] lnl = LN.getAsList(oltree);
+
+//        oltDiameter = treeDiameter(oltree);
+
+    	try {
         	
             BufferedReader r = new BufferedReader(new FileReader(classFile));
 
@@ -105,12 +199,12 @@ public class ClassifierLTree {
 
                     // get the split that identifies the original insertion position
                     String[] split = splitmap.get(seq);
-                    LN[] realBranch = LN.findBranchBySplit(n, split);
+                    LN[] realBranch = LN.findBranchBySplit(oltree, split);
 
 					// find the split that identifies the current insertion position
 					String[] insertSplit;
 					{
-						LN[] insertBranch = findBranchByName( n, branch );
+						LN[] insertBranch = findBranchByName( oltree, branch );
 
 						LN[] ll = LN.getAsList(insertBranch[0], false);
 						LN[] lr = LN.getAsList(insertBranch[1], false);
@@ -181,7 +275,7 @@ public class ClassifierLTree {
                     if( !PRINT_LEGACY_STUFF ) {
                     	
                     	
-                    	System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+                    	out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter/*, oltDiameter */);
                    	
                     } else {
                     	
@@ -203,7 +297,7 @@ public class ClassifierLTree {
 	
 	
 	    //                System.out.printf( "%s %s %s %d %d %f %f %f (%f %f)\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
-	                    System.out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter, oltDiameter );
+	                    out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, lenUW, len, lenOT, lenOT / reftreeDiameter, reftreeDiameter/*, oltDiameter*/ );
                     }
 
                 } catch (NoSuchElementException x) {
@@ -218,12 +312,10 @@ public class ClassifierLTree {
             Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("bailing out");
         }
+		
+	}
 
-
-
-    }
-
-    private static LN[] expandToAllNodes(LN[] lnl) {
+	private static LN[] expandToAllNodes(LN[] lnl) {
         LN[] lnlx = new LN[lnl.length * 3];
 
         int pos = 0;

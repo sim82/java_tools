@@ -8,6 +8,7 @@ package ml;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 /**
  *
@@ -91,7 +93,16 @@ public class MultipleAlignment {
 
     public void writePhylip( File file ) {
         try {
-            PrintWriter w = new PrintWriter(new FileWriter(file));
+        	
+        	
+            PrintWriter w;
+            
+            // transparent gz compression
+            if( file.getName().endsWith(".gz")) {
+            	w = new PrintWriter(new GZIPOutputStream( new FileOutputStream(file)));
+            } else {
+            	w = new PrintWriter(new FileWriter(file));
+            }
 
             w.printf( "%d %d\n", nTaxon, seqLen);
 

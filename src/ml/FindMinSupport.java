@@ -36,11 +36,14 @@ class ReductionResult {
 public class FindMinSupport {
 
 	private static boolean CREATE_REDUCED_ALIGNMENTS = true;
-	private static boolean CREATE_SUBSEQ_ALGNMENTS = true;
+	private static boolean CREATE_SUBSEQ_ALGNMENTS = false;
 	private static boolean CREATE_REDUCED_TREES = true;
 	private static boolean CREATE_MAPPING_FILES = true;
-	public static final Random rand = new Random();
-
+	
+	// try to keep the random gap generation reproducible
+	public static final Random rand = new Random(12345);
+	//private static final int START_TREE_IDX = 97;
+	private static final int START_TREE_IDX = 65;
 	public static ReductionResult createNThReducedTree(LN n, int num) {
 		final LN[] nodelist = LN.getAsList(n);
 
@@ -157,6 +160,124 @@ public class FindMinSupport {
             }
 
         }
+		
+		//
+		//
+		// baaaaaad: duplicate code:
+		// prune tips with support in range [75,100[ (done extra to keep sorting order compatible)
+		//
+		//
+		
+        for (final LN node : nodelist) {
+            final int nt = numTips(node);
+
+            if (node.data.getSupport() >= 100 || node.data.getSupport() < 75) {
+                continue;
+            }
+
+            if (nt == 2) {
+                nTT++;
+
+
+                final String[] tn = getTipNames(node);
+
+                assert (tn.length == 2);
+
+               // System.out.printf("%s %f (%s %s): %d\n", node.data, node.data.getSupport(), tn[0], tn[1], nt);
+
+                final LN tnt = LN.getTowardsNonTip(node);
+                if( tnt.back.data.isTip ) {
+                    throw new RuntimeException("tnt.back.data.isTip is true");
+                }
+
+                //String ret[] = new String[2];
+				ReductionResult ret = null;
+                //int c = 2;
+                if (i == num) {
+					ret = new ReductionResult();
+					ret.taxon = tn[1];
+					ret.taxonNeighbor = tn[0];
+					ret.nl = tnt.back;
+					ret.nr = tnt.next.back;
+
+                    tnt.back.back = tnt.next.back;
+                    tnt.next.back.back = tnt.back;
+
+
+
+//                    ret[0] = tn[1];
+//                    ret[1] = tn[0];
+                    //return tn[1];
+                    return ret;
+                }
+                i++;
+                if (i == num) {
+					ret = new ReductionResult();
+					ret.taxon = tn[0];
+					ret.taxonNeighbor = tn[1];
+					ret.nl = tnt.back;
+					ret.nr = tnt.next.next.back;
+
+
+                    tnt.back.back = tnt.next.next.back;
+                    tnt.next.next.back.back = tnt.back;
+
+//                    ret[0] = tn[0];
+//                    ret[1] = tn[1];
+                    return ret;
+
+                    //return tn[0];
+                }
+                i++;
+            }
+
+
+
+        }
+        //}
+
+        // find cases where a single tip has two neighboring brnaches with 100 % support
+        // this is done in an extra loop to keep the sorting order compatible with the old version
+		for (final LN node : nodelist) {
+			final int nt = numTips(node);
+
+            if( nt == 1 ) {
+                final LN tt = LN.getTowardsTip(node);
+
+//                if( tt.back.data.getTipName().equals("poly914")) {
+//                    System.out.printf( "poly914\n" );
+//                }
+
+                if( !tt.next.back.data.isTip && !tt.next.next.back.data.isTip && tt.next.backSupport >= 75.0 && tt.next.next.backSupport >= 75.0 && tt.next.backSupport < 100.0 && tt.next.next.backSupport < 100.0) {
+                    if( i == num ) {
+
+                        //String ret[] = new String[2];
+
+						final ReductionResult ret = new ReductionResult();
+						ret.taxon = tt.back.data.getTipName();
+						ret.taxonNeighbor = null;
+						ret.nl = tt.next.back;
+						ret.nr = tt.next.next.back;
+
+                        // remove the current node (and the branch toward the tip) by retwiddling of the other two nodes
+                        tt.next.back.back = tt.next.next.back;
+                        tt.next.next.back.back = tt.next.back;
+
+//                        ret[0] = tt.back.data.getTipName();
+//                        ret[1] = null;
+
+                        return ret;
+
+                    }
+
+                    i++;
+                }
+            }
+
+        }
+				
+		
+		
 		return null;
 	}
 
@@ -166,7 +287,7 @@ public class FindMinSupport {
 		//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
-//		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+		//createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -178,8 +299,8 @@ public class FindMinSupport {
 		final File basedir = new File("/space/raxml/VINCENT/");
 		final File alignmentdir = new File("/space/raxml/VINCENT/DATA");
 
-		final File outdir = new File("/space/redtree");
-		final File degen_alignoutdir = new File("/space/red_alignments");
+		final File outdir = new File("/space/redtree_testing");
+		final File degen_alignoutdir = new File("/space/red_alignments_testing");
 		final File subseq_alignoutdir = new File("/space/subseq_alignments");
 		final File subseq_queryoutdir = new File("/space/subseq_query");
 		
@@ -204,7 +325,7 @@ public class FindMinSupport {
         }
         
         
-		for (int i = 0;; i++) {
+		for (int i = START_TREE_IDX;; i++) {
 			final File f = new File(basedir, filename);
 
 			final TreeParser tp = new TreeParser(f);
@@ -250,7 +371,9 @@ public class FindMinSupport {
 				for (int j = 10; j <= 100; j += 10) {
 					final int len = (int) Math.ceil(alignmentLength * (j / 100.0));
 					
-					final boolean valid = createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j), taxon, len);
+					String subsuffix = ".gz";
+					
+					final boolean valid = createDegeneratedAlignment(new File(alignmentdir, alignName), new File(degen_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + j + subsuffix), taxon, len);
 					
 					if( !valid ) {
 						break;
@@ -480,6 +603,7 @@ public class FindMinSupport {
 			return false;
 		} else {
 			ma.replaceSequence(taxon, degseq);
+			
 			ma.writePhylip(outfile);
 			return true;
 		}
