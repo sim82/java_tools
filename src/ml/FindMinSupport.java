@@ -36,14 +36,15 @@ class ReductionResult {
 public class FindMinSupport {
 
 	private static boolean CREATE_REDUCED_ALIGNMENTS = true;
-	private static boolean CREATE_SUBSEQ_ALGNMENTS = false;
+	private static boolean CREATE_SUBSEQ_ALIGNMENTS = true;
 	private static boolean CREATE_REDUCED_TREES = true;
 	private static boolean CREATE_MAPPING_FILES = true;
 	
 	// try to keep the random gap generation reproducible
 	public static final Random rand = new Random(12345);
 	//private static final int START_TREE_IDX = 97;
-	private static final int START_TREE_IDX = 65;
+//	private static final int START_TREE_IDX = 65;
+	private static final int START_TREE_IDX = 0;
 	public static ReductionResult createNThReducedTree(LN n, int num) {
 		final LN[] nodelist = LN.getAsList(n);
 
@@ -284,10 +285,13 @@ public class FindMinSupport {
 	public static void main(String[] args) {
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-		//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
-//	createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
-		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
-		//createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+//		createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+//		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
+//		createReducedTrees("RAxML_bipartitions.218.BEST.WITH", "218");
+		createReducedTrees("RAxML_bipartitions.500.BEST.WITH", "500");
+//		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
+//		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
+		//createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -301,8 +305,9 @@ public class FindMinSupport {
 
 		final File outdir = new File("/space/redtree_testing");
 		final File degen_alignoutdir = new File("/space/red_alignments_testing");
-		final File subseq_alignoutdir = new File("/space/subseq_alignments");
-		final File subseq_queryoutdir = new File("/space/subseq_query");
+		final File subseq_alignoutdir = new File("/space/subseq_alignments_testing");
+		final File subseq_queryoutdir = new File("/space/subseq_query_testing");
+		MultipleAlignment.USE_SHITTY_LOADER = true;
 		
 		final MultipleAlignment inputAlignment = MultipleAlignment.loadPhylip(new File( alignmentdir, alignName ));
 		
@@ -386,7 +391,7 @@ public class FindMinSupport {
 			System.out.println();
 			
 
-			if( CREATE_SUBSEQ_ALGNMENTS ) {
+			if( CREATE_SUBSEQ_ALIGNMENTS ) {
 				//final int[] ssLenList = {250, 500};
 				
 				final int[] ssLenList = {500};
@@ -394,8 +399,9 @@ public class FindMinSupport {
 				for( final int ssLen : ssLenList ) {
 					for( SubseqPos sp : SubseqPos.values() ) {
 
+						String subsuffix = ".gz";
 						String posid = subseqIdent(sp);
-						File alignOutfile = new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen + posid ); 
+						File alignOutfile = new File(subseq_alignoutdir, alignName + "_" + padchar("" + i, '0', 4) + "_" + ssLen + posid + subsuffix ); 
 						
 						final String qs = createSubseqAlignment(new File(alignmentdir, alignName), alignOutfile, taxon, ssLen, sp);
 						

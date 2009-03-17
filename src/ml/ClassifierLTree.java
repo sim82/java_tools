@@ -405,7 +405,7 @@ public class ClassifierLTree {
         }
     }
 
-    private static double getPathLenBranchToBranch(LN n[], LN[] b, double seScale, int[] nodedist ) {
+    static double getPathLenBranchToBranch(LN n[], LN[] b, double seScale, int[] nodedist ) {
     	assert( n[0].backLen == n[1].backLen);
     	assert( b[0].backLen == b[1].backLen);
     	
