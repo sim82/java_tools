@@ -1,5 +1,8 @@
 package ml;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,7 +51,52 @@ public class LN {
 		return list;
 	}
 
-    private static int countNodes(LN n) {
+	public static LN[][] getBranchList( LN n ) 
+	{	if( n.data.isTip ) 
+		{	throw new RuntimeException("we don't like tips!");
+		}
+		
+		ArrayList<LN[]> list = new ArrayList<LN[]>();
+		
+		getBranchListForward(n, list);
+		getBranchListForward(n.next, list);
+		getBranchListForward(n.next.next, list);
+		
+		return list.toArray(new LN[list.size()][]);
+	}
+	
+    private static void getBranchListForward(LN n,
+			ArrayList<LN[]> list) 
+    {	if( ! n.data.isTip ) 
+    	{	LN[] b = {n, n.back};
+			
+    		branchSanityCheck(b);
+    	
+    		list.add(b);
+			
+			getBranchListForward(n.next.back, list);
+			getBranchListForward(n.next.next.back, list);
+		}
+	}
+
+	public static void branchSanityCheck(LN[] b) {
+		boolean x = (b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel;
+		
+		
+		if( ((b[0].backLabel != null && b[1].backLabel != null) && b[0].backLabel.equals(b[1].backLabel)) 
+			|| ((b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel)) 
+		{	throw new RuntimeException("! b[0].backLabel.equals(b[1].backLabel)");
+		}
+		if( b[0].backLen != b[1].backLen )
+		{	throw new RuntimeException( "b[0].backLen != b[1].backLen" );
+		}
+		if( b[0].backSupport != b[1].backSupport )
+		{	throw new RuntimeException("b[0].backSupport != b[1].backSupport");
+		}
+		
+	}
+
+	private static int countNodes(LN n) {
         return countNodes(n, true);
     }
     private static int countNodes(LN n, boolean back) {
@@ -58,13 +106,13 @@ public class LN {
 //			return 1 + countNodes(n.next.back) + countNodes(n.next.next.back);
 //		}
 
-        if( n == null ) {
-            return 0;
-        } else {
-            if( back ) {
-                return 1 + countNodes(n.back, false ) + countNodes(n.next.back, false) + countNodes(n.next.next.back, false);
-            } else {
-                return 1 + countNodes(n.next.back, false) + countNodes(n.next.next.back, false);
+        if( n == null ) 
+        {	return 0;
+        } else 
+        {	if( back ) 
+        	{	return 1 + countNodes(n.back, false ) + countNodes(n.next.back, false) + countNodes(n.next.next.back, false);
+            } else 
+            {	return 1 + countNodes(n.next.back, false) + countNodes(n.next.next.back, false);
             }
         }
 
@@ -203,7 +251,7 @@ public class LN {
 		// flood the tree from the tips of the split-set:
 		//
 		// nodes get 'marked' if they have two marked
-		// neighbors (ancetors). At the beginning only the leafs from one split-set are marked.
+		// neighbors (ancestors). At the beginning only the leafs from one split-set are marked.
 		// The recursion stops at the branch that separates the two split-sets (which can never have two
         // marked ancestors (at least this is my theory...))
 		// (this description is rubbish)
@@ -272,7 +320,7 @@ public class LN {
 
 		
 
-		LN[] ret = new LN[2];
+		
 
 		// the last node on the open list is on one side of the separating
 		LN n1 = nodeIndex.get(openNodes.iterator().next());
@@ -282,8 +330,9 @@ public class LN {
 		
 		for( int i = 0; i < 3; i++, n1 = n1.next ) {
 			if( !markedNodes.contains(n1.back.data.serial) ) {
-				ret[0] = n1;
-				ret[1] = n1.back;
+				// NOTE: ret[0] always points towards the subtree identified by the split set
+				
+				LN[] ret = {n1, n1.back};
 				return ret;
 			}
 		}
@@ -293,17 +342,45 @@ public class LN {
 
 	}
 
-    public static LN[] removeTaxon( LN n, String taxon ) {
-        if( n.data.isTip(taxon)) {
-            // keep it simple
-            throw new RuntimeException( "ooops! the tip to be removed is used as pseudo root. bailing out" );
-        }
+	public static String[] getSmallerSplitSet( LN[] branch ) {
+		LN[] ll = LN.getAsList(branch[0], false);
+		LN[] lr = LN.getAsList(branch[1], false);
+
+		Set<String> sl = LN.getTipSet(ll);
+		Set<String> sr = LN.getTipSet(lr);
+
+		Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
+
+		
+		String[] split = smallset.toArray(new String[smallset.size()]);
+		Arrays.sort(split);
+		
+		return split;
+	}
+	
+	public static LN[] removeTaxon( LN n, String taxon ) {
+		return removeTaxon(n, taxon, true);
+	}
+	
+	
+    public static LN[] removeTaxon( LN n, String taxon, boolean safe ) {
+    	if( n.data.isTip(taxon)) {
+	        // keep it simple
+	        throw new RuntimeException( "ooops! the tip to be removed is used as pseudo root. bailing out" );
+	    }
 
         LN[] nodelist = getAsList(n);
 
         for( LN node : nodelist ) {
             if( node.data.isTip(taxon) ) {
                 node = getTowardsTree(node);
+
+                if( safe ) {
+                	// check if we would remove the pseudo root
+                	if( n == node.back || n == node.back.next || n == node.back.next.next ) {
+                		throw new RuntimeException( "ooops! other node in the removed branch is used as pseudo root. bailing out");
+                	}
+                }
                 
                 // removing one branch means to join the two adjacent branches.
                 // use the sum of the two branch length as approximation for the length of the joined branch.
@@ -314,7 +391,16 @@ public class LN {
                 node.back.next.back.back = node.back.next.next.back;
                 node.back.next.next.back.back = node.back.next.back;
 
+    
+                
                 LN[] ret = {node.back.next.back, node.back.next.next.back};
+                
+                // scratch links in old node to prevent dead links from orphans.
+                // (node and node.back should be unreachable now, but there may still be
+                // references to them)
+                node.back.next.back = null;
+                node.back.next.next.back = null;
+                
                 return ret;
             }
         }
@@ -323,6 +409,28 @@ public class LN {
     }
 
 
+    public static LN[] removeNode( LN d1, LN d2 ) {
+    	if( d1.back.data.serial != d2.back.data.serial ) {
+    		throw new RuntimeException( "nodes do not qualify for remove operation: they do not link back to the same node");
+    	}
+    	
+    	
+        // scratch links in old node to prevent dead links from orphans.
+    	d1.back.back = null;
+    	d2.back.back = null;
+    	
+    	// link the two input nodes directly
+    	double newLen = d1.backLen + d2.backLen;
+    	d1.back = d2;
+    	d1.backLen = newLen;
+    	d2.back = d1;
+    	d2.backLen = newLen;
+    	
+    	LN[] ret = {d1, d2};
+    	
+    	return ret;
+    }
+    
 	public static double longestPath( LN n ) {
 		if( !n.data.isTip ) {
 			throw new RuntimeException("this method is only for tips");
@@ -452,6 +560,73 @@ public class LN {
 		}
 		
 		return false;
+	}
+
+	public static LN[] findBranchByTip(LN n, String name) {
+		LN[] list = LN.getAsList(n);
+		
+		for( LN l : list ) {
+			if( l.data.isTip(name)) {
+				l = LN.getTowardsTree(l);
+				
+				LN[] ret = {l, l.back};
+				
+				return ret;
+			}
+		}
+		
+		throw new RuntimeException( "tip not found.");
+	}
+
+	public static LN parseTree(File file) {
+		 TreeParser tp = new TreeParser(file);
+         LN tree = tp.parse();
+         
+         if( tree != null ) {
+        	 return tree;
+         } else {
+        	 throw new RuntimeException( "tp.parse returned null");
+         }
+	}
+
+	public static LN[] findCorrespondingBranch(LN[] ref, LN other) {
+//		LN[] reflist = LN.getAsList(ref[0]);
+//		LN[] otherlist = LN.getAsList(other);
+//		System.out.printf( "size: %d %d\n", reflist.length, otherlist.length );
+//		
+//		Set<String> refts = LN.getTipSet(reflist);
+//		Set<String> otherts = LN.getTipSet(otherlist);
+//		
+//		System.out.printf( "%s %s\n", refts.containsAll(otherts), otherts.containsAll(refts));
+//		otherts.removeAll(refts);
+//		for( String s : otherts ) {
+//			System.out.printf( "%s\n", s );
+//		}
+		
+		
+		LN[] ll = LN.getAsList(ref[0], false);
+		LN[] lr = LN.getAsList(ref[1], false);
+
+		
+		
+		Set<String> sl = LN.getTipSet(ll);
+		Set<String> sr = LN.getTipSet(lr);
+
+		String[] ssl = sl.toArray( new String[sl.size()] );
+		String[] ssr = sr.toArray( new String[sr.size()] );
+		
+		LN[] bl = LN.findBranchBySplit( other, ssl );
+		LN[] br = LN.findBranchBySplit( other, ssr );
+		
+//		System.out.printf( "(%d %d) (%d %d)\n", bl[0].data.serial, bl[1].data.serial, br[0].data.serial, br[1].data.serial ); 
+		
+		// check if both split-sets return the same branch of the other tree
+		if( bl[1].data.serial != br[0].data.serial || br[1].data.serial != bl[0].data.serial ) {
+			throw new RuntimeException( "reftree and other tree do not seem to have the same topology");
+		}
+		
+		LN[] ret = {bl[0], br[0]};
+		return ret;
 	}
 
 }

@@ -470,7 +470,7 @@ public class FindMinSupport {
 		return sb.toString();
 	}
 
-	private static String createStartSubseq(String seq, int length) {
+	static String createStartSubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
 			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
@@ -482,7 +482,7 @@ public class FindMinSupport {
 		return genAlignedSubseq(seq, nm, sp, ep);
 	}
 	
-	private static String createMidSubseq(String seq, int length) {
+	static String createMidSubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
 			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
@@ -496,7 +496,7 @@ public class FindMinSupport {
 		return genAlignedSubseq(seq, nm, sp, ep);
 	}
 	
-	private static String createEndSubseq(String seq, int length) {
+	static String createEndSubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
 			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
@@ -510,7 +510,7 @@ public class FindMinSupport {
 		return genAlignedSubseq(seq, nm, sp, ep);
 	}
 	
-	private static String createLeastGappySubseq(String seq, int length) {
+	static String createLeastGappySubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
 			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
@@ -615,7 +615,7 @@ public class FindMinSupport {
 		}
 	}
 
-	private static String createDegeneratedSequence(String seq, int len) {
+	static String createDegeneratedSequence(String seq, int len) {
 		final int[] ngm = getNonGapCharacterMap(seq);
 		int ngmsize = ngm.length;
 		
@@ -649,7 +649,7 @@ public class FindMinSupport {
 		MID
 	}
 	
-	private static String subseqIdent( SubseqPos pos ) {
+	static String subseqIdent( SubseqPos pos ) {
 		switch( pos ) {
 		case LEAST_GAPPY_RANDOM:
 			return "l";
@@ -706,7 +706,7 @@ public class FindMinSupport {
 
 	
 
-	private static String removeGaps(String degseq) {
+	public static String removeGaps(String degseq) {
 		int nGaps = 0;
 		
 		for( int i = 0; i < degseq.length(); i++ ) {
@@ -795,7 +795,7 @@ public class FindMinSupport {
 		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
 	}
 
-	private static String padchar(String string, char c, int num) {
+	static String padchar(String string, char c, int num) {
 		while (string.length() < num) {
 			string = c + string;
 		}

@@ -15,96 +15,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 
-class BlastFile {
-	ArrayList<String>	seqNames = new ArrayList<String>();
-	Map<String, Double> bitscoreMap = new HashMap<String, Double>();
-	private String queryName;
-	
-	
-	
-	public BlastFile( File file ) {
-		
-		try {
-			BufferedReader r = new BufferedReader( new FileReader(file) );
-			
-			
-			
-			while( true ) { 
-				String line = r.readLine();
-			
-				if( line == null ) {
-					throw new RuntimeException( "eof while looking for start of bitscore section");
-				}
-				
-				if( line.startsWith( "Query=" ) ) {
-					StringTokenizer st = new StringTokenizer(line);
-					st.nextToken();
-					this.queryName = st.nextToken();
-				} else if( line.startsWith("Sequences producing significant alignments:") ) {
-					r.readLine();
-					break;
-				}
-			}
-			
-			
-			while( true ) {
-				String line = r.readLine();
-
-				if( line == null ) {
-					throw new RuntimeException( "eof while still in bitscore section");
-				}
-				
-				if( line.length() == 0 ) {
-				//	System.out.printf( "end of score section\n" );
-					break;
-				}
-				
-				
-				StringTokenizer st = new StringTokenizer(line);
-				String name = st.nextToken();
-				String bitscoreS = st.nextToken();
-				
-				double bitscore = Double.parseDouble(bitscoreS);
-			
-				bitscoreMap.put( name, bitscore);
-				seqNames.add( name );
-			}
-			
-			
-			r.close();
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			
-			throw new RuntimeException( "bailing out" );
-		}
-		
-		
-	}
-	
-	ArrayList<String>getSeqNames() {
-		return seqNames;
-	}
-	
-	double getBitscore( String seqName ) {
-		Double s = bitscoreMap.get(seqName);
-		
-		if( s != null ) {
-			return s.doubleValue();
-		} else {
-			throw new RuntimeException( "seqName not in blastfile: '" + seqName + "'" );
-			//return s.POSITIVE_INFINITY; 
-		}
-		
-	}
-	
-	String getQueryName() {
-		return queryName;
-	}
-	
-}
-
 public class BlastOutTreedist {
 
 	public static void main(String[] args) {
@@ -210,9 +120,19 @@ public class BlastOutTreedist {
 //	        		throw new RuntimeException( "ooops. query sequence is not the best blast hit. bailing out");
 //	        	}
 
+    	        LN reftreePruned = LN.deepClone(reftree);
+    	        LN[] opb = LN.removeTaxon(reftreePruned, queryName); 
+    	        
 	        	String name = bf.getSeqNames().get(hit);
-	        	double distUW = getPathLenTipToTip( reftree, queryName, name, true );
-				double dist = getPathLenTipToTip( reftree, queryName, name, false );
+	        	LN[] ipb = LN.findBranchByTip( reftreePruned, name );
+	        	
+	        	
+	        	int[] fuck = {0, 0};
+	    		double lenOT = ClassifierLTree.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
+	            int ndOT = fuck[0];
+	        	
+	        	//double distUW = getPathLenTipToTip( reftree, queryName, name, true );
+				//double dist = getPathLenTipToTip( reftree, queryName, name, false );
 				
 				// ugly: extract seq and gap from the blast file name
 				int idx1stUnderscore = blastFile.indexOf('_');
@@ -222,7 +142,7 @@ public class BlastOutTreedist {
 				String seq = blastFile.substring(idx1stUnderscore+1, idx2ndUnderscore);
 				String gap = blastFile.substring(idx2ndUnderscore+1, idxDot);
 				
-				System.out.printf( "%s\t%s\t%s\t%s\t%d\t%f\t%f\n", seq, gap, queryName, name, (int)distUW, dist, dist / reftreeDiameter );
+				System.out.printf( "%s\t%s\t%s\t%s\t%d\t%f\t%f\n", seq, gap, queryName, name, (int)ndOT, lenOT, lenOT / reftreeDiameter );
     	        	
     	                		
         		

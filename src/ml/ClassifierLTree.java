@@ -206,6 +206,8 @@ public class ClassifierLTree {
 					{
 						LN[] insertBranch = findBranchByName( oltree, branch );
 
+						// FIXME: there now is a method in Ln to do this
+						
 						LN[] ll = LN.getAsList(insertBranch[0], false);
 						LN[] lr = LN.getAsList(insertBranch[1], false);
 
@@ -328,7 +330,7 @@ public class ClassifierLTree {
         return lnlx;
     }
 
-	private static LN[] findBranchByName(LN n, String branch) {
+	public static LN[] findBranchByName(LN n, String branch) {
 		LN[] list = LN.getAsList(n);
 
 
