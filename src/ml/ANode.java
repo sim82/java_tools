@@ -9,7 +9,7 @@ public class ANode {
 	boolean isTip;
 	private String tipName;
     private double support;
-
+    private String nodeLabel;
 	private int tipSerial;
 
     public boolean contentEquals( ANode other ) {
@@ -71,6 +71,10 @@ public class ANode {
 		return this.tipSerial;
 	}
 	
+	
+	public void setNodeLabel( String label ) {
+		nodeLabel = label;
+	}
 }
 
 

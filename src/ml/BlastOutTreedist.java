@@ -73,13 +73,21 @@ public class BlastOutTreedist {
         		autoprefix = "";
         	}
         	
+        	
+        	final String autosuffix;
+        	if( args.length > 3 ) {
+        		autosuffix = args[3];
+        	} else {
+        		autosuffix = ".fa";
+        	}
+        	
         	File cwd = new File(".");
         	
         	String[] files = cwd.list( new FilenameFilter() {
 
 				@Override
 				public boolean accept(File dir, String name) {
-					return name.startsWith(autoprefix) && name.endsWith(".fa");
+					return name.startsWith(autoprefix) && name.endsWith(autosuffix);
 				}
 			});
         	

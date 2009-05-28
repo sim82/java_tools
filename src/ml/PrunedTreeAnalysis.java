@@ -48,19 +48,24 @@ public class PrunedTreeAnalysis {
 		}
 
 //		// original insertion position on the olt
-//		LN[] oip = LN.findCorrespondingBranch( oip_reftree, olt );
+		LN[] oip = LN.findCorrespondingBranch( oip_reftree, olt );
+		
+		String oip_branchname = oip[0].backLabel;
+		//System.out.printf( "oip in olp: %s\n", oip[0].backLabel ); 
 		
 		for( ClassifierOutput.Res cr : co.reslist ) {
 			
 			// classifier insert position
-			LN[] cip = ClassifierLTree.findBranchByName(olt, cr.branch);
+			LN[] cip = LN.findBranchByName(olt, cr.branch);
 			LN[] cip_reftree = LN.findCorrespondingBranch(cip, reftreepruned);
 			
 			int[] fuck = new int[1]; // some things (like 'multiple return values') are soo painful in java ...
             double lenOT = ClassifierLTree.getPathLenBranchToBranch(oip_reftree, cip_reftree, 0.5, fuck);
             double ndOT = fuck[0];
             
-            System.out.printf( "%s %f %f\n", cr.seq, ndOT, lenOT );
+            String cip_branchname = cip[0].backLabel;
+            
+            System.out.printf( "%s\t%s\t%s\t%f\t%f\n", cr.seq, oip_branchname, cip_branchname, ndOT, lenOT );
 		}
 			
 	}

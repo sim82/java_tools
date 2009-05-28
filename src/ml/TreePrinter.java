@@ -62,6 +62,22 @@ public class TreePrinter {
 		}
     }
     static void printRaw( LN node, PrintStream s ) {
-        printRaw( node, s, true );
+        //node = LN.getTowardsTree(node);
+    	if( node.data.isTip ) {
+    		if( node.back != null ) {
+    			node = node.back;
+    		} else if( node.next.back != null ) {
+    			node = node.next.back;
+    		} else if( node.next.next.back != null ) {
+    			node = node.next.next.back;
+    		} else {
+    			throw new RuntimeException( "can not print single unlinked node");
+    		}
+    		
+    		if( node.data.isTip ) {
+    			throw new RuntimeException( "could not find non-tip node for writing the three (this is a braindead limitation of this tree printer!)");
+    		}
+    	}
+    	printRaw( node, s, true );
     }
 }

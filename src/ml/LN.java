@@ -351,7 +351,10 @@ public class LN {
 
 		Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
 
+	//	System.out.printf( "M00Clon8: %s %s %s\n", sl.contains("M00Clon8"), sr.contains("M00Clon8"), smallset.contains("M00Clon8"));
+		//System.out.printf( "ts: %d %d %d %d\n", ll.length, lr.length, sl.size(), sr.size() );
 		
+		//System.exit(0);
 		String[] split = smallset.toArray(new String[smallset.size()]);
 		Arrays.sort(split);
 		
@@ -431,6 +434,52 @@ public class LN {
     	return ret;
     }
     
+    public static double shortestPathNd( LN n ) {
+		if( !n.data.isTip ) {
+			throw new RuntimeException("this method is only for tips");
+		}
+
+
+		n = LN.getTowardsTree(n);
+
+		return 1.0 + shortestPathNdRec( n.back );
+    }
+    
+	private static double shortestPathNdRec(LN n) {
+		if( n.data.isTip ) {
+			return 0.0;
+		} else {
+			double len1 = shortestPathNdRec(n.next.back) + 1.0;
+			double len2 = shortestPathNdRec(n.next.next.back) + 1.0;
+
+			return Math.min(len1, len2);
+
+		}
+	}
+    
+    public static double shortestPath( LN n ) {
+		if( !n.data.isTip ) {
+			throw new RuntimeException("this method is only for tips");
+		}
+
+
+		n = LN.getTowardsTree(n);
+
+		return n.backLen + shortestPathRec( n.back );
+    }
+    
+	private static double shortestPathRec(LN n) {
+		if( n.data.isTip ) {
+			return 0.0;
+		} else {
+			double len1 = shortestPathRec(n.next.back) + n.next.backLen;
+			double len2 = shortestPathRec(n.next.next.back) + n.next.next.backLen;
+
+			return Math.min(len1, len2);
+
+		}
+	}
+
 	public static double longestPath( LN n ) {
 		if( !n.data.isTip ) {
 			throw new RuntimeException("this method is only for tips");
@@ -627,6 +676,22 @@ public class LN {
 		
 		LN[] ret = {bl[0], br[0]};
 		return ret;
+	}
+
+	public static LN[] findBranchByName(LN n, String branch) {
+		LN[] list = getAsList(n);
+	
+	
+		for( LN node : list ) {
+			if( node.backLabel.equals(branch)) {
+				assert( node.back.backLabel.equals(branch));
+				LN[] ret = {node, node.back};
+	
+				return ret;
+			}
+		}
+	
+		throw new RuntimeException( "could not find named branch '" + branch + "'" );
 	}
 
 }

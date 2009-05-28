@@ -14,6 +14,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.HashMap;
@@ -366,30 +367,35 @@ public class MultipleAlignment {
         }
     }
 
+    
+    public void writePhylip( PrintStream w ) {
+    	w.printf( "%d %d\n", nTaxon, seqLen);
+
+        int maxNameLen = 0;
+
+        for( String name : names ) {
+            maxNameLen = Math.max( maxNameLen, name.length());
+        }
+
+        for( int i = 0; i < nTaxon; i++ ) {
+            w.printf( "%s%s\n", padSpaceRight(names[i], maxNameLen + 2), data[i]);
+        }	
+    }
+    
     public void writePhylip( File file ) {
         try {
         	
         	
-            PrintWriter w;
+            PrintStream w;
             
             // transparent gz compression
             if( file.getName().endsWith(".gz")) {
-            	w = new PrintWriter(new GZIPOutputStream( new FileOutputStream(file)));
+            	w = new PrintStream(new GZIPOutputStream( new FileOutputStream(file)));
             } else {
-            	w = new PrintWriter(new FileWriter(file));
+            	w = new PrintStream(new FileOutputStream(file));
             }
 
-            w.printf( "%d %d\n", nTaxon, seqLen);
-
-            int maxNameLen = 0;
-
-            for( String name : names ) {
-                maxNameLen = Math.max( maxNameLen, name.length());
-            }
-
-            for( int i = 0; i < nTaxon; i++ ) {
-                w.printf( "%s%s\n", padSpaceRight(names[i], maxNameLen + 2), data[i]);
-            }
+            writePhylip(w);
             w.close();
         } catch (IOException ex) {
             Logger.getLogger(MultipleAlignment.class.getName()).log(Level.SEVERE, null, ex);

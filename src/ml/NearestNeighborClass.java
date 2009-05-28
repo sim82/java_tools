@@ -11,6 +11,8 @@ import java.util.Set;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory.Woodstox;
 
 public class NearestNeighborClass {
+	public final static boolean VERBOSE = false;
+	
 	public static void main(String[] args) {
 		if( args[1].equals("--auto")) {
 			String ds = args[2];
@@ -67,9 +69,27 @@ public class NearestNeighborClass {
 			File treefile = new File(args[1]);
 			File phyfile = new File(args[2]);
 			
-			
-			
-			wellDoIt(rtfile, treefile, phyfile, null, null);
+			String seq = null;
+			String gap = null;
+			{
+				String name = phyfile.getName();
+				int idx1st = name.indexOf('_');
+				if( idx1st >= 0 ) {
+					int idx2nd = name.indexOf('_', idx1st);
+					
+					if( idx2nd > idx1st ) {
+						int idxdot = name.indexOf('.', idx2nd );
+						
+						if( idxdot > idx2nd ) {
+							seq = name.substring(idx1st + 1, idx2nd );
+							gap = name.substring(idx2nd + 1, idxdot );
+						}
+						
+					}
+				}
+				
+			}
+			wellDoIt(rtfile, treefile, phyfile, seq, gap);
 		}
 	}
 
@@ -119,7 +139,11 @@ public class NearestNeighborClass {
 //		System.out.printf( "n tree: %d, n ma: %d\n", taxonSet.size(), ma.names.length );
 		
 		for( String qn : queryNames ) {
-//			System.out.printf( "query: %s\n", qn );
+			
+			if( VERBOSE ) {
+				System.out.printf( "query: %s\n", qn );
+			}
+			
 			String qs = ma.getSequence(qn);
 			
 			int edMin = Integer.MAX_VALUE;
@@ -134,7 +158,10 @@ public class NearestNeighborClass {
 				String os = ma.getSequence(i);
 				
 				int ed = editDist( qs, os );
-			
+				if( VERBOSE ) {
+					System.out.printf( "(%s %d) ", on, ed );
+				}
+				
 				if( ed < edMin ) {
 					edMin = ed;
 					idxMin = i;
@@ -142,9 +169,9 @@ public class NearestNeighborClass {
 				
 			}
 			
-			
-			//System.out.printf( "best: %d %d %s\n", edMin, idxMin, ma.names[idxMin] );
-			
+			if( VERBOSE ) {
+				System.out.printf( "\nbest: %d %d %s\n", edMin, idxMin, ma.names[idxMin] );
+			}
 
 		    LN reftreePruned = LN.deepClone(reftree);
 		    LN[] opb = LN.removeTaxon(reftreePruned, qn);
@@ -194,13 +221,61 @@ public class NearestNeighborClass {
 		
 		int ed = 0;
 		for( int i = 0; i < qs.length(); i++ ) {
-			if( qs.charAt(i) != os.charAt(i)) {
-				ed++;
+			
+			
+			if( qs.charAt(i) != '-' && qs.charAt(i) != os.charAt(i)) {
+				ed+=3;
+			} else if( qs.charAt(i) == '-' ) {
+				if( i <= 0 || qs.charAt(i-1) != '-' ) {
+					ed+=3;
+				} else {
+					ed++;
+				}
 			}
 		}
 		
 		return ed;
 	}
+//	private static int editDist(String qs, String os) {
+//		if( qs.length() != os.length()) {
+//			throw new RuntimeException("qs.length() != os.length()");
+//		}
+//		
+//		int ed = 0;
+//		for( int i = 0; i < qs.length(); i++ ) {
+//			
+//			
+//			if( qs.charAt(i) != '-' && qs.charAt(i) != os.charAt(i)) {
+//				ed+=4;
+//			} else if( qs.charAt(i) == '-' ) {
+//				if( i <= 0 || qs.charAt(i-1) != '-' ) {
+//					ed+=3;
+//				} else {
+//					ed++;
+//				}
+//			}
+//		}
+//		
+//		return ed;
+//	}
 	
+
+	private static int editDist_bad(String qs, String os) {
+		if( qs.length() != os.length()) {
+			throw new RuntimeException("qs.length() != os.length()");
+		}
+		
+		int ed = 0;
+		for( int i = 0; i < qs.length(); i++ ) {
+			
+			
+			if( qs.charAt(i) != os.charAt(i)) {
+				ed++;
+			} 
+		}
+		
+		return ed;
+	}
+
 	
 }

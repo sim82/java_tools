@@ -10,6 +10,16 @@ public class BlastTreedistPruned {
 		assert( args[0].equals("--auto"));
 		
 		File reftreeFile = new File( args[1] );
+		File prunesplitfile = new File( args[2] );
+		final String autoprefix;
+    	if( args.length > 2 ) {
+    		autoprefix = args[3];
+    	} else {
+    		autoprefix = "";
+    	}
+    	
+		
+		
         LN reftree;
         {
             TreeParser tpreftree = new TreeParser(reftreeFile);
@@ -18,7 +28,7 @@ public class BlastTreedistPruned {
 
         double reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
         
-        File prunesplitfile = new File( args[2] );
+        
         
         String[] prunesplit = PrunedTreeAnalysis.readSplit(prunesplitfile);
         
@@ -42,13 +52,7 @@ public class BlastTreedistPruned {
 
         
         
-        final String autoprefix;
-    	if( args.length > 2 ) {
-    		autoprefix = args[3];
-    	} else {
-    		autoprefix = "";
-    	}
-    	
+        
     	File cwd = new File(".");
     	
     	String[] files = cwd.list( new FilenameFilter() {

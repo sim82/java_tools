@@ -41,6 +41,8 @@ public class ClassifierLTree {
 
 	
     public static void main( String[] args ) throws FileNotFoundException, UnsupportedEncodingException {
+
+    	
     	if( !args[0].equals("--auto")) {
 	    	
     		// classic mode
@@ -61,6 +63,11 @@ public class ClassifierLTree {
     	} else {
     
     		// auto mode: convert all raxml output files in this directory
+    		// usage:
+    		// <CMD> --auto <real neighbor file> <reftree file>
+    		// automode will work on all RAxML_classification* files in the cwd
+    		// Output files are written to the subdir './ext'
+    		
     		
     		File rnFile = new File( args[1] );
     		File reftreeFile = new File( args[2] );
@@ -68,6 +75,8 @@ public class ClassifierLTree {
     		ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
     		
 	        File cwd = new File( "." );
+	        
+	        
 	        
 	        File[] classFiles = cwd.listFiles(new FilenameFilter() {
 	
@@ -80,12 +89,27 @@ public class ClassifierLTree {
 	        for( File classFile : classFiles ) {
 	        	String suffix = classFile.getName().substring(21);
 	        	
-	        	File oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix );
+	        	File oltFile;
 	        	
-	        	//System.out.printf( "file: %s %s\n", file.getName(), suffix);
+	        	{
+	        		oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix );
+	        		
+	        		if( !oltFile.canRead() ) {
+	        			oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix + ".gz" );
+	        		}
+	        		
+	        		if( !oltFile.canRead() ) {
+	        			throw new RuntimeException( "cannot find olt file (with and without .gz suffix)");
+	        		}
+	        	}
+	        	
+	        	//System.out.printf( "file: %s\n", classFile.getName());
 	        	
 	        	File outDir = new File( classFile.getParent(), "ext/" );
-	        	
+	
+	        	if( !outDir.exists() ) {
+	        		outDir.mkdir();
+	        	}
 	        	
 	        	PrintStream out = new PrintStream( new File(outDir, classFile.getName() ));
 	        	clt.output( out, classFile, oltFile );
@@ -204,7 +228,7 @@ public class ClassifierLTree {
 					// find the split that identifies the current insertion position
 					String[] insertSplit;
 					{
-						LN[] insertBranch = findBranchByName( oltree, branch );
+						LN[] insertBranch = LN.findBranchByName( oltree, branch );
 
 						// FIXME: there now is a method in Ln to do this
 						
@@ -240,13 +264,20 @@ public class ClassifierLTree {
                         // - remove the current taxon from the reference tree (copy), so that its topology
                         //   resembles the pruned tree from the current classification
                         // - return the branch from the reference tree that corresponds to the original taxon position
-                        LN[] opb = LN.removeTaxon(reftreePruned, seq);
-
+                        LN[] opb = LN.removeTaxon(reftreePruned, seq, false);
+                        reftreePruned = opb[0];
 
                         // identify the current insertion position from the pruned tree in the
                         // reference tree. The position is identified by the split set (or how ever this thin is called)
                         //long time1 = System.currentTimeMillis();
                         // the LN referenced by reftreePruned can (!?) never be removed by removeTaxon so it's ok to use it as pseudo root
+                        
+//                        System.out.printf( "split: " );
+//                        for( String name : insertSplit ) {
+//                        	System.out.printf( "%s ", name );
+//                        }
+//                        
+//                        System.out.println();
                         
                         LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
 
@@ -330,23 +361,7 @@ public class ClassifierLTree {
         return lnlx;
     }
 
-	public static LN[] findBranchByName(LN n, String branch) {
-		LN[] list = LN.getAsList(n);
-
-
-		for( LN node : list ) {
-			if( node.backLabel.equals(branch)) {
-				assert( node.back.backLabel.equals(branch));
-				LN[] ret = {node, node.back};
-
-				return ret;
-			}
-		}
-
-		throw new RuntimeException( "could not find named branch '" + branch + "'" );
-	}
-
-    private static LN findTipWithNamedBranch(LN[] lnl, String branch) {
+	private static LN findTipWithNamedBranch(LN[] lnl, String branch) {
         System.out.printf( "find: %s %d\n", branch, lnl.length );
 
         LN[] lnlx = expandToAllNodes( lnl );

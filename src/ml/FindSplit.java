@@ -22,7 +22,7 @@ public class FindSplit {
 
 
 	public static void main(String[] args) {
-		final int set = 714;
+		final int set = 1604;
 		
 		
 		final File treefile;
@@ -50,27 +50,42 @@ public class FindSplit {
         int  bestSmallSize 	= -1;
         String[] bestSplit	= null;
         
+        double bestSupport = -1;
+        
         for( LN[] branch : blist ) 
         {	LN p = branch[0];
         	LN q = branch[1];
-        	
-        	if( p.backSupport < 95.0 ) { 
-        		continue;
+        	//System.out.printf( "------------------------\n" );
+        	if( p.back != q || q.back != p ) {
+        		throw new RuntimeException("inconsistent branch");
         	}
         	
-        	String[] split = LN.getSmallerSplitSet(branch);
-        	System.out.printf( "split: %d %s\n", split.length, p.backLabel );
+        	if( p.backSupport != q.backSupport ) {
+        		throw new RuntimeException("inconsitency");
+        	}
         	
+        
+        	
+        	String[] split = LN.getSmallerSplitSet(branch);
+        	System.out.printf( "split: %d %s   ", split.length, p.backLabel );
+        	
+        	//if( split.length <= 20 ) {
+        		System.out.printf( "%f %s\n", p.backSupport, join(split, " ") );
+        	//}
+    		if( p.backSupport < 95.0 ) { 
+        		continue;
+        	}
         	if( split.length > bestSmallSize ) {
         		//System.out.printf( "new best: %d\n", split.length );
         		bestSmallSize = split.length;
         		bestBranch = branch;
         		bestSplit = split;
+        		bestSupport = p.backSupport;
         	}
         	
         }
         
-        System.out.printf( "best: %d\n", bestSplit.length );
+        System.out.printf( "best: %d %f\n", bestSplit.length, bestSupport );
         System.out.printf( "set: (%s)\n", join( bestSplit, " ") );
 		
         final int alignmentLength;
@@ -85,7 +100,10 @@ public class FindSplit {
         
         for( String taxon : bestSplit ) {
         	LN[] newbranch = LN.removeTaxon( tree, taxon, false );
-        	
+        	if( taxon.equals( "M00Clon8")) {
+        		System.out.printf( "here!!!!!!!!!!!!!!!!!!\n" );
+        		
+        	}
         	if( ! newbranch[0].data.isTip ) {
         		tree = newbranch[0];
         	} else if( ! newbranch[1].data.isTip ) {

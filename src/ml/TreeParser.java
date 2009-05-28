@@ -1,12 +1,16 @@
 package ml;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 
 
@@ -41,7 +45,31 @@ public class TreeParser {
 		try {
 
             //BufferedReader r = new BufferedReader(new FileReader(f));
-            FileReader r = new FileReader(f);
+			
+			
+            Reader r;
+            long len;
+            if( f.getName().endsWith(".gz")) {
+            	
+            	// this is a very ugly way to get the size of the uncompressed file, but it's not worth
+            	// thinking about a better solution atm. There should be a call for this in GZIPStream)
+            	GZIPInputStream gzis = new GZIPInputStream( new FileInputStream(f) );
+            	
+            	len = 0;
+            	
+            	long skipped;
+            	while( (skipped = gzis.skip(1024 * 1024)) != 0 ) {
+            		len+=skipped;
+            	}
+            	
+            	
+            	gzis.close();
+            	
+            	r = new InputStreamReader( new GZIPInputStream( new FileInputStream(f) ));
+            } else {
+            	r = new FileReader(f);
+            	len = f.length();
+            }
 //			String line = null;
 //
 //            String cont = "";
@@ -52,10 +80,11 @@ public class TreeParser {
 //                i++;
 //            }
 //            return cont;
-            long len = f.length();
+             
             char[] data = new char[(int)len];
 
             r.read(data);
+            r.close();
             return data;
 
 		} catch (FileNotFoundException ex) {
@@ -111,6 +140,11 @@ public class TreeParser {
 			throw new RuntimeException("parse error. parse: end of input. missing ';'");
 		}
 
+		// branch length might be present for historical reasons 
+		if( inputA[ptr] == ':' ) {
+			parseBranchLength();
+		}
+		
 		if (inputA[ptr] != ';') {
 			printLocation();
 			throw new RuntimeException("parse error. parse expects ';'");
@@ -223,23 +257,61 @@ public class TreeParser {
 			// 'normal' inner node: two childs
 			ptr++;
 
-            double support;
-            if( isFloatChar(inputA[ptr]) ) {
-                int lend = findFloat(ptr);
-                if (lend == ptr) {
-                    printLocation();
-                    throw new RuntimeException("missing float number at " + ptr);
-                }
-
-                support = Double.parseDouble(substring(ptr, lend));
-                ptr = lend;
+            final double support;
+            String nodeLabel = null;
+            
+            if( inputA[ptr] == ';') {
+            	// oh my god. a fucking rooted tree
+            	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
+            	System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
+            	twiddle( nl, nr, l1 + l2, label1, sup );
+    			
+            	return nl;
+            }
+            
+            if( inputA[ptr] != ':' ) {
+            	// the stuff between the closing '(' and the ':' of the branch length
+            	// is interpreted as node-label. If the node label corresponds to a float value
+            	// it is interpreted as branch support (or node support as a rooted-trees-only-please biologist would say)
+            	
+            	int lend = findNext(ptr, ':');
+            	
+            	nodeLabel = substring(ptr, lend);
+            	ptr = lend;
+            	
+            	boolean isDigit = true;
+            	for( int i = 0; i < nodeLabel.length(); i++ ) {
+            		isDigit &= Character.isDigit(nodeLabel.charAt(i));
+            		
+            		if( i == 0 ) {
+            			isDigit &= (nodeLabel.charAt(i) != '0');
+            		}
+            	}
+            	
+            	if( isDigit ) {
+            		support = Double.parseDouble(nodeLabel);
+            	} else {
+            		
+            		support = -1;
+            	}
+            	
+            	
+//                int lend = findFloat(ptr);
+//                if (lend == ptr) {
+//                    printLocation();
+//                    throw new RuntimeException("missing float number at " + ptr);
+//                }
+//
+//                support = Double.parseDouble(substring(ptr, lend));
+//                ptr = lend;
             } else {
                 support = -1.0;
             }
 
 			LN n = LN.create();
             n.data.setSupport(support);
-
+            n.data.setNodeLabel(nodeLabel);
+            
 			twiddle( nl, n.next, l1, label1, nl.data.getSupport() );
 			twiddle( nr, n.next.next, l2, label2, nr.data.getSupport() );
 
@@ -268,7 +340,9 @@ public class TreeParser {
 			twiddle( nl, n.next, l1, label1, nl.data.getSupport() );
 			twiddle( nr, n.next.next, l2, label2, nr.data.getSupport() );
 			twiddle( nx, n, l3, label3, nx.data.getSupport() );
-
+			
+//			System.out.printf( "root: %f %f %f\n", nl.data.getSupport(), nr.data.getSupport(), nx.data.getSupport() );
+//			System.exit(0);
 			return n;
 		} else {
 			printLocation();
