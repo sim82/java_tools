@@ -30,6 +30,56 @@ import javax.naming.spi.DirectoryManager;
  *
  * @author sim
  */
+
+class TaxonSMap {
+	HashMap<String,int[]> map = new HashMap<String, int[]>();
+	
+	TaxonSMap( File file ) {
+		try {
+			BufferedReader r = new BufferedReader( new FileReader(file));
+			
+			String line = null;
+			
+			while((line = r.readLine()) != null ) {
+				StringTokenizer ts = new StringTokenizer(line);
+				
+				String taxon = ts.nextToken();
+				
+				
+				int nToken = ts.countTokens();
+				
+				int[] nm = new int[nToken];
+				int i = 0;
+				while( ts.hasMoreTokens() ) {
+					String t = ts.nextToken();
+					
+					nm[i] = Integer.parseInt(t);
+					i++;
+				}
+				
+				map.put( taxon, nm );
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			
+			throw new RuntimeException( "bailing out" );
+		}
+	}
+	
+	int[] getMap( String taxon ) {
+		int[] m = map.get(taxon);
+		
+		if( m == null ) {
+			throw new RuntimeException( "taxon not found in smap: " + taxon );
+		}
+		
+		return m;
+	}
+	
+}
+
 public class ClassifierLTree {
 	//final double oltDiameter;
 	final double reftreeDiameter;
@@ -38,6 +88,7 @@ public class ClassifierLTree {
 	final Map<String,String> rnm;
 	final Map<String,String[]> splitmap;
 	
+	static TaxonSMap smap = null;
 
 	
     public static void main( String[] args ) throws FileNotFoundException, UnsupportedEncodingException {
@@ -71,6 +122,10 @@ public class ClassifierLTree {
     		
     		File rnFile = new File( args[1] );
     		File reftreeFile = new File( args[2] );
+    		
+    		if( args.length > 3 ) {
+    			smap = new TaxonSMap(new File(args[3]));
+    		}
     		
     		ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
     		
@@ -210,7 +265,18 @@ public class ClassifierLTree {
 
                     // the name of the classified taxon
                     String seq = ts.nextToken();
-
+                    
+                    String seqOrig = seq;
+                    
+                    int seqSubIdx = -1; 
+                    
+                    int atIdx = seq.indexOf( '@' );
+                    if( atIdx > 0 ) {
+                    	seq = seq.substring(0, atIdx);
+                    	seqSubIdx = Integer.parseInt(seqOrig.substring( atIdx + 1 ));
+                    }
+                     
+                    
                     // name of the branch, the classifier has put the taxon in (= current insertion position)
                     String branch = ts.nextToken();
 
@@ -307,9 +373,20 @@ public class ClassifierLTree {
                     
                     if( !PRINT_LEGACY_STUFF ) {
                     	
+                    	if( smap != null ) {
+                    		
+                    		if( seqSubIdx >= 0 ) {
+	                    		int[] nm = smap.getMap(seq);
+	                    		seqSubIdx = nm[seqSubIdx];
+                    		}
+                    		out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\t%d\n", seqOrig, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter/*, oltDiameter */, seqSubIdx);
+                    	} else {
+                    		out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\n", seqOrig, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter/*, oltDiameter */);
+                           	
+                    		
+                    	}
                     	
-                    	out.printf( "%s\t%s\t%s\t%d\t%d\t%f\t%f\t%f\n", seq, branch, realBranch[0].backLabel, support, ndOT, lenOT, lenOT / reftreeDiameter, reftreeDiameter/*, oltDiameter */);
-                   	
+                    	
                     } else {
                     	
 	                    // for comparison: get the path length in the (possibly unweighted) pruned tree

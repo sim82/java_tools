@@ -20,26 +20,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-class ReductionResult {
 
-	String taxon;
-	String taxonNeighbor;
-
-	LN nl;
-	LN nr;
-}
 
 /**
  *
  * @author sim
  */
 public class FindMinSupport {
+	static class ReductionResult {
 
-	private static boolean CREATE_REDUCED_ALIGNMENTS = true;
+		String taxon;
+		String taxonNeighbor;
+
+		LN nl;
+		LN nr;
+	}
+	private static boolean CREATE_REDUCED_ALIGNMENTS = !true;
 	private static boolean CREATE_SUBSEQ_ALIGNMENTS = !true;
 	private static boolean CREATE_REDUCED_TREES = !true;
 	private static boolean CREATE_MAPPING_FILES = !true;
-	private static final boolean CREATE_PAIRED_END_ALIGNMENTS = !true;
+	private static final boolean CREATE_PAIRED_END_ALIGNMENTS = true;
 	
 	// try to keep the random gap generation reproducible
 	public static final Random rand = new Random(12345);
@@ -287,7 +287,8 @@ public class FindMinSupport {
 	public static void main(String[] args) {
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-		createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
+		createReducedTrees("RAxML_bipartitions.140.BEST.WITH", "140");
+		//createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 //		createReducedTrees("RAxML_bipartitions.218.BEST.WITH", "218");
 		//createReducedTrees("RAxML_bipartitions.500.BEST.WITH", "500");
@@ -314,7 +315,7 @@ public class FindMinSupport {
 		
 		final MultipleAlignment pairedend_all;
 		
-		MultipleAlignment.USE_SHITTY_LOADER = true;
+		MultipleAlignment.USE_SHITTY_LOADER = !true;
 		if( CREATE_PAIRED_END_ALIGNMENTS ) {
 			pairedend_all = MultipleAlignment.loadPhylip(new File(alignmentdir, alignName));
 		}
@@ -435,7 +436,7 @@ public class FindMinSupport {
 			if( CREATE_PAIRED_END_ALIGNMENTS ) {
 				//final int[] ssLenList = {250, 500};
 				
-				final int ssLen = 50;
+				final int ssLen = 100;
 				
 				
 				
@@ -632,7 +633,7 @@ public class FindMinSupport {
 		return sb.toString();
 	}
 
-	private static int[] getNonGapCharacterMap(String seq) {
+	static int[] getNonGapCharacterMap(String seq) {
 		int num = 0;
 		for (int i = 0; i < seq.length(); i++) {
 			if (!isGapCharacter(seq.charAt(i))) {
@@ -890,9 +891,9 @@ public class FindMinSupport {
 		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
 	}
 
-	static String padchar(String string, char c, int num) {
+	static String padchar(String string, int i, int num) {
 		while (string.length() < num) {
-			string = c + string;
+			string = i + string;
 		}
 		return string;
 	}

@@ -17,32 +17,42 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
+import javax.management.RuntimeErrorException;
+
 /**
  *
  * @author sim
  */
-public class MultipleAlignment {
+public class MultipleAlignment implements Serializable {
     int nTaxon;
     int seqLen;
     String[] names;
     String[] data;
     HashMap<String,Integer> nameMap;
 
+    
+    
     public static boolean USE_SHITTY_LOADER = false;
     
     public MultipleAlignment(int nTaxon, int seqLen) {
-        this.nTaxon = nTaxon;
-        this.seqLen = seqLen;
-        this.names = new String[nTaxon];
-        this.data = new String[nTaxon];
+        this(nTaxon, seqLen, nTaxon);
     }
 
+    public MultipleAlignment(int nTaxon, int seqLen, int arraysize) {
+        this.nTaxon = nTaxon;
+        this.seqLen = seqLen;
+        this.names = new String[arraysize];
+        this.data = new String[arraysize];
+    }
+    
     public static MultipleAlignment loadPhylip( File file ) {
     	if( USE_SHITTY_LOADER ) {
     		return loadPhylipShitty(file);
@@ -504,4 +514,37 @@ public class MultipleAlignment {
 		return true;
 	}
 
+	public int append( String name, String seq ) {
+		if( nTaxon >= names.length ) {
+			throw new RuntimeException( "cannot append more sequences");
+		}
+		names[nTaxon] = name;
+		data[nTaxon] = seq;
+		
+		nTaxon++;
+		return nTaxon-1;
+	}
+	
+	public MultipleAlignment deepClone() {
+		MultipleAlignment ma = new MultipleAlignment(nTaxon, seqLen);
+		
+		System.arraycopy(names, 0, ma.names, 0, names.length);
+		System.arraycopy(data, 0, ma.data, 0, data.length);
+		
+		ma.buildNameIndex();
+		
+		return ma;
+	}
+	
+	public MultipleAlignment deepClone( int ntxinc ) {
+		MultipleAlignment ma = new MultipleAlignment(nTaxon, seqLen, nTaxon + ntxinc);
+		
+		System.arraycopy(names, 0, ma.names, 0, names.length);
+		System.arraycopy(data, 0, ma.data, 0, data.length);
+		
+		ma.buildNameIndex();
+		
+		return ma;
+	}
+	
 }

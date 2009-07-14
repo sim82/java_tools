@@ -27,6 +27,11 @@ public class TreeParser {
 	private int nLeafs = 0;
 	private int nInnerNodes = 0;
 
+	public static LN parse( File f ) {
+		TreeParser tp = new TreeParser(f);
+		return tp.parse();
+	}
+	
 	public TreeParser(String input) {
 	//	this.input = input;
 		this.inputA = input.toCharArray();
@@ -197,22 +202,24 @@ public class TreeParser {
 
 		// expect + consume ':'
 		if (inputA[ptr] != ':') {
-			throw new RuntimeException("parse error: parseBranchLength expects ':' at " + ptr);
+			//throw new RuntimeException("parse error: parseBranchLength expects ':' at " + ptr);
+			return -1;
+		} else {
+	
+			ptr++;
+	
+			skipWhitespace();
+	
+			int lend = findFloat(ptr);
+			if (lend == ptr) {
+				throw new RuntimeException("missing float number at " + ptr);
+			}
+	
+			double l = Double.parseDouble(substring(ptr, lend));
+			ptr = lend;
+	
+			return l;
 		}
-
-		ptr++;
-
-		skipWhitespace();
-
-		int lend = findFloat(ptr);
-		if (lend == ptr) {
-			throw new RuntimeException("missing float number at " + ptr);
-		}
-
-		double l = Double.parseDouble(substring(ptr, lend));
-		ptr = lend;
-
-		return l;
 	}
     private String substring( int from, int to ) {
         return new String( Arrays.copyOfRange( inputA, from, to));
@@ -269,12 +276,12 @@ public class TreeParser {
             	return nl;
             }
             
-            if( inputA[ptr] != ':' ) {
+            if( inputA[ptr] != ':' && inputA[ptr] != ',' && inputA[ptr] != ')' ) {
             	// the stuff between the closing '(' and the ':' of the branch length
             	// is interpreted as node-label. If the node label corresponds to a float value
             	// it is interpreted as branch support (or node support as a rooted-trees-only-please biologist would say)
             	
-            	int lend = findNext(ptr, ':');
+            	int lend = findEndOfBranch(ptr);
             	
             	nodeLabel = substring(ptr, lend);
             	ptr = lend;
@@ -387,7 +394,8 @@ public class TreeParser {
 		skipWhitespace();
 
 		// a leaf consists just of a data string. use the ':' as terminator for now (this is not correct, as there doesn't have to be a branch length (parsr will crash on tree with only one leaf...));
-		int end = findNext(ptr, ':');
+		//int end = findNext(ptr, ':');
+		int end = findEndOfBranch(ptr);
 		String ld = substring(ptr, end);
 
 		ptr = end;
@@ -402,6 +410,34 @@ public class TreeParser {
 
 		nLeafs++;
 		return n;
+	}
+
+	private int findEndOfBranch(int pos) {
+		char[] termchars = { 
+			':',
+			',',
+			')'
+		};
+		
+		try {
+            while (!isOneOf(inputA[pos], termchars)) {
+                pos++;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            printLocation();
+            throw new RuntimeException( "reached end of input while looking for end of branch label" );
+        }
+
+		return pos;
+	}
+
+	private boolean isOneOf(char c, char[] chars) {
+		for( char tc : chars ) {
+			if( c == tc ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private int findNext(int pos, char c) {

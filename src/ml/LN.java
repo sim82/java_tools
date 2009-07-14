@@ -24,7 +24,7 @@ public class LN {
 
 	public static LN create() {
 		ANode data = new ANode();
-
+		
 		LN n = new LN(data);
 		n.next = new LN(data);
 		n.next.next = new LN(data);
@@ -247,14 +247,14 @@ public class LN {
 		}
 
 		//
-		// at-hoc algorithm for finding the separating branch, given one split-set: 
+		// ad-hoc algorithm for finding the separating branch, given one split-set: 
 		// flood the tree from the tips of the split-set:
 		//
 		// nodes get 'marked' if they have two marked
 		// neighbors (ancestors). At the beginning only the leafs from one split-set are marked.
 		// The recursion stops at the branch that separates the two split-sets (which can never have two
         // marked ancestors (at least this is my theory...))
-		// (this description is rubbish)
+		// MEMO TO SELF: this description is rubbish
 		//
 		Set<Integer>markedNodes = new HashSet<Integer>();
 		Set<Integer>openNodes = new HashSet<Integer>(markedNodes);
@@ -624,7 +624,7 @@ public class LN {
 			}
 		}
 		
-		throw new RuntimeException( "tip not found.");
+		throw new RuntimeException( "tip not found: '" + name + "'" );
 	}
 
 	public static LN parseTree(File file) {
@@ -678,6 +678,16 @@ public class LN {
 		return ret;
 	}
 
+	static class PathLen {
+		PathLen( double bd, int nd ) {
+			this.bd = bd;
+			this.nd = nd;
+		}
+		
+		double bd; // branch dist: sum of branch lengths
+		int nd; // node dist: (in case of branch-branch distances it is interpreted as number of nodes separating the two branches)
+	}
+	
 	public static LN[] findBranchByName(LN n, String branch) {
 		LN[] list = getAsList(n);
 	
@@ -693,5 +703,81 @@ public class LN {
 	
 		throw new RuntimeException( "could not find named branch '" + branch + "'" );
 	}
+	public static boolean belongsToBranch( LN n, LN[] b ) {
+    	return (n.data.serial == b[0].data.serial) || (n.data.serial == b[1].data.serial );
+    }
+    
+    public static boolean branchEquals( LN[] b1, LN[] b2 ) {
+        return (b1[0].data.serial == b2[0].data.serial && b1[1].data.serial == b2[1].data.serial) ||
+               (b1[0].data.serial == b2[1].data.serial && b1[1].data.serial == b2[0].data.serial);
+    }
+    
+    
+    private static PathLen getPathLenToBranch(LN n, LN[] b ) {
+		if( n == null ) {
+			return null;
+		}
 
+//		System.out.printf( "bbd: %d (%d %d)\n", n.data.serial, b[0].data.serial, b[1].data.serial );
+
+        if( belongsToBranch( n, b ) ) {
+        	return new PathLen( 0.0, 0 );
+        } else {
+        	{
+        		PathLen len = getPathLenToBranch(n.next.back, b);
+        		if( len != null ) {
+        			len.nd++;
+        			len.bd += n.next.backLen;
+        			return len;
+        		} 
+        	}
+        	{
+                PathLen len = getPathLenToBranch(n.next.next.back, b);
+
+                if( len != null ) {
+                	len.nd++;
+                	len.bd += n.next.next.backLen;
+                	
+                    return len; 
+                }
+            }
+        	
+            return null;
+
+        }
+    }
+
+    static PathLen getPathLenBranchToBranch(LN n[], LN[] b, double seScale ) {
+    	assert( n[0].backLen == n[1].backLen);
+    	assert( b[0].backLen == b[1].backLen);
+    	
+    	if( branchEquals(n, b)) {
+    		return new PathLen( 0.0, 0 );
+    	}
+    	
+    	
+    	
+    	PathLen len1 = getPathLenToBranch(n[0], b );
+    	PathLen len2 = getPathLenToBranch(n[1], b );
+    	   	
+    	
+    	PathLen len;
+    	
+    	if( len1 != null && len2 != null ) {
+    		throw new RuntimeException( "tree anomaly: two branches connected with more than one path !?");
+    	}
+    	if( len1 != null ) {
+    		len = len1;
+    	} else if( len2 != null ) {
+    		len = len2;
+    	} else {
+    		return null;
+    	}
+    	
+    	len.nd += 1;
+    	len.bd += (n[0].backLen + b[0].backLen) * seScale;
+//    	
+    	return len;
+    }
+	
 }

@@ -13,6 +13,9 @@ import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory.Woodstox;
 public class NearestNeighborClass {
 	public final static boolean VERBOSE = false;
 	
+	static LN reftree;
+	static double reftreeDiameter; 
+	
 	public static void main(String[] args) {
 		if( args[1].equals("--auto")) {
 			String ds = args[2];
@@ -21,6 +24,10 @@ public class NearestNeighborClass {
 			File rtfile = new File( args[0] );
 			
 			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			
+			TreeParser tp = new TreeParser( rtfile );
+			reftree = tp.parse();
+			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
 			
 			boolean end = false;
 			for( int seq = 0; !end; seq++ ) {
@@ -43,7 +50,7 @@ public class NearestNeighborClass {
 					File treefile = new File( "/space/redtree/RAxML_bipartitions." + ds + ".BEST.WITH_" + sps);
 					File phyfile = new File( radir, name );
 					
-					wellDoIt(rtfile, treefile, phyfile, sps, "" + gap);
+					wellDoIt( treefile, phyfile, sps, "" + gap);
 					
 					
 					
@@ -61,6 +68,60 @@ public class NearestNeighborClass {
 			
 			
 			
+			
+		} else if(args[1].equals("--autope")) {
+			
+			
+			String ds = args[2];
+			
+			String[] gaps = {"100"};
+			
+			if( args.length > 3 ) {
+				gaps[0] = args[3];
+			} 
+			
+			
+			File radir = new File( "/space/pairedend_alignments");
+			File rtfile = new File( args[0] );
+			
+			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			
+			TreeParser tp = new TreeParser( rtfile );
+			reftree = tp.parse();
+			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
+			
+			boolean end = false;
+			for( int seq = 0; !end; seq++ ) {
+				end = true;
+				
+			
+				
+				for( String gap : gaps ) {
+					
+					String sps = padzero(4, seq);
+					String name = ds + "_" + sps + "_" + gap;
+					
+					if(! new File(radir, name).isFile()) {
+						name += ".gz";
+						if(! new File(radir, name).isFile()) {
+							continue;
+						}
+					}
+				
+					end = false;
+					
+					File treefile = new File( "/space/redtree/RAxML_bipartitions." + ds + ".BEST.WITH_" + sps);
+					File phyfile = new File( radir, name );
+					
+					wellDoIt( treefile, phyfile, sps, "" + gap);
+					
+					
+					
+				}
+			}
+			
+			
+		
 			
 		} else {
 		
@@ -89,11 +150,14 @@ public class NearestNeighborClass {
 				}
 				
 			}
-			wellDoIt(rtfile, treefile, phyfile, seq, gap);
+			TreeParser tp = new TreeParser( rtfile );
+			reftree = tp.parse();
+			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
+			wellDoIt( treefile, phyfile, seq, gap);
 		}
 	}
 
-	private static void wellDoIt(File rtfile, File treefile, File phyfile, String seq, String gap) {
+	private static void wellDoIt( File treefile, File phyfile, String seq, String gap) {
 		LN tree;
 		{
 			TreeParser tp = new TreeParser( treefile );
@@ -102,11 +166,8 @@ public class NearestNeighborClass {
 		
 		Set<String> taxonSet = new HashSet<String>();
 		
-		LN reftree;
+		
 		{
-			TreeParser tp = new TreeParser( rtfile );
-			reftree = tp.parse();
-			
 			LN[] list = LN.getAsList(tree);
 			for( LN n : list ) {
 				if( n.data.isTip ) {
@@ -148,7 +209,7 @@ public class NearestNeighborClass {
 			
 			int edMin = Integer.MAX_VALUE;
 			int idxMin = -1;
-			
+			int nMin = 0;
 			for( int i = 0; i < ma.names.length; i++ ) {
 				String on = ma.names[i];
 				if( qn.equals(on)) {
@@ -157,7 +218,7 @@ public class NearestNeighborClass {
 				
 				String os = ma.getSequence(i);
 				
-				int ed = editDist( qs, os );
+				int ed = editDist_nogaps(qs, os);
 				if( VERBOSE ) {
 					System.out.printf( "(%s %d) ", on, ed );
 				}
@@ -165,6 +226,10 @@ public class NearestNeighborClass {
 				if( ed < edMin ) {
 					edMin = ed;
 					idxMin = i;
+					
+					nMin = 1;
+				} else if( ed == edMin ) {
+					nMin++;
 				}
 				
 			}
@@ -178,6 +243,10 @@ public class NearestNeighborClass {
 		
 		    //String[] ois = splitmap.get(qn);
 		    String nnName = ma.names[idxMin];
+		    
+		    if( false ) {
+		    	System.out.printf( "%s\n%s\n", qs, ma.data[idxMin] );
+		    }
 		    
 		    LN[] list = LN.getAsList(reftreePruned);
 		    
@@ -194,7 +263,7 @@ public class NearestNeighborClass {
 		    		double lenOT = ClassifierLTree.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
 		            int ndOT = fuck[0];
 		            if( seq != null && gap != null ) {
-		            	System.out.printf( "%s\t%s\t%d\t%f\n", seq, gap, ndOT, lenOT );
+		            	System.out.printf( "%s\t%s\t%d\t%f\t%f\t%d\t%d\t%s\n", seq, gap, ndOT, lenOT, lenOT/reftreeDiameter, nMin, edMin, qn );
 		            } else {
 		            	System.out.printf( "%d %f\n", ndOT, lenOT );
 		            }
@@ -214,7 +283,7 @@ public class NearestNeighborClass {
 		return s;
 	}
 
-	private static int editDist(String qs, String os) {
+	public static int editDist(String qs, String os) {
 		if( qs.length() != os.length()) {
 			throw new RuntimeException("qs.length() != os.length()");
 		}
@@ -236,6 +305,129 @@ public class NearestNeighborClass {
 		
 		return ed;
 	}
+	
+	
+	public static int editDist_affine(String qs, String os) {
+		if( qs.length() != os.length()) {
+			throw new RuntimeException("qs.length() != os.length()");
+		}
+		
+		int ed = 0;
+		
+		boolean qge = false;
+		boolean oge = false;
+		for( int i = 0; i < qs.length(); i++ ) {
+			char qc = qs.charAt(i);
+			char oc = os.charAt(i);
+			
+			boolean qg = isGapCharacter(qc);
+			boolean og = isGapCharacter(oc);
+			if( !true ) {
+				if( !qg && qc != oc ) {
+					ed += 3;
+				} else if( qg ) {
+					if( !qge ) {
+						ed+=3;
+					} else {
+						ed +=1;
+					}
+				}
+				
+				
+//				if( qc != oc ) {
+//					
+//					if( qg ) {
+//						if( !qge ) {
+//							ed+=3;
+//						} else {
+//							ed += 1;
+//						}	
+//					} else {
+//						ed += 3;
+//					}
+//				} 
+				
+				
+			} else {
+				if( qc != oc ) {
+					// we have a mismatch
+					// check if we have (one-sided) gap
+					
+					if( qg ) {
+						// gap in the query sequence, check if we extend an existing gap 
+						if( qge ) {
+							ed += 1;
+						} else {
+							ed += 3;
+						}
+					} else if( og ) {
+						// d.t.o for the original sequence
+						if( oge ) {
+							ed += 1;
+						} else {
+							ed += 3;
+						}
+					} else {
+						// no gap. use normal mismatch penalty
+						ed += 3;
+					}
+				} else if( qg ) {
+					// gap vs. gap. penalize slightly
+					ed += 1;
+				}
+			}
+			// store current gap state for next position
+			qge = qg;
+			oge = og;
+			
+		}
+		
+		return ed;
+	}
+	
+	public static int editDist_nogaps(String qs, String os) {
+		if( qs.length() != os.length()) {
+			throw new RuntimeException("qs.length() != os.length()");
+		}
+		
+		int ed = 0;
+		
+		for( int i = 0; i < qs.length(); i++ ) {
+			char qc = qs.charAt(i);
+			char oc = os.charAt(i);
+			
+			if( qc != '-' && oc != '-' && qc != oc ) {
+				ed+=1;
+			} 
+		}
+		
+		return ed;
+	}
+	
+	public static int editDist_withgaps(String qs, String os) {
+		
+//		if( true ) {
+//			
+//			throw new RuntimeException( "bla");
+//		}
+		if( qs.length() != os.length()) {
+			throw new RuntimeException("qs.length() != os.length()");
+		}
+		
+		int ed = 0;
+		
+		for( int i = 0; i < qs.length(); i++ ) {
+			char qc = qs.charAt(i);
+			char oc = os.charAt(i);
+			
+			if( qc != oc ) {
+				ed+=1;
+			} 
+		}
+		
+		return ed;
+	}
+	
 //	private static int editDist(String qs, String os) {
 //		if( qs.length() != os.length()) {
 //			throw new RuntimeException("qs.length() != os.length()");
@@ -277,5 +469,7 @@ public class NearestNeighborClass {
 		return ed;
 	}
 
-	
+	private static boolean isGapCharacter(char c) {
+		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
+	}
 }
