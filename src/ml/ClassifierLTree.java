@@ -26,61 +26,69 @@ import java.util.logging.Logger;
 
 import javax.naming.spi.DirectoryManager;
 
-/**
- *
- * @author sim
- */
-
-class TaxonSMap {
-	HashMap<String,int[]> map = new HashMap<String, int[]>();
+public class ClassifierLTree {
+	/**
+	 *
+	 * @author sim
+	 */
 	
-	TaxonSMap( File file ) {
-		try {
-			BufferedReader r = new BufferedReader( new FileReader(file));
-			
-			String line = null;
-			
-			while((line = r.readLine()) != null ) {
-				StringTokenizer ts = new StringTokenizer(line);
+	static class TaxonSMap {
+		HashMap<String,int[]> map = new HashMap<String, int[]>();
+		
+		TaxonSMap( File file ) {
+			try {
+				BufferedReader r = new BufferedReader( new FileReader(file));
 				
-				String taxon = ts.nextToken();
+				String line = null;
 				
-				
-				int nToken = ts.countTokens();
-				
-				int[] nm = new int[nToken];
-				int i = 0;
-				while( ts.hasMoreTokens() ) {
-					String t = ts.nextToken();
+				while((line = r.readLine()) != null ) {
+					StringTokenizer ts = new StringTokenizer(line);
 					
-					nm[i] = Integer.parseInt(t);
-					i++;
+					String taxon = ts.nextToken();
+					
+					
+					int nToken = ts.countTokens();
+					
+					int[] nm = new int[nToken];
+					int i = 0;
+					while( ts.hasMoreTokens() ) {
+						String t = ts.nextToken();
+						
+						nm[i] = Integer.parseInt(t);
+						i++;
+					}
+					
+					map.put( taxon, nm );
 				}
 				
-				map.put( taxon, nm );
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				
+				throw new RuntimeException( "bailing out" );
+			}
+		}
+		
+		int[] getMap( String taxon ) {
+			int[] m = map.get(taxon);
+			
+			if( m == null ) {
+				throw new RuntimeException( "taxon not found in smap: " + taxon );
 			}
 			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return m;
+		}
+		int maxLen() {
+			int max = 0;
 			
-			throw new RuntimeException( "bailing out" );
+			for( int[] smap : map.values()) {
+				max = Math.max(max, smap[smap.length-1]);
+			}
+			
+			return max + 1;
 		}
 	}
-	
-	int[] getMap( String taxon ) {
-		int[] m = map.get(taxon);
-		
-		if( m == null ) {
-			throw new RuntimeException( "taxon not found in smap: " + taxon );
-		}
-		
-		return m;
-	}
-	
-}
 
-public class ClassifierLTree {
 	//final double oltDiameter;
 	final double reftreeDiameter;
 	final LN	reftree;
