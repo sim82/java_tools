@@ -11,19 +11,21 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ml.FindMinSupport.ReductionResult;
-
 public class SubseqGen {
+	
+	final static int N_RND_SEQS = 100;
+	
 	public static void main(String[] args) {
-//		{
-//			int[] x = drawNWithoutReplacement(10, 10);
-//			System.out.printf( "size: %d\n", x.length );
-//			for( int y : x ) {
-//				System.out.printf( "%d\n", y );
-//				
-//			}
-//			System.exit(0);
-//		}
+		if( false )
+		{
+			int[] x = drawNWithoutReplacement(1, 1);
+			System.out.printf( "size: %d\n", x.length );
+			for( int y : x ) {
+				System.out.printf( "%d\n", y );
+				
+			}
+			System.exit(0);
+		}
 		
 		
 		File treeFile = new File( args[0] );
@@ -51,9 +53,14 @@ public class SubseqGen {
 			e.printStackTrace();
 			throw new RuntimeException( "bailing out" );
 		}
+		int starti;
+		if( args.length > 2 ) {
+			starti = Integer.parseInt(args[2]);
+		} else {
+			starti = 0;
+		}
 		
-		
-		for( int i = 0;; i++ ) {
+		for( int i = starti;; i++ ) {
 			LN clonedTree = LN.deepClone(tree);
 			
 			ReductionResult res = createNThReducedTree(clonedTree, i);
@@ -110,12 +117,13 @@ public class SubseqGen {
 			
 				
 			if( true ) {
-				MultipleAlignment clonedMa = ma.deepClone( 100 );
-				randomSubseqs( res.taxon, clonedMa, 100, 250 );
+				MultipleAlignment clonedMa = ma.deepClone( N_RND_SEQS );
+				randomSubseqs( res.taxon, clonedMa, N_RND_SEQS, 250 );
 				
 				String alignName = alignFile.getName() + "_" + FindMinSupport.padchar("" + i, 0, 4);
 	
-				clonedMa.writePhylip(new File( alignName ));
+				
+				clonedMa.writePhylip(new File( alignName + ".gz"));
 			}
 		}
 		
@@ -136,7 +144,12 @@ public class SubseqGen {
 		
 		final int[] nm = FindMinSupport.getNonGapCharacterMap(seq);
 		
-		int[] rnd = drawNWithoutReplacement(n, nm.length - seqLen);
+		if( nm.length < seqLen ) {
+			seqLen = nm.length;
+		}
+		
+		n = Math.min( n, nm.length - seqLen + 1);
+		int[] rnd = drawNWithoutReplacement(n, nm.length - seqLen + 1);
 		
 		for( int r : rnd ) {
 			char[] newseq = new char[seq.length()];

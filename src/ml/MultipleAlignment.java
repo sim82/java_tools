@@ -383,8 +383,8 @@ public class MultipleAlignment implements Serializable {
 
         int maxNameLen = 0;
 
-        for( String name : names ) {
-            maxNameLen = Math.max( maxNameLen, name.length());
+        for( int i = 0; i < nTaxon; i++ ) {
+            maxNameLen = Math.max( maxNameLen, names[i].length());
         }
 
         for( int i = 0; i < nTaxon; i++ ) {
