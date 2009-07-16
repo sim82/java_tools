@@ -338,12 +338,12 @@ public class ClassifierLTree {
                         //long time1 = System.currentTimeMillis();
                         // the LN referenced by reftreePruned can (!?) never be removed by removeTaxon so it's ok to use it as pseudo root
                         
-//                        System.out.printf( "split: " );
-//                        for( String name : insertSplit ) {
-//                        	System.out.printf( "%s ", name );
-//                        }
-//                        
-//                        System.out.println();
+                        System.out.printf( "split: " );
+                        for( String name : insertSplit ) {
+                        	System.out.printf( "%s ", name );
+                        }
+                        
+                        System.out.println();
                         
                         LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
 

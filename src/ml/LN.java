@@ -217,7 +217,14 @@ public class LN {
 				return ret;
 			}
 		}
+//
+//		for( LN ln : list ) {
+//			if( ln.data.isTip ) {
+//				System.out.print( ln.data.getTipName() + " " );
+//			}
+//		}
 
+		
 		throw new RuntimeException( "could not find node for tip '" + tipName + "'" );
 
 	}

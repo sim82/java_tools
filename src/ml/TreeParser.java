@@ -12,6 +12,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
+import com.sun.org.apache.bcel.internal.generic.PUTSTATIC;
+
 
 
 public class TreeParser {
@@ -332,7 +334,7 @@ public class TreeParser {
 
 			double l3 = parseBranchLength();
             String label3 = parseBranchLabel();
-            
+         //   System.out.printf( "l3: %s\n", nx.data.getTipName() );
 			skipWhitespace();
 
 			if( inputA[ptr] != ')' ) {
