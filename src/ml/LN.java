@@ -307,6 +307,10 @@ public class LN {
 			}
 
 			if( lastNode < 0 ) {
+				for( String s : split ) {
+					System.out.printf( "%s ", s );
+				}
+				System.out.println();
 				throw new RuntimeException("no open node with two marked neighbors found. looks like a bad split" );
 			}
 

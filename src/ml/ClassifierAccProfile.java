@@ -35,13 +35,13 @@ public class ClassifierAccProfile {
 		}
 		
 		
-		int N_THREADS = 3;
+		int N_THREADS = 1;
 		ThreadPoolExecutor tpe = new ThreadPoolExecutor( N_THREADS, N_THREADS, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(N_THREADS * 3));
 		tpe.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 		
 		for( final File classFile : classFiles ) {
 			
-			tpe.execute( new Runnable() {
+			Runnable r = new Runnable() {
 				
 				@Override
 				public void run() {
@@ -109,8 +109,10 @@ public class ClassifierAccProfile {
 					}
 					ps.close();
 				}
-			});
+			};
 			
+			//tpe.execute( r );
+			r.run();
 			
 		}
 		

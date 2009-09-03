@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
@@ -21,7 +22,7 @@ public class TreeParser {
 	//String input;
 
 	// input as char array
-	private char[] inputA;
+	private byte[] inputA;
 
 	// pointer to next char in input string
 	private int ptr = 0;
@@ -34,11 +35,11 @@ public class TreeParser {
 		return tp.parse();
 	}
 	
-	public TreeParser(String input) {
-	//	this.input = input;
-		this.inputA = input.toCharArray();
-		ptr = 0;
-	}
+//	public TreeParser(String input) {
+//	//	this.input = input;
+//		this.inputA = input.toCharArray();
+//		ptr = 0;
+//	}
 
 	public TreeParser(File f) {
 
@@ -47,14 +48,14 @@ public class TreeParser {
         ptr = 0;
 	}
 
-	private static char[] readFile(File f) {
+	private static byte[] readFile(File f) {
 
 		try {
 
             //BufferedReader r = new BufferedReader(new FileReader(f));
 			
 			
-            Reader r;
+            InputStream r;
             long len;
             if( f.getName().endsWith(".gz")) {
             	
@@ -72,9 +73,9 @@ public class TreeParser {
             	
             	gzis.close();
             	
-            	r = new InputStreamReader( new GZIPInputStream( new FileInputStream(f) ));
+            	r = new GZIPInputStream( new FileInputStream(f) );
             } else {
-            	r = new FileReader(f);
+            	r = new FileInputStream(f);
             	len = f.length();
             }
 //			String line = null;
@@ -88,7 +89,7 @@ public class TreeParser {
 //            }
 //            return cont;
              
-            char[] data = new char[(int)len];
+            byte[] data = new byte[(int)len];
 
             r.read(data);
             r.close();
@@ -433,7 +434,7 @@ public class TreeParser {
 		return pos;
 	}
 
-	private boolean isOneOf(char c, char[] chars) {
+	private boolean isOneOf(byte c, char[] chars) {
 		for( char tc : chars ) {
 			if( c == tc ) {
 				return true;
@@ -456,7 +457,7 @@ public class TreeParser {
 		return pos;
 	}
 
-	private boolean isFloatChar(char c) {
+	private boolean isFloatChar(byte c) {
 		return Character.isDigit(c) || c == '.' || c == 'e' || c == 'E' || c == '-';
 	}
 

@@ -5,9 +5,11 @@
 
 package ml;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -31,6 +33,107 @@ public class ClassifierLTree {
 	 *
 	 * @author sim
 	 */
+	
+	static class TreeWithSplitCache {
+		LN tree;	
+		Map<String, LN[]> splitMap = new HashMap<String, LN[]>();
+		Map<String, LN[]> branchMap = new HashMap<String, LN[]>();
+		Map<String, String[]> branchSplitMap = new HashMap<String, String[]>();
+		
+		
+		public TreeWithSplitCache( LN tree ) {
+			this.tree = tree;
+		}
+		
+		LN[] getBranchBySplit( String[] split ) {
+			String qs = "";
+		
+			//Arrays.sort(split);
+			
+			for( String s : split ) {
+				qs += s + ":";
+			}
+			
+			LN[] branch = splitMap.get(qs);
+			
+			if( branch == null ) {
+				branch = LN.findBranchBySplit(tree, split);
+				splitMap.put( qs, branch );
+			}
+			
+			return branch;
+		}
+		
+		LN[] getBranchByName( String name ) {
+			LN[] branch = branchMap.get(name);
+			
+			
+			if( branch == null ) {
+				branch = LN.findBranchByName(tree, name);
+				branchMap.put(name, branch);
+			}
+			
+			return branch;
+		}
+
+		public String[] getSplitByBranchName(String branch) {
+			//System.out.printf( "%s\n", branch );
+			
+			String[] insertSplit = branchSplitMap.get(branch);
+			
+			if( insertSplit == null ) {
+				//LN[] insertBranch = LN.findBranchByName( oltree, branch );
+				LN[] insertBranch = getBranchByName( branch );
+	
+				
+				// FIXME: there now is a method in Ln to do this
+				
+				LN[] ll = LN.getAsList(insertBranch[0], false);
+				LN[] lr = LN.getAsList(insertBranch[1], false);
+	
+				Set<String> sl = LN.getTipSet(ll);
+				Set<String> sr = LN.getTipSet(lr);
+	
+				Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
+	
+				insertSplit = new String[smallset.size()];
+				insertSplit = smallset.toArray(insertSplit);
+				Arrays.sort(insertSplit);
+				
+				branchSplitMap.put( branch, insertSplit);
+			} else {
+				//System.out.printf( "hit\n" );
+			}
+			return insertSplit;
+		}
+	}
+	
+	static class PrunedReftree {
+		String taxon;
+		
+		LN[] obp;
+		TreeWithSplitCache tsc;
+		
+		
+		PrunedReftree( LN origTree, String taxon ) {
+			this.taxon = taxon;
+			
+			LN tree = LN.deepClone(origTree);
+			obp = LN.removeTaxon(tree, taxon);
+			
+			tsc = new TreeWithSplitCache(tree);
+			
+		}
+		
+		
+		LN[] getOBP() {
+			return obp;
+		}
+		
+		TreeWithSplitCache getTSC() {
+			return tsc;
+		}
+	}
 	
 	static class TaxonSMap {
 		HashMap<String,int[]> map = new HashMap<String, int[]>();
@@ -174,9 +277,15 @@ public class ClassifierLTree {
 	        		outDir.mkdir();
 	        	}
 	        	
-	        	PrintStream out = new PrintStream( new File(outDir, classFile.getName() ));
-	        	clt.output( out, classFile, oltFile );
 	        	
+	        	PrintStream out = new PrintStream( new BufferedOutputStream(new FileOutputStream(new File(outDir, classFile.getName() ))));
+	        	try {
+	        		clt.output( out, classFile, oltFile );
+	        	} catch( RuntimeException x ) {
+	        		x.printStackTrace();
+	        		System.out.printf( "error thrown at: %s %s\n", classFile.getName(), oltFile.getName() );
+	        		throw new RuntimeException( "bailing out finally" );
+	        	}
 	        	out.close();
 	        }
 	
@@ -216,7 +325,8 @@ public class ClassifierLTree {
 
 	}
     
-	
+	TreeWithSplitCache oltsc = null;
+	File oltfile_cached = null;
 //	File oltFile_cached = null;
 //	LN oltree_cached;
 //	double oltDiameter_cached;
@@ -245,12 +355,16 @@ public class ClassifierLTree {
 //    	} 
     	
 
-    	LN oltree;
+    	//LN oltree;
+    	
 //    	double oltDiameter;
-
+    	if( true || oltsc == null || !oltfile_cached.equals(oltFile))
         {
+    		oltfile_cached = oltFile;
+    		
             TreeParser tp = new TreeParser(oltFile);
-            oltree = tp.parse();
+            LN oltree = tp.parse();
+            oltsc = new TreeWithSplitCache(oltree);
         }
 //        LN[] lnl = LN.getAsList(oltree);
 
@@ -263,6 +377,8 @@ public class ClassifierLTree {
 
             String line;
 
+            PrunedReftree prt = null;
+            
             while( ( line = r.readLine() ) != null ) {
                 
 		
@@ -283,7 +399,11 @@ public class ClassifierLTree {
                     	seq = seq.substring(0, atIdx);
                     	seqSubIdx = Integer.parseInt(seqOrig.substring( atIdx + 1 ));
                     }
-                     
+            
+            
+                    if( prt == null || !prt.taxon.equals(seq)) {
+                    	prt = new PrunedReftree(reftree, seq);
+                    }
                     
                     // name of the branch, the classifier has put the taxon in (= current insertion position)
                     String branch = ts.nextToken();
@@ -297,26 +417,14 @@ public class ClassifierLTree {
 
                     // get the split that identifies the original insertion position
                     String[] split = splitmap.get(seq);
-                    LN[] realBranch = LN.findBranchBySplit(oltree, split);
+                    //LN[] realBranch = LN.findBranchBySplit(oltree, split);
 
+                    LN[] realBranch = oltsc.getBranchBySplit(split);
 					// find the split that identifies the current insertion position
 					String[] insertSplit;
 					{
-						LN[] insertBranch = LN.findBranchByName( oltree, branch );
-
-						// FIXME: there now is a method in Ln to do this
+						insertSplit = oltsc.getSplitByBranchName( branch );
 						
-						LN[] ll = LN.getAsList(insertBranch[0], false);
-						LN[] lr = LN.getAsList(insertBranch[1], false);
-
-						Set<String> sl = LN.getTipSet(ll);
-						Set<String> sr = LN.getTipSet(lr);
-
-						Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
-
-						insertSplit = new String[smallset.size()];
-						insertSplit = smallset.toArray(insertSplit);
-						Arrays.sort(insertSplit);
 					}
 
                     // get the weighted path length between current and original insertion position
@@ -331,30 +439,30 @@ public class ClassifierLTree {
                     	
                     	
                         // original position branch
-                        LN reftreePruned = LN.deepClone(reftree);
+                        //LN reftreePruned = LN.deepClone(reftree);
 
                         
                         // this call has two important effects:
                         // - remove the current taxon from the reference tree (copy), so that its topology
                         //   resembles the pruned tree from the current classification
                         // - return the branch from the reference tree that corresponds to the original taxon position
-                        LN[] opb = LN.removeTaxon(reftreePruned, seq, false);
-                        reftreePruned = opb[0];
+                        //LN[] opb = LN.removeTaxon(reftreePruned, seq, false);
+                        //reftreePruned = opb[0];
 
                         // identify the current insertion position from the pruned tree in the
                         // reference tree. The position is identified by the split set (or how ever this thin is called)
                         //long time1 = System.currentTimeMillis();
                         // the LN referenced by reftreePruned can (!?) never be removed by removeTaxon so it's ok to use it as pseudo root
                         
-                        System.out.printf( "split: " );
-                        for( String name : insertSplit ) {
-                        	System.out.printf( "%s ", name );
-                        }
+                //        System.out.printf( "split: " );
+//                        for( String name : insertSplit ) {
+//                        	System.out.printf( "%s ", name );
+//                        }
+//                        
+//                        System.out.println();
                         
-                        System.out.println();
-                        
-                        LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
-
+                        //LN[] ipb = LN.findBranchBySplit(reftreePruned, insertSplit);
+                    	LN[] ipb = prt.getTSC().getBranchBySplit(insertSplit);
                         //System.out.printf( "time: %d\n", System.currentTimeMillis() - time1 );
 
                         // calculate weighted path length between original and current insertion branches
@@ -362,7 +470,7 @@ public class ClassifierLTree {
                         // if the branches are identical the path has zero length
 
                         int[] fuck = new int[1]; // some things (like 'multiple return values') are soo painful in java ...
-                        lenOT = getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
+                        lenOT = getPathLenBranchToBranch(prt.getOBP(), ipb, 0.5, fuck);
                         ndOT = fuck[0];
 //                        {
 //                        	double lenOT1alt = getPathLenToBranch(opb[0], ipb);
