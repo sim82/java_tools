@@ -6,19 +6,12 @@ import java.util.Arrays;
 import javax.management.RuntimeErrorException;
 
 public class ParsimonyAlign {
-	enum Dir {
-		D,
-		U,
-		L,
-		E,
-		X
-	};
 	
-//	static String sA = "abcda<bbcdab";
-//	static String sB = "abcbbdab";
+	static String sA = "abcda<bbcdab";
+	static String sB = "abcbbdab";
 	
-	static String sA = "bbbbabcd";
-	static String sB = "abcd";
+//	static String sA = "ba<bbbcbcd";
+//	static String sB = "abcd";
 	static int[] seqA = stringToSymbol( sA );
 	static int[] seqB = stringToSymbol( sB );
 	
@@ -30,9 +23,14 @@ public class ParsimonyAlign {
 	
 	static int[] score = new int[W*H];
 	static int[] scoreL = new int[W*H];
-	static Dir[] dir = new Dir[W*H];
-	static Dir[] dirL = new Dir[W*H];
 	
+	// stay flag in the main-matrix
+	final static byte STAY = 0x1;
+	
+	// stay flag in the gap-matrix
+	final static byte STAY_L = 0x2;
+	
+	static byte[] dir = new byte[W*H];
 	
 	static int GAP_OPEN = 2;
 	static int GAP_EXTEND = 1;
@@ -58,7 +56,6 @@ public class ParsimonyAlign {
 	private static int[] stringToSymbol(String string ) {
 		int[] ret = new int[1024];
 	
-		//ArrayList<Integer> ret = new ArrayList<Integer>();
 		int inc;
 		int i = 0;
 		for( char c : string.toCharArray() ) {
@@ -98,134 +95,71 @@ public class ParsimonyAlign {
 	}
 	
 	public static void main(String[] args) {
-		dir[0] = Dir.X;
 		for( int ib = 0; ib < LenB; ib++ ) {
-			//score[saddr(-1, ib)] = score[saddr(-1, ib-1)];
 			score[saddr(-1, ib)] = gapCost(ib+1);
 			scoreL[saddr(-1, ib)] = gapCost(ib+1);
-			dir[saddr(-1, ib)] = Dir.U;
+			
+			dir[saddr(-1, ib)] = STAY_L;
 		}
 			
 		for( int ia = 0; ia < LenA; ia++ ) {
-//			scoreL[saddr(ia, -1)] = scoreL[saddr(ia-1, -1)] + 1;
-//			score[saddr(ia, -1)] = scoreL[saddr(ia, -1)] + 1;
 			scoreL[saddr(ia, -1)] = gapCost(ia+1);
 			score[saddr(ia, -1)] = gapCost(ia+1);
 			
-			
-			dir[saddr(ia, -1)] = Dir.L;
+			dir[saddr(ia, -1)] = STAY_L;
 		}
-		
+	
 		for( int ib = 0; ib < LenB; ib++ ) {
 			for( int ia = 0; ia < LenA; ia++ ) {
 				int ca = seqA[ia];
 				int cb = seqB[ib];
 				
-				int sd;
-				int sdl;
-				//int sd2;
-				{
-					sd = score[saddr(ia-1, ib-1)];
-					//sd2 = scoreL[saddr(ia-1, ib-1)];
-					if( (ca & cb) == 0 ) {
-						sd += 1;
-						//sd2 += 1;
-					}
-					sdl = sd;
+				// calculate match score ('go diagonal')
+				int sd = score[saddr(ia-1, ib-1)];
+				
+				// penalize based on parsimony
+				if( (ca & cb) == 0 ) {
+					sd += 1;
 				}
-	
+				
+				
+				// calculate gap score. Either open or extend gap
+				int scoreExt = scoreL[saddr(ia-1, ib)] + GAP_EXTEND;
+				int scoreOpen = score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND;
+				
 				int sl;
-				int sll;
-				boolean open;
-				{
-					//sll = scoreL[saddr(ia-1, ib)] + 1;
-					
-					scoreL[saddr(ia, ib)] = Math.min(scoreL[saddr(ia-1, ib)] + GAP_EXTEND, score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND);
-					//scoreL[saddr(ia, ib)] = scoreL[saddr(ia-1, ib)] + 1;
-					
-					sl = scoreL[saddr(ia, ib)];
-					open = sl == score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND;
-					
-					if( open ) {
-						dirL[saddr(ia, ib)] = Dir.E;
-					} else {
-						dirL[saddr(ia, ib)] = Dir.L;
-					}
-//					if( sl1 < sl2 ) {
-//						sl = sl1;
-//					} else {
-//						sl = sl2;
-//					}
-//					sll = sl;
-//					if( sl <= sl2 ) {
-//						sld = Dir.L;
-//						sl = sl;
-//					} else {
-//						sld = Dir.L;
-//						sl = sl2;
-//					}
-//					if( (15 & cb) == 0 ) {
-//						sl += 1;
-//					}
-	
-					
-				}
-				int su;
-				{
-					su = score[saddr(ia, ib-1)];
-					if( (ca & 15) == 0 ) {
-						su += 1;
-					}
-				}
-				su = LARGE_VALUE;
 				
-//				if( sd <= sl && sd <= su ) {
-//					score[saddr(ia,ib)] = sd;
-//					scoreL[saddr(ia,ib)] = sl2;
-//					dir[saddr(ia,ib)] = Dir.D;
-//				} else {
-//					if( sl <= su ) {
-//						score[saddr(ia,ib)] = sl;
-//						scoreL[saddr(ia,ib)] = sl2;
-//						dir[saddr(ia,ib)] = sld;
-//					} else {
-//						score[saddr(ia,ib)] = su;
-//						dir[saddr(ia,ib)] = Dir.U;
-//					}
-//				}
+				if( scoreExt < scoreOpen ) {
+					// gap gets extended. Set 'stay' flag in the gap-extension matrix,
+					// so the traceback knows to stay in the extension state.
+					sl = scoreExt;
+					dir[saddr(ia, ib)] |= STAY_L;
+				} else {
+					// gap gets openend. No stay flag means 'go left and switch to main-matrix'
+					sl = scoreOpen;
+				}
 				
-				if( sl <= sd ) {
+				scoreL[saddr(ia, ib)] = sl;
+				
+				
+				// choose between match or gap
+				if( sl < sd ) {
+					// open gap. No stay flag means 'go left and switch to gap-matrix'.
 					score[saddr(ia,ib)] = sl;
-					Dir d = open ? Dir.L : Dir.E;
-					dir[saddr(ia,ib)] = Dir.E;
-					
 				} else {
 					score[saddr(ia,ib)] = sd;
 					
-					dir[saddr(ia,ib)] = Dir.D;
-					
+					// match positions. Set 'stay' flag in the main-matrix (means 'go diagonal')
+					dir[saddr(ia,ib)] |= STAY;
 				}
-				
-				//scoreL[saddr(ia,ib)] = sll;
-				
-				
 			}			
-			//score[saddr(i,i)] = ;
 		}
 		
 		System.out.printf( "score: %d\n", score[saddr(LenA-1, LenB-1)] );
 		
 		for( int ib = 0; ib < H; ib++ ) {
 			for( int ia = 0; ia < W; ia++ ) {
-				System.out.printf( "%s ", dir[addr(ia,ib)] );
-			}
-			System.out.println();
-		}
-		System.out.println();
-		
-		for( int ib = 0; ib < H; ib++ ) {
-			for( int ia = 0; ia < W; ia++ ) {
-				System.out.printf( "%s ", dirL[addr(ia,ib)] );
+				System.out.printf( "%d ", (int)dir[addr(ia,ib)]);
 			}
 			System.out.println();
 		}
@@ -252,46 +186,33 @@ public class ParsimonyAlign {
 		int ba = LenA-1;
 		StringBuffer bsa = new StringBuffer();
 		StringBuffer bsb = new StringBuffer();
+		
+		// traceback
 		boolean inL = false;
 		while( ba >= 0 || bb >= 0 ) {
 			
 			if( !inL ) {
-				switch( dir[saddr(ba, bb)]) {
-				case D:
+				// we are currently not in a gap. see if we should match ('go diagonal') or open a gap ('jump to gap-matrix')
+				if( (dir[saddr(ba, bb)] & STAY) != 0 ) 
+				{
+					// go diagonal
 					bsa.append(Integer.toHexString(seqA[ba]));
 					bsb.append(Integer.toHexString(seqB[bb]));
 					ba--;
 					bb--;
-					break;
-					
-				case E:
-				case L:
-//					bsa.append(Integer.toHexString(seqA[ba]));
-//					bsb.append("-");
-//					ba--;
+				} else { 
+					// open gap. keep position and switch to gap-matrix
 					inL = true;
-					break;
-					
-				case U:
-					bsa.append("-");
-					bsb.append(Integer.toHexString(seqA[bb]));
-					bb--;
-					break;
-					
-				
-				default:
-					throw new RuntimeException( "traceback should be finished by now ..." );
-				}
+				}					
 			} else {
+				// we are in a gap
+				
+				// output gap
 				bsa.append(Integer.toHexString(seqA[ba]));
 				bsb.append("-");
 				
-				inL = dirL[saddr(ba, bb)] == Dir.L;
-//				if( inL ) {
-//					System.out.printf( "stay\n" );
-//				} else {
-//					System.out.printf( "leave\n" );
-//				}
+				// check if we should stay in the gap-matrix
+				inL = (dir[saddr(ba, bb)] & STAY_L) != 0;
 				ba--;
 			}
 		}
