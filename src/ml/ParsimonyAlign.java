@@ -10,11 +10,15 @@ public class ParsimonyAlign {
 		D,
 		U,
 		L,
+		E,
 		X
 	};
 	
-	static String sA = "abcd<babcdab";
-	static String sB = "abbbbdab";
+//	static String sA = "abcda<bbcdab";
+//	static String sB = "abcbbdab";
+	
+	static String sA = "bbbbabcd";
+	static String sB = "abcd";
 	static int[] seqA = stringToSymbol( sA );
 	static int[] seqB = stringToSymbol( sB );
 	
@@ -25,11 +29,22 @@ public class ParsimonyAlign {
 	static final int H = LenB + 1;
 	
 	static int[] score = new int[W*H];
+	static int[] scoreL = new int[W*H];
 	static Dir[] dir = new Dir[W*H];
+	static Dir[] dirL = new Dir[W*H];
 	
 	
+	static int GAP_OPEN = 2;
+	static int GAP_EXTEND = 1;
 	
 	
+	static int gapCost( int l ) {
+		if( l > 0 ) {
+			return l * GAP_EXTEND + GAP_OPEN;
+		} else {
+			return 0;
+		}
+	}
 	
 	final static int LARGE_VALUE = 100000;
 	
@@ -86,12 +101,18 @@ public class ParsimonyAlign {
 		dir[0] = Dir.X;
 		for( int ib = 0; ib < LenB; ib++ ) {
 			//score[saddr(-1, ib)] = score[saddr(-1, ib-1)];
-			score[saddr(-1, ib)] = LARGE_VALUE;
+			score[saddr(-1, ib)] = gapCost(ib+1);
+			scoreL[saddr(-1, ib)] = gapCost(ib+1);
 			dir[saddr(-1, ib)] = Dir.U;
 		}
 			
 		for( int ia = 0; ia < LenA; ia++ ) {
-			score[saddr(ia, -1)] = score[saddr(ia-1, -1)];
+//			scoreL[saddr(ia, -1)] = scoreL[saddr(ia-1, -1)] + 1;
+//			score[saddr(ia, -1)] = scoreL[saddr(ia, -1)] + 1;
+			scoreL[saddr(ia, -1)] = gapCost(ia+1);
+			score[saddr(ia, -1)] = gapCost(ia+1);
+			
+			
 			dir[saddr(ia, -1)] = Dir.L;
 		}
 		
@@ -101,19 +122,51 @@ public class ParsimonyAlign {
 				int cb = seqB[ib];
 				
 				int sd;
+				int sdl;
+				//int sd2;
 				{
 					sd = score[saddr(ia-1, ib-1)];
+					//sd2 = scoreL[saddr(ia-1, ib-1)];
 					if( (ca & cb) == 0 ) {
 						sd += 1;
+						//sd2 += 1;
 					}
+					sdl = sd;
 				}
 	
 				int sl;
+				int sll;
+				boolean open;
 				{
-					sl = score[saddr(ia-1, ib)];
-					if( (15 & cb) == 0 ) {
-						sl += 1;
+					//sll = scoreL[saddr(ia-1, ib)] + 1;
+					
+					scoreL[saddr(ia, ib)] = Math.min(scoreL[saddr(ia-1, ib)] + GAP_EXTEND, score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND);
+					//scoreL[saddr(ia, ib)] = scoreL[saddr(ia-1, ib)] + 1;
+					
+					sl = scoreL[saddr(ia, ib)];
+					open = sl == score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND;
+					
+					if( open ) {
+						dirL[saddr(ia, ib)] = Dir.E;
+					} else {
+						dirL[saddr(ia, ib)] = Dir.L;
 					}
+//					if( sl1 < sl2 ) {
+//						sl = sl1;
+//					} else {
+//						sl = sl2;
+//					}
+//					sll = sl;
+//					if( sl <= sl2 ) {
+//						sld = Dir.L;
+//						sl = sl;
+//					} else {
+//						sld = Dir.L;
+//						sl = sl2;
+//					}
+//					if( (15 & cb) == 0 ) {
+//						sl += 1;
+//					}
 	
 					
 				}
@@ -126,18 +179,35 @@ public class ParsimonyAlign {
 				}
 				su = LARGE_VALUE;
 				
-				if( sd <= sl && sd <= su ) {
-					score[saddr(ia,ib)] = sd;
-					dir[saddr(ia,ib)] = Dir.D;
+//				if( sd <= sl && sd <= su ) {
+//					score[saddr(ia,ib)] = sd;
+//					scoreL[saddr(ia,ib)] = sl2;
+//					dir[saddr(ia,ib)] = Dir.D;
+//				} else {
+//					if( sl <= su ) {
+//						score[saddr(ia,ib)] = sl;
+//						scoreL[saddr(ia,ib)] = sl2;
+//						dir[saddr(ia,ib)] = sld;
+//					} else {
+//						score[saddr(ia,ib)] = su;
+//						dir[saddr(ia,ib)] = Dir.U;
+//					}
+//				}
+				
+				if( sl <= sd ) {
+					score[saddr(ia,ib)] = sl;
+					Dir d = open ? Dir.L : Dir.E;
+					dir[saddr(ia,ib)] = Dir.E;
+					
 				} else {
-					if( sl <= su ) {
-						score[saddr(ia,ib)] = sl;
-						dir[saddr(ia,ib)] = Dir.L;
-					} else {
-						score[saddr(ia,ib)] = su;
-						dir[saddr(ia,ib)] = Dir.U;
-					}
+					score[saddr(ia,ib)] = sd;
+					
+					dir[saddr(ia,ib)] = Dir.D;
+					
 				}
+				
+				//scoreL[saddr(ia,ib)] = sll;
+				
 				
 			}			
 			//score[saddr(i,i)] = ;
@@ -147,14 +217,32 @@ public class ParsimonyAlign {
 		
 		for( int ib = 0; ib < H; ib++ ) {
 			for( int ia = 0; ia < W; ia++ ) {
-				System.out.printf( "%s\t", dir[addr(ia,ib)] );
+				System.out.printf( "%s ", dir[addr(ia,ib)] );
 			}
 			System.out.println();
 		}
 		System.out.println();
+		
+		for( int ib = 0; ib < H; ib++ ) {
+			for( int ia = 0; ia < W; ia++ ) {
+				System.out.printf( "%s ", dirL[addr(ia,ib)] );
+			}
+			System.out.println();
+		}
+		System.out.println();
+		
 		for( int ib = 0; ib < H; ib++ ) {
 			for( int ia = 0; ia < W; ia++ ) {
 				System.out.printf( "%d\t", score[addr(ia,ib)] );
+			}
+			System.out.println();
+		}
+		System.out.println();
+		
+		
+		for( int ib = 0; ib < H; ib++ ) {
+			for( int ia = 0; ia < W; ia++ ) {
+				System.out.printf( "%d\t", scoreL[addr(ia,ib)] );
 			}
 			System.out.println();
 		}
@@ -164,32 +252,48 @@ public class ParsimonyAlign {
 		int ba = LenA-1;
 		StringBuffer bsa = new StringBuffer();
 		StringBuffer bsb = new StringBuffer();
-		
+		boolean inL = false;
 		while( ba >= 0 || bb >= 0 ) {
-			switch( dir[saddr(ba, bb)]) {
-			case D:
-				bsa.append(Integer.toHexString(seqA[ba]));
-				bsb.append(Integer.toHexString(seqB[bb]));
-				ba--;
-				bb--;
-				break;
+			
+			if( !inL ) {
+				switch( dir[saddr(ba, bb)]) {
+				case D:
+					bsa.append(Integer.toHexString(seqA[ba]));
+					bsb.append(Integer.toHexString(seqB[bb]));
+					ba--;
+					bb--;
+					break;
+					
+				case E:
+				case L:
+//					bsa.append(Integer.toHexString(seqA[ba]));
+//					bsb.append("-");
+//					ba--;
+					inL = true;
+					break;
+					
+				case U:
+					bsa.append("-");
+					bsb.append(Integer.toHexString(seqA[bb]));
+					bb--;
+					break;
+					
 				
-			case L:
+				default:
+					throw new RuntimeException( "traceback should be finished by now ..." );
+				}
+			} else {
 				bsa.append(Integer.toHexString(seqA[ba]));
 				bsb.append("-");
+				
+				inL = dirL[saddr(ba, bb)] == Dir.L;
+//				if( inL ) {
+//					System.out.printf( "stay\n" );
+//				} else {
+//					System.out.printf( "leave\n" );
+//				}
 				ba--;
-				break;
-				
-			case U:
-				bsa.append("-");
-				bsb.append(Integer.toHexString(seqA[bb]));
-				bb--;
-				break;
-				
-			default:
-				throw new RuntimeException( "traceback should be finished by now ..." );
 			}
-			
 		}
 		
 		System.out.printf( "%s\n%s\n", bsa.reverse(), bsb.reverse() );
