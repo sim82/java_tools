@@ -29,7 +29,7 @@ public class NearestNeighborClassPhylip {
 				String rseq = refMa.getSequence(i);
 				
 				
-				int dist = NearestNeighborClass.editDist_noGaps(qseq, rseq);
+				int dist = NearestNeighborClass.editDist_nogaps(qseq, rseq);
 				if( dist < minDist ) {
 					minDist = dist;
 					bestNeighbor = refMa.names[i];

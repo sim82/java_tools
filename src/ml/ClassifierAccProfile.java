@@ -3,14 +3,10 @@ package ml;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import javax.management.RuntimeErrorException;
 
 public class ClassifierAccProfile {
 

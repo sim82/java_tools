@@ -1,14 +1,10 @@
 package ml;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-
-import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory.Woodstox;
 
 public class NearestNeighborClass {
 	public final static boolean VERBOSE = false;

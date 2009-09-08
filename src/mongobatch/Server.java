@@ -3,17 +3,12 @@ package mongobatch;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import com.sun.xml.internal.bind.v2.runtime.reflect.ListIterator;
 
 
 class ClientConnection {

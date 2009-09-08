@@ -75,6 +75,10 @@ public class ANode {
 	public void setNodeLabel( String label ) {
 		nodeLabel = label;
 	}
+	
+	public String getNodeLabel() {
+		return nodeLabel;
+	}
 }
 
 

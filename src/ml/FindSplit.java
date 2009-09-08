@@ -1,7 +1,6 @@
 package ml;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -46,7 +45,6 @@ public class FindSplit {
         
         System.out.printf( "%d branches\n", blist.length );
         
-        LN[] bestBranch 	= null;
         int  bestSmallSize 	= -1;
         String[] bestSplit	= null;
         
@@ -78,7 +76,6 @@ public class FindSplit {
         	if( split.length > bestSmallSize ) {
         		//System.out.printf( "new best: %d\n", split.length );
         		bestSmallSize = split.length;
-        		bestBranch = branch;
         		bestSplit = split;
         		bestSupport = p.backSupport;
         	}

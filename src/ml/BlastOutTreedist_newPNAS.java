@@ -1,27 +1,16 @@
 package ml;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 
 public class BlastOutTreedist_newPNAS {
 
 	public static void main(String[] args) {
 		
-		boolean automode = args[0].equals("--auto"); 
-		
-        File reftreeFile = new File( args[1] );
+		File reftreeFile = new File( args[1] );
         LN reftree;
         {
             TreeParser tpreftree = new TreeParser(reftreeFile);
