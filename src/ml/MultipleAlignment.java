@@ -48,7 +48,15 @@ public class MultipleAlignment implements Serializable {
         this.data = new String[arraysize];
     }
     
-    public static MultipleAlignment loadPhylip( File file ) {
+    public MultipleAlignment( int seqLen, String[] names, String[] seqs) {
+		this.seqLen = seqLen;
+		this.nTaxon = names.length;
+		this.names = names;
+		this.data = seqs;
+    	
+	}
+
+	public static MultipleAlignment loadPhylip( File file ) {
     	if( USE_SHITTY_LOADER ) {
     		return loadPhylipShitty(file);
     	} else {

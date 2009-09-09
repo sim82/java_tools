@@ -48,8 +48,8 @@ public class ParsimonyAlign {
 	final static byte BT_TOUCH = 0x4;
 	final static byte BT_DIAG = 0x8;
 	
-	static int GAP_OPEN = 2;
-	static int GAP_EXTEND = 2;
+	static int GAP_OPEN = 1;
+	static int GAP_EXTEND = 1;
 	
 	
 	
@@ -68,6 +68,7 @@ public class ParsimonyAlign {
 	}
 
 	final static int LARGE_VALUE = 100000;
+	private static final boolean IGNORE_SCORE_A = true;
 	
 	// address for 'matrix space' coordinate
 	int addr( int a, int b ) {
@@ -118,6 +119,10 @@ public class ParsimonyAlign {
 	}
 	
 	
+	static int[] score_cached;
+	static int[] scoreL_cached;
+	static byte[] dir_cached;
+	
 	public ParsimonyAlign( int[] seqA, int[] seqB, int[] scoreA ) {
 		this.seqA = seqA;
 		this.seqB = seqB;
@@ -128,10 +133,31 @@ public class ParsimonyAlign {
 		
 		W = lenA + 1;
 		H = lenB + 1;
-		
-		score = new int[W*H];
-		scoreL = new int[W*H];
-		dir = new byte[W*H];
+
+		// array allocation seemed to cause quite some overhead.
+		// get rid of allocation and (more importantly) unnecessary initialization
+		// of the score arrays.
+		if( true ) {
+				
+			if( score_cached == null || score_cached.length < W*H ) {
+				score_cached = new int[W*H];
+				scoreL_cached = new int[W*H];
+				dir_cached = new byte[W*H];
+			} else {
+				//Arrays.fill(score_cached, 0, W*H, 0);
+				//Arrays.fill(scoreL_cached, 0, W*H, 0);
+				Arrays.fill(dir_cached, 0, W*H, (byte)0);
+			}
+			
+			
+			score = score_cached;
+			scoreL = scoreL_cached;
+			dir = dir_cached;
+		} else {
+			score = new int[W*H];
+			scoreL = new int[W*H];
+			dir = new byte[W*H];
+		}
 	}
 	
 	int align() {
@@ -149,19 +175,31 @@ public class ParsimonyAlign {
 			dir[saddr(ia, -1)] = STAY_L;
 		}
 	
+		score[saddr(-1,-1)] = 0;
+		scoreL[saddr(-1,-1)] = 0;
+		
 		for( int ib = 0; ib < lenB; ib++ ) {
-			for( int ia = ib; ia < lenA; ia++ ) {
+			for( int ia = ib; ia <= ib + lenA - lenB; ia++ ) {
 				int ca = seqA[ia];
 				int cb = seqB[ib];
 				
-				if( ia == ib ) {
-					dir[saddr(ia-1, ib-1)] |= BT_DIAG;
-				}
+			
+				int saddr_0_0 = saddr(ia, ib);
+				int saddr_1_0 = saddr(ia-1, ib);
+				
+				
+				
+//				if( ia == ib ) {
+//					dir[saddr(ia-1, ib-1)] |= BT_DIAG;
+//				}
 				
 				// calculate match score ('go diagonal')
 				int sd = score[saddr(ia-1, ib-1)];
 				
-				sd += scoreA[ia];
+				if( !IGNORE_SCORE_A ) {
+					sd += scoreA[ia];
+				}
+				
 				// penalize based on parsimony
 				if( (ca & cb) == 0 ) {
 					sd += 1;
@@ -169,8 +207,8 @@ public class ParsimonyAlign {
 				
 				
 				// calculate gap score. Either open or extend gap
-				int scoreExt = scoreL[saddr(ia-1, ib)] + GAP_EXTEND;
-				int scoreOpen = score[saddr(ia-1, ib)] + GAP_OPEN + GAP_EXTEND;
+				int scoreExt = scoreL[saddr_1_0] + GAP_EXTEND;
+				int scoreOpen = score[saddr_1_0] + GAP_OPEN + GAP_EXTEND;
 				
 				int sl;
 				
@@ -178,13 +216,13 @@ public class ParsimonyAlign {
 					// gap gets extended. Set 'stay' flag in the gap-extension matrix,
 					// so the traceback knows to stay in the extension state.
 					sl = scoreExt;
-					dir[saddr(ia, ib)] |= STAY_L;
+					dir[saddr_0_0] |= STAY_L;
 				} else {
 					// gap gets openend. No stay flag means 'go left and switch to main-matrix'
 					sl = scoreOpen;
 				}
 				sl += scoreA[ia];
-				scoreL[saddr(ia, ib)] = sl;
+				scoreL[saddr_0_0] = sl;
 				
 				
 				
@@ -209,129 +247,137 @@ public class ParsimonyAlign {
 				// choose between match or gap
 				if( sl < sd && ia > ib ) {
 					// open gap. No stay flag means 'go left and switch to gap-matrix'.
-					score[saddr(ia,ib)] = sl;
+					score[saddr_0_0] = sl;
 				} else {
-					score[saddr(ia,ib)] = sd;
+					score[saddr_0_0] = sd;
 					
 					// match positions. Set 'stay' flag in the main-matrix (means 'go diagonal')
-					dir[saddr(ia,ib)] |= STAY;
+					dir[saddr_0_0] |= STAY;
 				}
 			}			
 		}
 		
-		System.out.printf( "score: %d\n", score[saddr(lenA-1, lenB-1)] );
+	//	System.out.printf( "score: %d\n", score[saddr(lenA-1, lenB-1)] );
 		
 		
-		int bb = lenB-1;
-		int ba = lenA-1;
-		StringBuffer bsa = new StringBuffer();
-		StringBuffer bsb = new StringBuffer();
+
+		boolean doBt = false;
 		
-		seqBOut = new int[seqA.length];
-		int seqBIdx = 0;
 		
-		// traceback
-		boolean inL = false;
-		boolean btError = false;
-		try {
-			while( (ba >= 0 || bb >= 0)) {
-//				if( ba < bb ) {
-//					System.out.printf( "ba < bb @ %d %d\n", ba, bb );
-////					btError = true;
-////					break;
-//				}
-				dir[saddr(ba, bb)] |= BT_TOUCH;
-				if( !inL ) {
-					
-					// we are currently not in a gap. see if we should match ('go diagonal') or open a gap ('jump to gap-matrix')
-					if( (dir[saddr(ba, bb)] & STAY) != 0 ) 
-					{
-						// go diagonal
-						bsa.append(Integer.toHexString(seqA[ba]));
-						bsb.append(Integer.toHexString(seqB[bb]));
-						seqBOut[seqBIdx++] =  seqB[bb];
+		if( doBt ) {
+			
+			int bb = lenB-1;
+			int ba = lenA-1;
+			StringBuffer bsa = new StringBuffer();
+			StringBuffer bsb = new StringBuffer();
+			
+			seqBOut = new int[seqA.length];
+			int seqBIdx = 0;
+			
+			// traceback
+			boolean inL = false;
+			boolean btError = false;
+			
+			
+			try {
+				while( (ba >= 0 || bb >= 0)) {
+	//				if( ba < bb ) {
+	//					System.out.printf( "ba < bb @ %d %d\n", ba, bb );
+	////					btError = true;
+	////					break;
+	//				}
+					dir[saddr(ba, bb)] |= BT_TOUCH;
+					if( !inL ) {
 						
+						// we are currently not in a gap. see if we should match ('go diagonal') or open a gap ('jump to gap-matrix')
+						if( (dir[saddr(ba, bb)] & STAY) != 0 ) 
+						{
+							// go diagonal
+							bsa.append(Integer.toHexString(seqA[ba]));
+							bsb.append(Integer.toHexString(seqB[bb]));
+							seqBOut[seqBIdx++] =  seqB[bb];
+							
+							ba--;
+							bb--;
+						} else { 
+							// open gap. keep position and switch to gap-matrix
+							inL = true;
+						}					
+					} else {
+						// we are in a gap
+						
+						// output gap
+						bsa.append(Integer.toHexString(seqA[ba]));
+						bsb.append("-");
+						seqBOut[seqBIdx++] = 15;
+						
+						// check if we should stay in the gap-matrix
+						inL = (dir[saddr(ba, bb)] & STAY_L) != 0;
 						ba--;
-						bb--;
-					} else { 
-						// open gap. keep position and switch to gap-matrix
-						inL = true;
-					}					
-				} else {
-					// we are in a gap
-					
-					// output gap
-					bsa.append(Integer.toHexString(seqA[ba]));
-					bsb.append("-");
-					seqBOut[seqBIdx++] = 15;
-					
-					// check if we should stay in the gap-matrix
-					inL = (dir[saddr(ba, bb)] & STAY_L) != 0;
-					ba--;
+					}
 				}
+			} catch( RuntimeException x ) {
+				x.printStackTrace();
+				btError = true;
 			}
-		} catch( RuntimeException x ) {
-			x.printStackTrace();
-			btError = true;
-		}
-		System.out.printf( "%s\n%s\n", bsa.reverse(), bsb.reverse() );
-		
-		//btError = true;
-		if( btError ) {
-			int h = 40;
-			int w = 40;
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY);
+			System.out.printf( "%s\n%s\n", bsa.reverse(), bsb.reverse() );
+			
+			//btError = true;
+			if( btError ) {
+				int h = 40;
+				int w = 40;
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY);
+					}
+					System.out.println();
 				}
 				System.out.println();
-			}
-			System.out.println();
-			
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY_L);
+				
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY_L);
+					}
+					System.out.println();
 				}
 				System.out.println();
-			}
-			System.out.println();
-			
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%x ", (int)dir[addr(ia,ib)] & (BT_TOUCH|BT_DIAG));
+				
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%x ", (int)dir[addr(ia,ib)] & (BT_TOUCH|BT_DIAG));
+					}
+					System.out.println();
 				}
 				System.out.println();
-			}
-			System.out.println();
-		
 			
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%x ", (int)dir[addr(ia,ib)]);
+				
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%x ", (int)dir[addr(ia,ib)]);
+					}
+					System.out.println();
 				}
 				System.out.println();
-			}
-			System.out.println();
-			
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d\t", score[addr(ia,ib)] );
+				
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%d\t", score[addr(ia,ib)] );
+					}
+					System.out.println();
 				}
 				System.out.println();
-			}
-			System.out.println();
-			
-			
-			for( int ib = 0; ib < h; ib++ ) {
-				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d\t", scoreL[addr(ia,ib)] );
+				
+				
+				for( int ib = 0; ib < h; ib++ ) {
+					for( int ia = 0; ia < w; ia++ ) {
+						System.out.printf( "%d\t", scoreL[addr(ia,ib)] );
+					}
+					System.out.println();
 				}
 				System.out.println();
+				throw new RuntimeException( "bailing out" );
 			}
-			System.out.println();
-			throw new RuntimeException( "bailing out" );
-		}
-		
+		}		
 		return score[saddr(lenA-1, lenB-1)];
 	}
 	
@@ -379,12 +425,16 @@ public class ParsimonyAlign {
 			
 			int[] scoreA;
 			
-			BufferedReader r = new BufferedReader(new FileReader("/scratch/pars.txt"));
+			BufferedReader r = new BufferedReader(new FileReader("/scratch/pars.txt.PNAS100"));
 			
 			
 			PrintWriter w = new PrintWriter(new File( "/scratch/pars.out" ));
 			
 			Random rnd = new Random( 123456 );
+			
+			long time1 = System.currentTimeMillis();
+			long time2 = time1;
+			int count = 0;
 			
 			while( true ) {
 				
@@ -399,12 +449,12 @@ public class ParsimonyAlign {
 				
 				String lineInfo = r.readLine();
 			
-				if( rnd.nextFloat() < 0.9 ) {
-					continue;
-				}
+//				if( rnd.nextFloat() < 0.99 ) {
+//					continue;
+//				}
 				
 				String info = lineInfo;
-				System.out.printf( "info: %s\n", info );
+			//	System.out.printf( "info: %s\n", info );
 				
 //				if( !lineInfo.equals("336 I2 18429")) {
 //					continue;
@@ -414,32 +464,49 @@ public class ParsimonyAlign {
 				//scoreA = readIntVec( r.readLine(), false );
 				scoreA = fill( new int[seqA.length], 0 );
 				
-				
-				int[] seqBRaw = readIntVec( lineB, false );
-				for( int i = 0; i < seqBRaw.length; i++ ) {
-					System.out.printf( "%x", seqBRaw[i] );
+				if( false ) {
+					int[] seqBRaw = readIntVec( lineB, false );
+					for( int i = 0; i < seqBRaw.length; i++ ) {
+						System.out.printf( "%x", seqBRaw[i] );
+					}
+					System.out.println();
 				}
-				System.out.println();
-			
 				
 				ParsimonyAlign pa = new ParsimonyAlign(seqA, seqB, scoreA);
 				int score = pa.align();
 				
 				
 				//int pscore = parsimonyScore( seqA, readIntVec(lineB, false), readIntVec(lineScoreA, false) );
-				int pscore = parsimonyScore( seqA, pa.getSeqBOut(), readIntVec(lineScoreA, false) );
+				int pscore = -1;
+				if( pa.getSeqBOut() != null ) {
+					pscore = parsimonyScore( seqA, pa.getSeqBOut(), readIntVec(lineScoreA, false) );
+					
+					
+									
+
 				
+					System.out.printf( "pscore: %d %s\n", pscore, info );
+				}
 				
 				w.printf( "%s %d %d\n", info, score, pscore );
 				w.flush();
-				
 
+				count++;
 				
-				System.out.printf( "pscore: %d %s\n", pscore, info );
+//				if( count > 200 ) {
+//					break;
+//				}
+				
+				if( count % 1000 == 0 ) {
+					System.out.printf( "time: %d\n", System.currentTimeMillis() - time2 );
+					time2 = System.currentTimeMillis();
+				}
 			}
 			
 			
 			w.close();
+			
+			System.out.printf( "time: %d\n", System.currentTimeMillis() - time1 );
 		}
 	}
 

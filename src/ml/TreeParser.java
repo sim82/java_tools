@@ -268,7 +268,7 @@ public class TreeParser {
             if( inputA[ptr] == ';') {
             	// oh my god. a fucking rooted tree
             	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
-            	System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
+            	//System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
             	twiddle( nl, nr, l1 + l2, label1, sup );
     			
             	return nl;
