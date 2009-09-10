@@ -48,12 +48,42 @@ public class ParsimonyAlign {
 	final static byte BT_TOUCH = 0x4;
 	final static byte BT_DIAG = 0x8;
 	
-	static int GAP_OPEN = 1;
+	static int GAP_OPEN = 3;
 	static int GAP_EXTEND = 1;
 	
+	static boolean COMPRESS_MATRIX = true;
+	static boolean PRINT_ALIGNMENT = false;
 	
+	int score_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return score[addr(a, b)];
+		} else {
+			return -1;
+		}
+	}
 	
+	int scoreL_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return scoreL[addr(a, b)];
+		} else {
+			return -1;
+		}
+	}
 	
+	byte dir_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return dir[addr(a, b)];
+		} else {
+			return -1;
+		}
+	}
+	
+	private boolean validPos(int a, int b) {
+		return (!COMPRESS_MATRIX) || (a >= b || a <= b + (W-H));
+	}
+
+
+
 	static int gapCost( int l ) {
 		if( l > 0 ) {
 			return l * GAP_EXTEND + GAP_OPEN;
@@ -75,7 +105,15 @@ public class ParsimonyAlign {
 		if( a < 0 || b < 0 ) {
 			throw new RuntimeException( "a or b out of range" ); 
 		}
-		return b * W + a;
+		if( COMPRESS_MATRIX ) {
+			if( a < b || a > b + (W - H)) {
+				throw new RuntimeException( "bad maths exception " + a + " " + b + " " + W + " " + H );
+			}
+			
+			return b * (W - H + 1) + (a - b);
+		} else {
+			return b * W + a;
+		}
 	}
 	private static int[] stringToSymbol(String string ) {
 		int[] ret = new int[1024];
@@ -134,19 +172,25 @@ public class ParsimonyAlign {
 		W = lenA + 1;
 		H = lenB + 1;
 
+		int size;
+		if( COMPRESS_MATRIX ) {
+			size = (W - H + 1) * H;
+		} else {
+			size = W * H;
+		}
 		// array allocation seemed to cause quite some overhead.
 		// get rid of allocation and (more importantly) unnecessary initialization
 		// of the score arrays.
 		if( true ) {
 				
-			if( score_cached == null || score_cached.length < W*H ) {
-				score_cached = new int[W*H];
-				scoreL_cached = new int[W*H];
-				dir_cached = new byte[W*H];
+			if( score_cached == null || score_cached.length < size ) {
+				score_cached = new int[size];
+				scoreL_cached = new int[size];
+				dir_cached = new byte[size];
 			} else {
 				//Arrays.fill(score_cached, 0, W*H, 0);
 				//Arrays.fill(scoreL_cached, 0, W*H, 0);
-				Arrays.fill(dir_cached, 0, W*H, (byte)0);
+				Arrays.fill(dir_cached, 0, size, (byte)0);
 			}
 			
 			
@@ -154,21 +198,21 @@ public class ParsimonyAlign {
 			scoreL = scoreL_cached;
 			dir = dir_cached;
 		} else {
-			score = new int[W*H];
-			scoreL = new int[W*H];
-			dir = new byte[W*H];
+			score = new int[size];
+			scoreL = new int[size];
+			dir = new byte[size];
 		}
 	}
 	
 	int align() {
-		for( int ib = 0; ib < lenB; ib++ ) {
-			score[saddr(-1, ib)] = gapCost(ib+1);
-			scoreL[saddr(-1, ib)] = gapCost(ib+1);
+//		for( int ib = 0; ib < lenB; ib++ ) {
+//			score[saddr(-1, ib)] = gapCost(ib+1);
+//			scoreL[saddr(-1, ib)] = gapCost(ib+1);
+//			
+//			dir[saddr(-1, ib)] = STAY_L;
+//		}
 			
-			dir[saddr(-1, ib)] = STAY_L;
-		}
-			
-		for( int ia = 0; ia < lenA; ia++ ) {
+		for( int ia = 0; ia <= lenA - lenB - 1; ia++ ) {
 			scoreL[saddr(ia, -1)] = gapCost(ia+1);
 			score[saddr(ia, -1)] = gapCost(ia+1);
 			
@@ -185,7 +229,7 @@ public class ParsimonyAlign {
 				
 			
 				int saddr_0_0 = saddr(ia, ib);
-				int saddr_1_0 = saddr(ia-1, ib);
+				
 				
 				
 				
@@ -205,25 +249,41 @@ public class ParsimonyAlign {
 					sd += 1;
 				}
 				
-				
-				// calculate gap score. Either open or extend gap
-				int scoreExt = scoreL[saddr_1_0] + GAP_EXTEND;
-				int scoreOpen = score[saddr_1_0] + GAP_OPEN + GAP_EXTEND;
-				
 				int sl;
+				if( ia > ib ) {
+					int saddr_1_0 = saddr(ia-1, ib);
+					// calculate gap score. Either open or extend gap
+					
+					
+					int scoreExt;
+					if( ia > ib + 1 ) { 
+						scoreExt = scoreL[saddr_1_0] + GAP_EXTEND;
+					} else {
+						scoreExt = LARGE_VALUE;
+					}
+					int scoreOpen = score[saddr_1_0] + GAP_OPEN + GAP_EXTEND;
+					
 				
-				if( scoreExt < scoreOpen && ia > ib + 1) {
-					// gap gets extended. Set 'stay' flag in the gap-extension matrix,
-					// so the traceback knows to stay in the extension state.
-					sl = scoreExt;
-					dir[saddr_0_0] |= STAY_L;
+					
+					if( /*ia > ib + 1 && */ scoreExt < scoreOpen ) {
+						// gap gets extended. Set 'stay' flag in the gap-extension matrix,
+						// so the traceback knows to stay in the extension state.
+						sl = scoreExt;
+						dir[saddr_0_0] |= STAY_L;
+					} else {
+						// gap gets openend. No stay flag means 'go left and switch to main-matrix'
+						sl = scoreOpen;
+					}
 				} else {
-					// gap gets openend. No stay flag means 'go left and switch to main-matrix'
-					sl = scoreOpen;
+					sl = LARGE_VALUE;
 				}
-				sl += scoreA[ia];
-				scoreL[saddr_0_0] = sl;
+			
 				
+				if( !IGNORE_SCORE_A ) {
+					
+					sl += scoreA[ia];
+				}
+				scoreL[saddr_0_0] = sl;
 				
 				
 
@@ -261,7 +321,7 @@ public class ParsimonyAlign {
 		
 		
 
-		boolean doBt = false;
+		boolean doBt = PRINT_ALIGNMENT;
 		
 		
 		if( doBt ) {
@@ -328,7 +388,7 @@ public class ParsimonyAlign {
 				int w = 40;
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY);
+						System.out.printf( "%d ", (int)dir_safe(ia,ib) & STAY);
 					}
 					System.out.println();
 				}
@@ -336,7 +396,7 @@ public class ParsimonyAlign {
 				
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%d ", (int)dir[addr(ia,ib)] & STAY_L);
+						System.out.printf( "%d ", (int)dir_safe(ia,ib) & STAY_L);
 					}
 					System.out.println();
 				}
@@ -344,7 +404,7 @@ public class ParsimonyAlign {
 				
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%x ", (int)dir[addr(ia,ib)] & (BT_TOUCH|BT_DIAG));
+						System.out.printf( "%x ", (int)dir_safe(ia,ib) & (BT_TOUCH|BT_DIAG));
 					}
 					System.out.println();
 				}
@@ -353,7 +413,7 @@ public class ParsimonyAlign {
 				
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%x ", (int)dir[addr(ia,ib)]);
+						System.out.printf( "%x ", (int)dir_safe(ia,ib));
 					}
 					System.out.println();
 				}
@@ -361,7 +421,7 @@ public class ParsimonyAlign {
 				
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%d\t", score[addr(ia,ib)] );
+						System.out.printf( "%d\t", score_safe(ia,ib) );
 					}
 					System.out.println();
 				}
@@ -370,7 +430,7 @@ public class ParsimonyAlign {
 				
 				for( int ib = 0; ib < h; ib++ ) {
 					for( int ia = 0; ia < w; ia++ ) {
-						System.out.printf( "%d\t", scoreL[addr(ia,ib)] );
+						System.out.printf( "%d\t", scoreL_safe(ia,ib) );
 					}
 					System.out.println();
 				}
@@ -464,17 +524,17 @@ public class ParsimonyAlign {
 				//scoreA = readIntVec( r.readLine(), false );
 				scoreA = fill( new int[seqA.length], 0 );
 				
-				if( false ) {
+				
+				
+				ParsimonyAlign pa = new ParsimonyAlign(seqA, seqB, scoreA);
+				int score = pa.align();
+				if( PRINT_ALIGNMENT ) {
 					int[] seqBRaw = readIntVec( lineB, false );
 					for( int i = 0; i < seqBRaw.length; i++ ) {
 						System.out.printf( "%x", seqBRaw[i] );
 					}
 					System.out.println();
 				}
-				
-				ParsimonyAlign pa = new ParsimonyAlign(seqA, seqB, scoreA);
-				int score = pa.align();
-				
 				
 				//int pscore = parsimonyScore( seqA, readIntVec(lineB, false), readIntVec(lineScoreA, false) );
 				int pscore = -1;
@@ -493,9 +553,9 @@ public class ParsimonyAlign {
 
 				count++;
 				
-//				if( count > 200 ) {
-//					break;
-//				}
+				if( PRINT_ALIGNMENT && count > 10 ) {
+					break;
+				}
 				
 				if( count % 1000 == 0 ) {
 					System.out.printf( "time: %d\n", System.currentTimeMillis() - time2 );
