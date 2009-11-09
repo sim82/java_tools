@@ -78,7 +78,35 @@ public class LN {
 			getBranchListForward(n.next.next.back, list);
 		}
 	}
-
+    
+    public static LN[][] getAllBranchList( LN n ) 
+	{	if( n.data.isTip ) 
+		{	throw new RuntimeException("we don't like tips!");
+		}
+		
+		ArrayList<LN[]> list = new ArrayList<LN[]>();
+		
+		getAllBranchListForward(n, list);
+		getAllBranchListForward(n.next, list);
+		getAllBranchListForward(n.next.next, list);
+		
+		return list.toArray(new LN[list.size()][]);
+	}
+	
+    private static void getAllBranchListForward(LN n,
+			ArrayList<LN[]> list) 
+    {	
+    	LN[] b = {n, n.back};
+		branchSanityCheck(b);
+		list.add(b);
+    	
+		if( !n.data.isTip ) 
+    	{	
+    			
+			getAllBranchListForward(n.next.back, list);
+			getAllBranchListForward(n.next.next.back, list);
+		}
+	}
 	public static void branchSanityCheck(LN[] b) {
 		boolean x = (b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel;
 		
@@ -479,7 +507,7 @@ public class LN {
 		return n.backLen + shortestPathRec( n.back );
     }
     
-	private static double shortestPathRec(LN n) {
+	public static double shortestPathRec(LN n) {
 		if( n.data.isTip ) {
 			return 0.0;
 		} else {
@@ -519,7 +547,7 @@ public class LN {
         assert( n.data == n.next.data && n.data == n.next.next.data );
 
         ANode data = new ANode(n.data);
-
+        
         LN nn = new LN(data);
         nn.next = new LN(data);
         nn.next.next = new LN(data);
@@ -790,5 +818,28 @@ public class LN {
 //    	
     	return len;
     }
+
+	public static LN insertBranch(LN[] br, double len) {
+		LN nl = LN.create();
+		
+		double bl = br[0].backLen / 2;
+		
+		br[0].back = nl.next;
+		nl.next.back = br[0];
+		br[0].backLen = nl.next.backLen = bl;
+		 
+		br[1].back = nl.next.next;
+		nl.next.next.back = br[1];
+		br[1].backLen = nl.next.next.backLen = bl;
+		
+		LN nt = LN.create();
+		
+		nt.back = nl;
+		nl.back = nt;
+		
+		nt.backLen = nl.backLen = len;
+		
+		return nt;
+	}
 	
 }

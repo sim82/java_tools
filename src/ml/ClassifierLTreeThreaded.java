@@ -21,15 +21,18 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ClassifierLTree {
+public class ClassifierLTreeThreaded {
 	/**
 	 *
 	 * @author sim
 	 */
-	static boolean DO_PRUNE = true;
+	
 	static class TreeWithSplitCache {
 		LN tree;	
 		Map<String, LN[]> splitMap = new HashMap<String, LN[]>();
@@ -104,7 +107,7 @@ public class ClassifierLTree {
 		}
 	}
 	
-	class PrunedReftree {
+	static class PrunedReftree {
 		String taxon;
 		
 		LN[] obp;
@@ -115,15 +118,8 @@ public class ClassifierLTree {
 			this.taxon = taxon;
 			
 			LN tree = LN.deepClone(origTree);
+			obp = LN.removeTaxon(tree, taxon);
 			
-			if( DO_PRUNE ) {
-				obp = LN.removeTaxon(tree, taxon,false);
-				tree = obp[0];
-			} else {
-				// horrible hack:
-				obp = LN.findBranchBySplit(tree, splitmap.get( taxon ));
-				assert( obp != null );
-			}
 			tsc = new TreeWithSplitCache(tree);
 			
 		}
@@ -210,9 +206,6 @@ public class ClassifierLTree {
     	
     	if( !args[0].equals("--auto")) {
 	    	
-    		// WARNING: setting 'no prune' mode!
-    		ClassifierLTree.DO_PRUNE = false;
-    		
     		// classic mode
     		
 	        File dir = new File( args[0] );
@@ -221,7 +214,7 @@ public class ClassifierLTree {
 	        File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
 	        File reftreeFile = new File( args[3] );
 	
-	        ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
+	        ClassifierLTreeThreaded clt = new ClassifierLTreeThreaded(reftreeFile, rnFile );
 	        
 	        
 	        File classFile = new File( dir, "RAxML_classification." + args[2] );
@@ -244,7 +237,7 @@ public class ClassifierLTree {
     			smap = new TaxonSMap(new File(args[3]));
     		}
     		
-    		ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
+    		final ClassifierLTreeThreaded clt = new ClassifierLTreeThreaded(reftreeFile, rnFile );
     		
 	        File cwd = new File( "." );
 	        
@@ -254,45 +247,55 @@ public class ClassifierLTree {
 	
 				@Override
 				public boolean accept(File dir, String name) {
-					return name.startsWith("RAxML_classification." ); 
+					return name.startsWith("RAxML_classification" ); 
 				} });
 	        
-	        
-	        for( File classFile : classFiles ) {
-	        	String suffix = classFile.getName().substring(21);
-	        	System.out.printf( "cf: %s\n", classFile );
-	        	File oltFile;
+	        int N_THREADS = 1;
+			ThreadPoolExecutor tpe = new ThreadPoolExecutor( N_THREADS, N_THREADS, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(N_THREADS * 3));
+			tpe.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+			
+	        for( final File classFile : classFiles ) {
 	        	
-	        	{
-	        		oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix );
-	        		
-	        		if( !oltFile.canRead() ) {
-	        			oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix + ".gz" );
-	        		}
-	        		
-	        		if( !oltFile.canRead() ) {
-	        			throw new RuntimeException( "cannot find olt file (with and without .gz suffix): " + oltFile);
-	        		}
-	        	}
+	        	tpe.execute(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						String suffix = classFile.getName().substring(21);
+			        	
+			        	File oltFile;
+			        	
+			        	{
+			        		oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix );
+			        		
+			        		if( !oltFile.canRead() ) {
+			        			oltFile = new File( classFile.getParent(), "RAxML_originalLabelledTree." + suffix + ".gz" );
+			        		}
+			        		
+			        		if( !oltFile.canRead() ) {
+			        			throw new RuntimeException( "cannot find olt file (with and without .gz suffix)");
+			        		}
+			        	}
+			        	
+			        	//System.out.printf( "file: %s\n", classFile.getName());
+			        	
+			        	File outDir = new File( classFile.getParent(), "ext/" );
+			
+			        	if( !outDir.exists() ) {
+			        		outDir.mkdir();
+			        	}
+			        	try {
+				        	PrintStream out = new PrintStream( new BufferedOutputStream( new FileOutputStream( new File(outDir, classFile.getName()))) );
+				        	clt.output( out, classFile, oltFile );
+				        	
+				        	out.close();
+			        	} catch( IOException e ) {
+			        		e.printStackTrace();
+			        		throw new RuntimeException("bailing out at: " + classFile.getName() + " " + oltFile.getName());
+			        	}
+					}
+				});
 	        	
-	        	//System.out.printf( "file: %s\n", classFile.getName());
-	        	
-	        	File outDir = new File( classFile.getParent(), "ext/" );
-	
-	        	if( !outDir.exists() ) {
-	        		outDir.mkdir();
-	        	}
-	        	
-	        	
-	        	PrintStream out = new PrintStream( new BufferedOutputStream(new FileOutputStream(new File(outDir, classFile.getName() ))));
-	        	try {
-	        		clt.output( out, classFile, oltFile );
-	        	} catch( RuntimeException x ) {
-	        		x.printStackTrace();
-	        		System.out.printf( "error thrown at: %s %s\n", classFile.getName(), oltFile.getName() );
-	        		throw new RuntimeException( "bailing out finally" );
-	        	}
-	        	out.close();
 	        }
 	
     	}
@@ -301,7 +304,7 @@ public class ClassifierLTree {
 
 	
 	
-	public ClassifierLTree( File reftreeFile, File rnFile ) {
+	public ClassifierLTreeThreaded( File reftreeFile, File rnFile ) {
 		rnm = parseRealNeighbors( rnFile );
 		splitmap = parseSplits( rnFile );
 		
@@ -331,8 +334,8 @@ public class ClassifierLTree {
 
 	}
     
-	TreeWithSplitCache oltsc = null;
-	File oltfile_cached = null;
+	
+	
 //	File oltFile_cached = null;
 //	LN oltree_cached;
 //	double oltDiameter_cached;
@@ -362,11 +365,9 @@ public class ClassifierLTree {
     	
 
     	//LN oltree;
-    	
+    	TreeWithSplitCache oltsc;	
 //    	double oltDiameter;
-    	if( true || oltsc == null || !oltfile_cached.equals(oltFile))
-        {
-    		oltfile_cached = oltFile;
+    	{
     		
             TreeParser tp = new TreeParser(oltFile);
             LN oltree = tp.parse();
@@ -541,7 +542,7 @@ public class ClassifierLTree {
                 }
         	}
         } catch (IOException ex) {
-            Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClassifierLTreeThreaded.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("bailing out");
         }
 		
@@ -700,7 +701,7 @@ public class ClassifierLTree {
             return map;
 
         } catch (IOException ex) {
-            Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClassifierLTreeThreaded.class.getName()).log(Level.SEVERE, null, ex);
 
             throw new RuntimeException( "bailing out");
         }
@@ -768,7 +769,7 @@ public class ClassifierLTree {
             return map;
 
         } catch (IOException ex) {
-            Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ClassifierLTreeThreaded.class.getName()).log(Level.SEVERE, null, ex);
 
             throw new RuntimeException( "bailing out");
         }

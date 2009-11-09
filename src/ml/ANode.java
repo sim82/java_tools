@@ -12,6 +12,11 @@ public class ANode {
     private String nodeLabel;
 	private int tipSerial;
 
+	// a multi purpose sequence field, for use in special/hacky code like
+	// sequence simulation
+	
+	public byte[] seq;
+	
     public boolean contentEquals( ANode other ) {
         if( this.isTip) {
             return other.isTip && this.tipName.equals(other.tipName) && this.support == other.support;
@@ -31,6 +36,7 @@ public class ANode {
         this.support = other.support;
     }
 
+    
 	public void setTipName(String name) {
 		assert( !isTip && name != null );
 		tipName = name;

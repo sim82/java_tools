@@ -121,7 +121,7 @@ public class FindSplit {
         final File split_outdir = new File( "/space/pruned_subtree/splits");
         final File blast_outdir = new File( "/space/pruned_subtree/blast");
         final int i = 0;
-        final String paddi = FindMinSupport.padchar( "" + 0, '0', 4);
+        final String paddi = FindMinSupport.padchar( "" + 0, 0, 4);
         
         if( CREATE_PRUNED_TREES ) {	
 	        File outfile = new File("/space/pruned_subtree/trees/", "" + set + "_" + paddi );
@@ -165,7 +165,7 @@ public class FindSplit {
 				
 				String subsuffix = ".gz";
 				
-				final boolean valid = createDegeneratedAlignment(mafile, new File(degen_alignoutdir, alignName + "_" + FindMinSupport.padchar("" + i, '0', 4) + "_" + j + subsuffix), bestSplit, len);
+				final boolean valid = createDegeneratedAlignment(mafile, new File(degen_alignoutdir, alignName + "_" + FindMinSupport.padchar("" + i, 0, 4) + "_" + j + subsuffix), bestSplit, len);
 				
 				if( !valid ) {
 					break;
@@ -189,9 +189,9 @@ public class FindSplit {
 
 					String subsuffix = ".gz";
 					String posid = FindMinSupport.subseqIdent(sp);
-					File alignOutfile = new File(subseq_alignoutdir, alignName + "_" + FindMinSupport.padchar("" + i, '0', 4) + "_" + ssLen + posid + subsuffix ); 
+					File alignOutfile = new File(subseq_alignoutdir, alignName + "_" + FindMinSupport.padchar("" + i, 0, 4) + "_" + ssLen + posid + subsuffix ); 
 					
-					File querybase = new File( subseq_queryoutdir, "" + set + "_" + FindMinSupport.padchar("" + i, '0', 4) + "_");
+					File querybase = new File( subseq_queryoutdir, "" + set + "_" + FindMinSupport.padchar("" + i, 0, 4) + "_");
 					String querysuffix = "_" + ssLen + FindMinSupport.subseqIdent(sp);
 					
 					createSubseqAlignment(mafile, alignOutfile, querybase.getPath(), querysuffix, bestSplit, ssLen, sp);

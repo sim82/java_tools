@@ -41,7 +41,7 @@ public class RedTrees {
 			
 			
 			try {
-				File outfile = new File( ".", infile.getName() + "_" + FindMinSupport.padchar("" + i, '0', 4 ) );
+				File outfile = new File( ".", infile.getName() + "_" + FindMinSupport.padchar("" + i, 0, 4 ) );
 				
 				final PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(outfile)));
 				TreePrinter.printRaw(res.nr, ps);
@@ -57,7 +57,7 @@ public class RedTrees {
 			String[] ssl = LN.getSmallerSplitSet(sbr);
 						
 			
-            rfw.println( FindMinSupport.padchar("" + i, '0', 4) + "\t" + res.n.data.getTipName() + "\t" + "*NONE*" + "\t" + FindMinSupport.commaSeparatedList(ssl));
+            rfw.println( FindMinSupport.padchar("" + i, 0, 4) + "\t" + res.n.data.getTipName() + "\t" + "*NONE*" + "\t" + FindMinSupport.commaSeparatedList(ssl));
         
 			
 		}
