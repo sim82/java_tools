@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -111,6 +112,9 @@ public class Tx implements Serializable {
 		
 		
 		ArrayList<String> esd = new ArrayList<String>();
+		Map<String,Integer>currentMappings = new HashMap<String, Integer>();
+		ArrayList<Integer>posToFm = new ArrayList<Integer>();
+		
 		while( st.hasMoreTokens() ) {
 			String token = st.nextToken();	
 			int ci = esd.size(); 
@@ -136,7 +140,19 @@ public class Tx implements Serializable {
 			if( name != null ) {
 				int cim = fms.size();
 				String tmpName = "./tmp_" + cim;
+				final String cname;
+				try {
+					cname = new File(name).getCanonicalPath();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					throw new RuntimeException( "bailing out." );
+				}
 				
+				
+				if( !currentMappings.containsKey(cname)) {
+					
+				}
 				FileMapping fm = new FileMapping( name, tmpName, ci );
 				fms.add(fm);
 			}

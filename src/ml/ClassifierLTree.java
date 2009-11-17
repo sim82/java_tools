@@ -208,27 +208,7 @@ public class ClassifierLTree {
     public static void main( String[] args ) throws FileNotFoundException, UnsupportedEncodingException {
 
     	
-    	if( !args[0].equals("--auto")) {
-	    	
-    		// WARNING: setting 'no prune' mode!
-    		ClassifierLTree.DO_PRUNE = false;
-    		
-    		// classic mode
-    		
-	        File dir = new File( args[0] );
-	        File rnFile = new File( args[1] );
-	
-	        File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
-	        File reftreeFile = new File( args[3] );
-	
-	        ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
-	        
-	        
-	        File classFile = new File( dir, "RAxML_classification." + args[2] );
-	
-	             
-	        clt.output( System.out, classFile, oltFile );
-    	} else {
+    	if( args[0].equals("--auto") || args[0].equals("--autoc")) {
     
     		// auto mode: convert all raxml output files in this directory
     		// usage:
@@ -236,6 +216,7 @@ public class ClassifierLTree {
     		// automode will work on all RAxML_classification* files in the cwd
     		// Output files are written to the subdir './ext'
     		
+    		final boolean cutsuffix = args[0].equals("--autoc");
     		
     		File rnFile = new File( args[1] );
     		File reftreeFile = new File( args[2] );
@@ -283,18 +264,38 @@ public class ClassifierLTree {
 	        		outDir.mkdir();
 	        	}
 	        	
-	        	
-	        	PrintStream out = new PrintStream( new BufferedOutputStream(new FileOutputStream(new File(outDir, classFile.getName() ))));
+				PrintStream out = new PrintStream( new BufferedOutputStream(new FileOutputStream(new File(outDir, classFile.getName() ))));
 	        	try {
-	        		clt.output( out, classFile, oltFile );
+	        		clt.output( out, classFile, oltFile, cutsuffix );
 	        	} catch( RuntimeException x ) {
 	        		x.printStackTrace();
 	        		System.out.printf( "error thrown at: %s %s\n", classFile.getName(), oltFile.getName() );
 	        		throw new RuntimeException( "bailing out finally" );
 	        	}
-	        	out.close();
+	        	out.close();						
+		    	
 	        }
 	
+    	} else {
+	    	
+    		// WARNING: setting 'no prune' mode!
+    		ClassifierLTree.DO_PRUNE = false;
+    		
+    		// classic mode
+    		
+	        File dir = new File( args[0] );
+	        File rnFile = new File( args[1] );
+	
+	        File oltFile = new File( dir, "RAxML_originalLabelledTree." + args[2] );
+	        File reftreeFile = new File( args[3] );
+	
+	        ClassifierLTree clt = new ClassifierLTree(reftreeFile, rnFile );
+	        
+	        
+	        File classFile = new File( dir, "RAxML_classification." + args[2] );
+	
+	             
+	        clt.output( System.out, classFile, oltFile, false );
     	}
     }
 
@@ -337,7 +338,7 @@ public class ClassifierLTree {
 //	LN oltree_cached;
 //	double oltDiameter_cached;
 	
-    private void output(PrintStream out, File classFile, File oltFile) {
+    private void output(PrintStream out, File classFile, File oltFile, boolean cutsuffix) {
     	// parse 'original labelled tree'
 //    	LN oltree;
 //    	double oltDiameter;
@@ -396,6 +397,8 @@ public class ClassifierLTree {
                     // the name of the classified taxon
                     String seq = ts.nextToken();
                     
+                    
+                    
                     String seqOrig = seq;
                     
                     int seqSubIdx = -1; 
@@ -405,8 +408,18 @@ public class ClassifierLTree {
                     	seq = seq.substring(0, atIdx);
                     	seqSubIdx = Integer.parseInt(seqOrig.substring( atIdx + 1 ));
                     }
-            
-            
+                   
+                    // this is really getting ugly: misuse the strange 'seqSubIdx' stuff to  allow for 
+                    // the removal of arbitrary suffixes connected by an underscore ...
+                    // ... I'm using using ugly code here to honor the conceptual ugliness us this feature.
+                    final int usIdx;
+                    if( cutsuffix && (usIdx = seq.lastIndexOf("_")) > 0 ) {
+                    	seq = seq.substring(0, usIdx);
+                    	seqSubIdx = Integer.parseInt(seqOrig.substring( usIdx + 1 ));
+                    	
+                    }
+              
+                    
                     if( prt == null || !prt.taxon.equals(seq)) {
                     	prt = new PrunedReftree(reftree, seq);
                     }
