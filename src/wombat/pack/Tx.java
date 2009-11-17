@@ -71,16 +71,18 @@ public class Tx implements Serializable {
 		 */
 		String origName;
 		String tmpName;
+		@Deprecated
 		int ci;
+		
 		byte[] storedFile;
 		boolean isExecutable;
 		boolean isGz; 
 		byte[] md5sum;
 		
-		public FileMapping( String origName, String tmpName, int ci ) {
+		public FileMapping( String origName, String tmpName ) {
 			this.origName = origName;
 			this.tmpName = tmpName;
-			this.ci = ci;
+			this.ci = -1;
 		}
 		
 		public void store() {
@@ -104,16 +106,17 @@ public class Tx implements Serializable {
 	
 	String[] es;
 	String[] esNew;
-	ArrayList<FileMapping> fms = new ArrayList<FileMapping>();
-	
+	FileMapping[] fms;
 	
 	public Tx( String localDir, String commandline ) {
 		StringTokenizer st = new StringTokenizer(commandline);
-		
+
+		ArrayList<FileMapping> fmsd = new ArrayList<FileMapping>();
+
 		
 		ArrayList<String> esd = new ArrayList<String>();
 		Map<String,Integer>currentMappings = new HashMap<String, Integer>();
-		ArrayList<Integer>posToFm = new ArrayList<Integer>();
+		Map<Integer,Integer>posToFm = new HashMap<Integer,Integer>();
 		
 		while( st.hasMoreTokens() ) {
 			String token = st.nextToken();	
@@ -138,8 +141,7 @@ public class Tx implements Serializable {
 			}
 			
 			if( name != null ) {
-				int cim = fms.size();
-				String tmpName = "./tmp_" + cim;
+				
 				final String cname;
 				try {
 					cname = new File(name).getCanonicalPath();
@@ -151,10 +153,17 @@ public class Tx implements Serializable {
 				
 				
 				if( !currentMappings.containsKey(cname)) {
+					int cim = fmsd.size();
+					String tmpName = "./tmp_" + cim;
 					
+					FileMapping fm = new FileMapping( cname, tmpName );
+					posToFm.put( ci, cim );
+					currentMappings.put( cname, cim );
+					fmsd.add(fm);
+				} else {
+					posToFm.put( ci, currentMappings.get( cname ));
 				}
-				FileMapping fm = new FileMapping( name, tmpName, ci );
-				fms.add(fm);
+				
 			}
 		}
 		
@@ -162,9 +171,14 @@ public class Tx implements Serializable {
 		es = esd.toArray( new String[esd.size()] );
 		esNew = es.clone();
 		
+		fms = fmsd.toArray( new FileMapping[fmsd.size()] );
+		
 		for( FileMapping fm : fms ) {
-			esNew[fm.ci] = fm.tmpName;
 			fm.store();
+		}
+		
+		for( Map.Entry<Integer,Integer> e : posToFm.entrySet() ) {
+			esNew[e.getKey()] = fms[e.getValue()].tmpName;
 		}
 		
 		String cmdNew = "";
