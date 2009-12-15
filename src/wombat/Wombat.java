@@ -1,7 +1,7 @@
 /*
  * wombat, the WOrry-free Multicore BATch-system
  * 
- * Copyright 2009 S. Berger
+ * Copyright 2009 Simon A. Berger
  * 
  *  This program is free software; you may redistribute it and/or modify its
  *  under the terms of the GNU General Public License as published by the Free
@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 
 import util.StringTools;
-import wombat.gui.Main;
 import wombat.pack.TxExec;
 
 

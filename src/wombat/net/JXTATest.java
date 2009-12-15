@@ -1,3 +1,6 @@
+/*
+ * 
+ */
 package wombat.net;
 
 import net.jxta.platform.NetworkConfigurator;

@@ -30,7 +30,6 @@ public class SimplePing2 {
 						e.printStackTrace();
 						throw new RuntimeException( "bailing out." );
 					}
-					ObjectInputStream
 				}
 			}
 		};
