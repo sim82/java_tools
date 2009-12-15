@@ -1,4 +1,4 @@
-package wombat.pack;
+package wombat.pack2;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -18,7 +18,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,16 +27,10 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import javax.management.RuntimeErrorException;
-
-import sun.security.provider.MD5;
-
 import wombat.StreamConsumerThread;
-import wombat.pack.Rx.RxFile;
 
 
 class TeeStreamConsumer extends Thread {
@@ -64,55 +57,28 @@ class TeeStreamConsumer extends Thread {
 }
 
 
-public class Tx implements Serializable {
+public class Tx {
 	final static long MAX_SIZE = 1024 * 1024 * 20;
-	static class FileMapping implements Serializable {
-		/**
-		 * 
-		 */
-		String origName;
-		String tmpName;
-		@Deprecated
-		int ci;
-		
-		byte[] storedFile;
-		boolean isExecutable;
-		boolean isGz; 
-		byte[] md5sum;
-		
-		public FileMapping( String origName, String tmpName ) {
-			this.origName = origName;
-			this.tmpName = tmpName;
-			this.ci = -1;
+	public static void store( TxData.FileMapping fm ) {
+		File f = new File(fm.origName);
+		if( !f.canRead() || !f.isFile() ) {
+			throw new RuntimeException( "cannot store file " + fm.origName	);
 		}
 		
-		public void store() {
-			File f = new File(origName);
-			if( !f.canRead() || !f.isFile() ) {
-				throw new RuntimeException( "cannot store file " + origName	);
-			}
-			
-			isExecutable = f.canExecute();
-			isGz = true;
-			md5sum = new byte[16];
-			
-			storedFile = Tx.readFile(f, isGz,  md5sum );
-			
-			String md5string = md5ToString( md5sum );
-			System.out.printf( "file stored: '%s' => '%s' %s\n", origName, tmpName, md5string );
-		}
-
+		fm.isExecutable = f.canExecute();
+		fm.isGz = true;
+		fm.md5sum = new byte[16];
 		
+		fm.storedFile = Tx.readFile(f, fm.isGz,  fm.md5sum );
+		
+		String md5string = md5ToString( fm.md5sum );
+		System.out.printf( "file stored: '%s' => '%s' %s\n", fm.origName, fm.tmpName, md5string );
 	}
 	
-	String[] es;
-	String[] esNew;
-	FileMapping[] fms;
-	
-	public Tx( String localDir, String commandline ) {
+	public static TxData TxNew( String localDir, String commandline ) {
 		StringTokenizer st = new StringTokenizer(commandline);
 
-		ArrayList<FileMapping> fmsd = new ArrayList<FileMapping>();
+		ArrayList<TxData.FileMapping> fmsd = new ArrayList<TxData.FileMapping>();
 
 		
 		ArrayList<String> esd = new ArrayList<String>();
@@ -132,9 +98,14 @@ public class Tx implements Serializable {
 			} else if( token.startsWith( "/" ) || token.startsWith("./") ){
 				
 				File probe = new File( token );
+				// FIXME: review this when there is more time: do we really want to check for WRITE access?
 				if( probe.isFile() && probe.canWrite() ) {
 					name = token;
 				} else {
+					if( token.startsWith( "/" ) ) {
+						System.out.printf( "WARNING: command contains reference to global file that could not be stored:.\n%s\n", token );
+					}
+					
 					name = null;
 				}
 			} else { 
@@ -157,7 +128,7 @@ public class Tx implements Serializable {
 					int cim = fmsd.size();
 					String tmpName = "./tmp_" + cim;
 					
-					FileMapping fm = new FileMapping( cname, tmpName );
+					TxData.FileMapping fm = new TxData.FileMapping( cname, tmpName );
 					posToFm.put( ci, cim );
 					currentMappings.put( cname, cim );
 					fmsd.add(fm);
@@ -168,22 +139,23 @@ public class Tx implements Serializable {
 			}
 		}
 		
+		TxData tx = new TxData();
 		
-		es = esd.toArray( new String[esd.size()] );
-		esNew = es.clone();
+		tx.es = esd.toArray( new String[esd.size()] );
+		tx.esNew = tx.es.clone();
 		
-		fms = fmsd.toArray( new FileMapping[fmsd.size()] );
+		tx.fms = fmsd.toArray( new TxData.FileMapping[fmsd.size()] );
 		
-		for( FileMapping fm : fms ) {
-			fm.store();
+		for( TxData.FileMapping fm : tx.fms ) {
+			store(fm);
 		}
 		
 		for( Map.Entry<Integer,Integer> e : posToFm.entrySet() ) {
-			esNew[e.getKey()] = fms[e.getValue()].tmpName;
+			tx.esNew[e.getKey()] = tx.fms[e.getValue()].tmpName;
 		}
 		
 		String cmdNew = "";
-		for( String e : esNew ) {
+		for( String e : tx.esNew ) {
 			if( cmdNew.length() > 0 ) {
 				cmdNew += " ";
 			}
@@ -193,6 +165,8 @@ public class Tx implements Serializable {
 		}
 		
 		System.out.printf( "command transformed:\n'%s'\n'%s'\n", commandline, cmdNew );
+		
+		return tx;
 	}
 	
 	
@@ -276,204 +250,10 @@ public class Tx implements Serializable {
 	}
 
 
-	Rx execute( File tmpRoot, boolean installHook ) {
-		Random rnd = new Random();
-		
-		
-		File tmpDir = null;
-		int i = 0;
-		while( tmpDir == null ) {
-			tmpDir = new File( tmpRoot, "pack_" + Math.abs(rnd.nextInt()) );
-			
-			if( tmpDir.isFile() || tmpDir.isDirectory() ) {
-				tmpDir = null;
-				
-			} else {
-				boolean ret = tmpDir.mkdir();
-				
-				if( !ret ) {
-					throw new RuntimeException( "mkdir returned false. bailing out. " + tmpDir );
-				}
-			}
-			
-			if( i > 10 ) {
-				throw new RuntimeException( "failed to create tmp dir after 10th attempt. bailing out." );
-			}
-			i++;
-		}
-		
-		
-		Set<String>rxExclude = new HashSet<String>();
-		
-		for( FileMapping fm : fms ) {
-			File tmpFile = new File( tmpDir, fm.tmpName );
-			if( tmpFile.isFile() || tmpFile.isDirectory() ) {
-				throw new RuntimeException( "temp file we want to create already exists!? bailing out." );
-			}
-			
-			if( fm.storedFile == null ) {
-				throw new RuntimeException( "WTF!? storedFile in FileMapping is null. bailing out.");
-			}
-	
-			byte[] md5sum = writeFile( tmpFile, fm.storedFile, fm.isExecutable, fm.isGz );
-			
-			if( !Arrays.equals(fm.md5sum, md5sum) ) {
-				System.out.printf( "bad md5sum for stored file '%s' => '%s'.\n%s vs. %s\n", fm.origName, fm.tmpName, md5ToString(md5sum), md5ToString(fm.md5sum) );
-			}
-			
-			try {
-				rxExclude.add(tmpFile.getCanonicalPath());
-			} catch (IOException e) {
-				e.printStackTrace();
-				
-				throw new RuntimeException("WTF!? tmpFile.getCanonicalPath failed. bailing out.");
-			}
-		}
-		
-		
-		
-		String[] esNewMod = new String[3];
-		esNewMod[0] = "/bin/bash";
-		esNewMod[1] = "-c";
-		esNewMod[2] = join( esNew );
-		
-	
-		ProcessBuilder pb = new ProcessBuilder( esNewMod );
-		pb.directory(tmpDir);
-		
-		try {
-			final boolean[] removeHook = {true}; // oh, well. strange problems call for strange solutions ...
-			final Process process = pb.start();
-			
-			final Thread shutdownHandler;
-			if( installHook ) {
-				shutdownHandler = new Thread() {
-					public void run() {
-						// if the shutdown is already in progress, prevent the removal of the shutdown hook later.
-						removeHook[0] = false;
-						process.destroy();
-					}
-				};
-				Runtime.getRuntime().addShutdownHook(shutdownHandler);
-			} else {
-				shutdownHandler = null;
-			}
-			
-			
-			StreamConsumerThread isc = new StreamConsumerThread(process.getInputStream(), new File(tmpDir, "out.txt"));
-			StreamConsumerThread esc = new StreamConsumerThread(process.getErrorStream(), new File(tmpDir, "err.txt"));
-			isc.start();
-			esc.start();
-			
-			try {
-				
-				
-				int ret = process.waitFor();
-				System.out.printf( "process returned: %d\n", ret );
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-				
-				System.out.printf( "interrupt exception\n" );
-				process.destroy();
-			} finally {
-				isc.interrupt();
-				esc.interrupt();
-				
-				try {
-					process.getInputStream().close();
-					
-				} catch (IOException e) {
-				
-				}
-				try {
-					process.getOutputStream().close();
-				} catch (IOException e) {
-				
-				}
-				try {
-					process.getErrorStream().close();
-				} catch (IOException e) {
-				
-				}
-				
-//				System.out.printf( "waiting for reader threads: %d\n", serial );
-//				try {
-//					isc.join();
-//					esc.join();
-//				} catch (InterruptedException e1) {
-//					// TODO Auto-generated catch block
-//					e1.printStackTrace();
-//				}
-
-				
-				//System.out.printf( "what happened?\n" );
-				
-				
-
-			}
-			
-			if( shutdownHandler != null && removeHook[0] ) {
-				Runtime.getRuntime().removeShutdownHook(shutdownHandler);
-			}
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		
-		Rx rx = new Rx(tmpDir, rxExclude);
-		
-		deleteTmpdir( tmpDir );
-		
-		
-		return rx;
-	}
 	
 	
 		
 	
-	private void deleteTmpdir(File tmpDir) {
-		for( File tdf : tmpDir.listFiles() ) {
-			if( tdf.isFile() && tdf.canRead() ) {
-				//String name = tdf.getName();
-				tdf.delete();
-				
-			}
-		}
-		tmpDir.delete();
-	}
-
-
-//	public static void main(String[] args) {
-//		Pack p = new Pack( ".", "%r%/mnt/nufa1/berger/mlali_pe/raxml-hpc/raxmlHPC -f A -m GTRGAMMA -t %r%/mnt/nufa1/berger/tree//redtree/RAxML_bipartitions.1604.BEST.WITH_0009 -s %r%/mnt/nufa1/berger/tree//dist_subseq_alignments/1604_0009_200_60 -n 1604_0009_200_60_A");
-//		try {
-//			ObjectOutputStream oos = new ObjectOutputStream( new BufferedOutputStream( new GZIPOutputStream(new FileOutputStream("/tmp/pack"))));
-//			oos.writeObject(p);
-//			oos.close();
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
-	
-	private String join(String[] l) {
-		String out = null;
-		
-		for( String s : l ) {
-			if( out == null ) {
-				out = s;
-			} else {
-				out += " " + s;
-			}
-		}
-		return out;
-	}
-
-
 	static byte[] writeFile(File tmpFile, byte[] storedFile, boolean isExecutable, boolean isGzip ) {
 		try {
 			MessageDigest digest;
@@ -522,11 +302,6 @@ public class Tx implements Serializable {
 
 
 	public static void main(String[] args) throws IOException {
-		
-		if( true ) {
-			throw new RuntimeException( "wombat.pack version1 is obsolete" );
-		}
-		
 		final String batchfile;
 		if( args.length > 0 ) {
 			batchfile = args[0];
@@ -548,7 +323,7 @@ public class Tx implements Serializable {
 		
 		while( ( line = br.readLine()) != null ) {
 			if( line.length() > 0 && !line.startsWith("#") ) {
-				System.out.printf( "start task: '%s'\n", line );
+				//System.out.printf( "start task: '%s'\n", line );
 				
 				final String cmd = line;
 				final int mySerial = serial;
@@ -557,7 +332,7 @@ public class Tx implements Serializable {
 					
 					@Override
 					public void run() {
-						Tx p = new Tx( ".", cmd );
+						TxData p = TxNew( ".", cmd );
 						try {
 							File txFile = new File( txDir, "tx_" + padnum(mySerial, 5));
 							//ObjectOutputStream oos = new ObjectOutputStream( new BufferedOutputStream( new GZIPOutputStream(new FileOutputStream(txFile))));

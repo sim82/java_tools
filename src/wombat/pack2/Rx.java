@@ -1,4 +1,4 @@
-package wombat.pack;
+package wombat.pack2;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -11,27 +11,24 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
-public class Rx implements Serializable {
+
+public class Rx {
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 7656276938725569281L;
 
-	static class RxFile implements Serializable {
-		String localName;
-		byte[] md5sum;
-		boolean isGzip;
-		byte[] data;
-	}
+	public static RxData RxNew(File tmpDir, Set<String> rxExclude) {
 	
-	
-	final RxFile[] rxfs;
-	public Rx(File tmpDir, Set<String> rxExclude) {
-	
-		ArrayList<RxFile> tmp = new ArrayList<RxFile>();
+		RxData rx = new RxData();
+		
+		ArrayList<RxData.RxFile> tmp = new ArrayList<RxData.RxFile>();
 		for( File tdf : tmpDir.listFiles() ) {
 			if( tdf.isFile() && tdf.canRead() ) {
 				//String name = tdf.getName();
@@ -40,7 +37,7 @@ public class Rx implements Serializable {
 					if( !rxExclude.contains(tdf.getCanonicalPath())) {
 					//	System.out.printf( "candidate for rx: %s\n", tdf );
 						
-						RxFile rxf = new RxFile();
+						RxData.RxFile rxf = new RxData.RxFile();
 						rxf.localName = tdf.getName();
 						
 						rxf.isGzip = true;
@@ -57,12 +54,14 @@ public class Rx implements Serializable {
 			}
 		}
 		
-		rxfs = tmp.toArray(new RxFile[tmp.size()]);
+		rx.rxfs = tmp.toArray(new RxData.RxFile[tmp.size()]);
+		
+		return rx;
 	}
 
 	
-	public void unpack( File outDir ) {
-		for( RxFile rxf : rxfs ) {
+	public static void unpack( RxData rx, File outDir ) {
+		for( RxData.RxFile rxf : rx.rxfs ) {
 			File outFile = new File( outDir, rxf.localName );
 			byte[] md5sum = Tx.writeFile( outFile, rxf.data, false, rxf.isGzip );
 			
@@ -72,7 +71,7 @@ public class Rx implements Serializable {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		final File in;
 		if( args.length > 0 ) {
@@ -92,10 +91,22 @@ public class Rx implements Serializable {
 				}
 			});
 			
+			//ExecutorService exec = Executors.newFixedThreadPool(2);
+			ExecutorService exec = Executors.newSingleThreadExecutor();
 			
-			for( File file : files ) {
-				rxExtract(file, new File("./"));
+			for( final File file : files ) {
+				exec.execute( new Runnable() {
+					
+					@Override
+					public void run() {
+						rxExtract(file, new File("./"));
+					}
+				});
+				
 			}
+			
+			exec.shutdown();
+			exec.awaitTermination(365 * 1000, TimeUnit.DAYS);
 		} else {
 			assert( in.isFile() );
 			File rxFile = in;
@@ -114,10 +125,10 @@ public class Rx implements Serializable {
 			} else {
 				ois = new ObjectInputStream( new BufferedInputStream( new FileInputStream(rxFile)));
 			}
-			Rx rx = (Rx) ois.readObject();
+			RxData rx = (RxData) ois.readObject();
 			
-			rx.unpack(outDir);
-			
+			unpack( rx, outDir);
+			System.out.printf( "unpacked %s. rt: %d %d\n", rxFile.getName(), (rx.timeStart - rx.timeFirst), (rx.timeEnd - rx.timeStart) / 1000 );
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

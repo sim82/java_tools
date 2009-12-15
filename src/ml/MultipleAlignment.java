@@ -16,11 +16,14 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
+
+import javax.management.RuntimeErrorException;
 
 /**
  *
@@ -548,6 +551,68 @@ public class MultipleAlignment implements Serializable {
 		ma.buildNameIndex();
 		
 		return ma;
+	}
+
+	public static MultipleAlignment loadFasta(File file) {
+		// TODO Auto-generated method stub
+		try {
+			return loadFasta( new FileReader(file));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "bailing out.");
+		}
+	}
+
+	private static MultipleAlignment loadFasta(FileReader fileReader) {
+		try {
+            BufferedReader r = new BufferedReader(fileReader);
+
+            ArrayList<String>names = new ArrayList<String>();
+            ArrayList<String>seqs = new ArrayList<String>();
+            
+            String curName = null;
+            String seqAcc = "";
+            String line;
+            while( (line = r.readLine()) != null ) {
+            	if( line.startsWith(">")) {
+            		if( curName != null ) {
+            			names.add(curName);
+            			seqs.add(seqAcc);
+            		}
+            		
+            		StringTokenizer st = new StringTokenizer(line.substring(1));
+            		curName = st.nextToken();
+            		seqAcc = "";
+            		
+            		
+            	} else if( curName != null ) {
+            		seqAcc += line;
+            	}
+            }
+    		if( curName != null ) {
+    			names.add(curName);
+    			seqs.add(seqAcc);
+    		}
+            int len = -1;
+    		for( String seq : seqs ) {
+    			if( len != -1 && len != seq.length()) {
+    				throw new RuntimeException( "sequences in fasta file have different lengths. cannot construct MultipleAlignment" );
+    			}
+    			
+    			len = seq.length();
+    		}
+            MultipleAlignment ma = new MultipleAlignment(len, names.toArray( new String[names.size()]), seqs.toArray(new String[seqs.size()]));
+
+            r.close();
+            return ma;
+
+        } catch (IOException ex) {
+            Logger.getLogger(MultipleAlignment.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException("bailing out");
+        }
+
+
 	}
 	
 }

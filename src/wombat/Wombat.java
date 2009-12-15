@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 
+import util.StringTools;
 import wombat.gui.Main;
 import wombat.pack.TxExec;
 
@@ -97,9 +98,9 @@ class CfgThread extends Thread {
 					for( Runnable x : q ) {
 						if( x instanceof MyRunnable ) {
 							MyRunnable mx = (MyRunnable) x;
-							System.out.printf( "%d: serial: %d cmd: '%s'\n", i, mx.getSerial(), mx.getCommand() );
+							System.out.printf( "%d: serial: %d info: %s\n", i, mx.getSerial(), mx.getInfo(false) );
 						} else {
-							System.out.printf( "%d: '%s'\n", i, q );
+							System.out.printf( "%d: '%s'\n", i, x );
 						}
 						i++;
 					}
@@ -112,12 +113,8 @@ class CfgThread extends Thread {
 					
 					
 					for( MyRunnable r : l ) {
-						String cmd = r.getCommand();
-						
-						if( !verbose ) {
-							cmd = "... " + cmd.substring(cmd.length() - 40);
-						}
-						
+
+//						
 						long t = timeNow - r.startTime(); 
 						String tstr;
 						if( t < 60000 ) {
@@ -130,7 +127,8 @@ class CfgThread extends Thread {
 							tstr = t / (60000 * 60 * 24) + "d";
 						}
 						
-						System.out.printf( "%d: serial: %d time: %s cmd: '%s'\n", i, r.getSerial(), tstr, cmd );
+//						System.out.printf( "%d: serial: %d time: %s cmd: '%s'\n", i, r.getSerial(), tstr, cmd );
+						System.out.printf( "%d: serial: %d time: %s info: %s\n", i, r.getSerial(), r.startTime(), r.getInfo(verbose) );
 						i++;
 					}
 				} else if( token.equals( "info")) {
@@ -215,12 +213,20 @@ public class Wombat {
 					
 					tpe.execute(txr);
 					serial++;
+				} else if( line.startsWith( "%tx2%" )) {
+					//System.out.printf( "start tx task: '%s'\n", line );
+					Runnable txr = wombat.pack2.TxExec.newRunnable( line, serial, rs );
+					
+					tpe.execute(txr);
+					serial++;
 				} else {
 					System.out.printf( "start task: '%s'\n", line );
 					
 					final ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", line );
-					MyRunnable mr = new MyRunnable(pb, serial, rs);
+					//MyRunnable mr = new MyRunnable(pb, serial, rs);
 				
+					MyRunnable mr = createProcessRunnable( pb, serial, rs );
+					
 					tpe.execute(mr);
 //					submitted.add( f );
 					serial++;
@@ -245,6 +251,134 @@ public class Wombat {
 		}
 	}
 	
+	private MyRunnable createProcessRunnable(final ProcessBuilder pb, final int serial,
+			RunnableSet rs2) {
+		
+
+		return new MyRunnable() {
+			
+			long startTime = -1;
+			Process process;
+			private StreamConsumerThread isc;
+			private StreamConsumerThread esc;
+			
+			@Override
+			public void run() {
+				System.out.printf( "running: %d\n", serial );
+				startTime = System.currentTimeMillis();
+				
+				try {
+					process = pb.start();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				String pserial = "task_" + StringTools.padchar( "" + serial, 0, 5 );
+				
+				isc = new StreamConsumerThread(process.getInputStream(), new File(pserial + ".out"));
+				esc = new StreamConsumerThread(process.getErrorStream(), new File(pserial + ".err"));
+				
+				String fc = getCommand();
+				isc.addComment( "stdout of task:\n" + fc + "\n" );
+				esc.addComment( "stderr of task:\n" + fc + "\n" );
+				
+				
+				isc.start();
+				esc.start();
+				rs.add(this);
+				try {
+					int ret = process.waitFor();
+//					System.out.printf( "wait for returned: %d\n", ret );
+					
+//					isc.stopPlease();
+//					esc.stopPlease();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					//e.printStackTrace();
+					System.out.printf( "got interrupt. killing process of task %d\n", serial );
+//					killProcess();
+					process.destroy();
+					
+				//	process.
+				}
+				
+				isc.interrupt();
+				esc.interrupt();
+				
+				try {
+					process.getInputStream().close();
+					
+				} catch (IOException e) {
+				
+				}
+				try {
+					process.getOutputStream().close();
+				} catch (IOException e) {
+				
+				}
+				try {
+					process.getErrorStream().close();
+				} catch (IOException e) {
+				
+				}
+				
+				
+//				System.out.printf( "waiting for reader threads: %d\n", serial );
+//				try {
+//					isc.join();
+//					esc.join();
+//				} catch (InterruptedException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+
+				
+				//System.out.printf( "what happened?\n" );
+				rs.remove(this);
+				
+				System.out.printf( "MyRunner exiting: %d\n", serial ); 
+				process = null;
+				
+			}
+			
+			@Override
+			public int getSerial() {
+				
+				return serial;
+			}
+
+			@Override
+			public String getInfo(boolean verbose) {
+				String cmd = getCommand();
+				
+				if( !verbose ) {
+					cmd = "... " + cmd.substring(cmd.length() - 40);
+				}
+				
+				return cmd;
+			}
+			
+			public String getCommand() {
+				String cmd = null;
+				for( String s : pb.command() ) {
+					if( cmd == null ) {
+						cmd = s;
+					} else {
+						cmd += " " + s;
+					}
+				}
+				
+				return cmd;
+			}
+
+			@Override
+			public long startTime() {
+				return startTime;
+			}
+		};
+	}
+
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		

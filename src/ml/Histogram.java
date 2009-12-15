@@ -8,6 +8,27 @@ import java.util.TreeMap;
 public class Histogram<T> {
 	SortedMap<T,Integer>	buckets = new TreeMap<T,Integer>();
 	
+	/*
+	 * there is most likely some bad integer math going on in the bin functions.
+	 * can't be bothered to check at the moment.
+	 */
+	public static int bin( float v, float min, float max, int nbins ) {
+		assert( max > min && v >= min && v <= max );
+		float range = max - min;
+		float vn = (v - min) / range; 
+		
+		return (int) (vn * nbins);
+		
+	}
+	
+	public static int bin( double v, double min, double max, int nbins ) {
+		assert( max > min && v >= min && v <= max );
+		double range = max - min;
+		double vn = (v - min) / range; 
+		
+		return (int) (vn * nbins);
+		
+	}
 	
 	public void add( T e ) {
 		

@@ -4,13 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
+
+
 
 public class NearestNeighborClass {
 	public final static boolean VERBOSE = false;
 	
 	static LN reftree;
 	static double reftreeDiameter; 
+	static Random rnd = new Random();
 	
 	public static void main(String[] args) {
 		if( args[1].equals("--auto")) {
@@ -119,6 +123,63 @@ public class NearestNeighborClass {
 			
 		
 			
+		} else if(args[1].equals("--autodist")) {
+			
+			String[] dp = {"200_60"};
+			
+			String ds = args[2];
+			
+			
+			
+			File radir = new File( "/space/dist_subseq_alignments");
+			File rtfile = new File( args[0] );
+			
+			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			
+			TreeParser tp = new TreeParser( rtfile );
+			reftree = tp.parse();
+			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
+			
+			boolean end = false;
+			for( int seq = 0; !end; seq++ ) {
+				end = true;
+				
+			
+				
+				for( String gap : dp ) {
+					
+					String sps = padzero(4, seq);
+					String name = ds + "_" + sps + "_" + gap;
+			
+					if( VERBOSE ) {
+						System.out.printf( "checking: %s\n", name );
+					}
+					
+					if(! new File(radir, name).isFile()) {
+						if( VERBOSE ) {
+							System.out.printf( "not found\n" );
+						}
+						name += ".gz";
+						if(! new File(radir, name).isFile()) {
+							continue;
+						}
+					}
+				
+					end = false;
+					
+					File treefile = new File( "/space/redtree/RAxML_bipartitions." + ds + ".BEST.WITH_" + sps);
+					File phyfile = new File( radir, name );
+					
+					wellDoItBootstrap( treefile, phyfile, sps, "" + gap, 3);
+					
+					
+					
+				}
+			}
+			
+			
+		
+			
 		} else {
 		
 			
@@ -154,6 +215,10 @@ public class NearestNeighborClass {
 	}
 
 	private static void wellDoIt( File treefile, File phyfile, String seq, String gap) {
+		wellDoIt(treefile, phyfile, seq, gap, -1);
+	}
+	
+	private static void wellDoIt( File treefile, File phyfile, String seq, String gap, int removeSuffix) {
 		LN tree;
 		{
 			TreeParser tp = new TreeParser( treefile );
@@ -187,9 +252,12 @@ public class NearestNeighborClass {
 
 		
 		ArrayList<String> queryNames = new ArrayList<String>();
+		Set<String> qnSet = new HashSet<String>();
 		for( String name : ma.names ) {
 			if( !taxonSet.contains(name)) {
 				queryNames.add( name );
+				qnSet.add(name);
+				//System.out.printf( "add query: %s\n", name );
 			}
 		}
 		
@@ -197,24 +265,31 @@ public class NearestNeighborClass {
 		
 		for( String qn : queryNames ) {
 			
+			String qnOrig = qn;
+			
 			if( VERBOSE ) {
 				System.out.printf( "query: %s\n", qn );
 			}
 			
 			String qs = ma.getSequence(qn);
 			
+			int[] ngm = nonGapMap(qs);
+			int[] ngm_bs = bsSample(ngm);
+			
 			int edMin = Integer.MAX_VALUE;
 			int idxMin = -1;
 			int nMin = 0;
 			for( int i = 0; i < ma.names.length; i++ ) {
 				String on = ma.names[i];
-				if( qn.equals(on)) {
+				if( qnSet.contains(on)) {
+					//System.out.printf( "drop: %s\n", on );
 					continue;
 				}
 				
 				String os = ma.getSequence(i);
 				
-				int ed = editDist_nogaps(qs, os);
+				int ed = editDist_explicit(qs, os, ngm_bs);
+				//int ed = editDist_nogaps(qs, os);
 				if( VERBOSE ) {
 					System.out.printf( "(%s %d) ", on, ed );
 				}
@@ -234,6 +309,10 @@ public class NearestNeighborClass {
 				System.out.printf( "\nbest: %d %d %s\n", edMin, idxMin, ma.names[idxMin] );
 			}
 
+			if( removeSuffix > 0 ) {
+				qn = qn.substring(0, qn.length() - removeSuffix );
+			}
+			
 		    LN reftreePruned = LN.deepClone(reftree);
 		    LN[] opb = LN.removeTaxon(reftreePruned, qn);
 		
@@ -259,7 +338,7 @@ public class NearestNeighborClass {
 		    		double lenOT = ClassifierLTree.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
 		            int ndOT = fuck[0];
 		            if( seq != null && gap != null ) {
-		            	System.out.printf( "%s\t%s\t%d\t%f\t%f\t%d\t%d\t%s\n", seq, gap, ndOT, lenOT, lenOT/reftreeDiameter, nMin, edMin, qn );
+		            	System.out.printf( "%s\t%s\t%d\t%f\t%f\t%d\t%d\t%s\t%s\n", seq, gap, ndOT, lenOT, lenOT/reftreeDiameter, nMin, edMin, qn, qnOrig );
 		            } else {
 		            	System.out.printf( "%d %f\n", ndOT, lenOT );
 		            }
@@ -270,7 +349,287 @@ public class NearestNeighborClass {
 			
 		}
 	}
+	static void wellDoItBootstrap( File treefile, File phyfile, String seq, String gap, int removeSuffix) {
+		LN tree;
+		{
+			TreeParser tp = new TreeParser( treefile );
+			tree = tp.parse();
+		}
+		
+		Set<String> taxonSet = new HashSet<String>();
+		
+		
+		{
+			LN[] list = LN.getAsList(tree);
+			for( LN n : list ) {
+				if( n.data.isTip ) {
+					taxonSet.add( n.data.getTipName());
+				}
+			}
+		}
+		
+		
+		
+		
+		MultipleAlignment ma;
+		try {
+			ma = MultipleAlignment.loadPhylip(GZStreamAdaptor.open(phyfile));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "bailing out");
+		} 
+		
 
+		
+		ArrayList<String> queryNames = new ArrayList<String>();
+		Set<String> qnSet = new HashSet<String>();
+		for( String name : ma.names ) {
+			if( !taxonSet.contains(name)) {
+				queryNames.add( name );
+				qnSet.add(name);
+				//System.out.printf( "add query: %s\n", name );
+			}
+		}
+		
+//		System.out.printf( "n tree: %d, n ma: %d\n", taxonSet.size(), ma.names.length );
+		
+		final int N_REP = 100;
+		
+		for( String qn : queryNames ) {
+			
+			String qnOrig = qn;
+			
+			if( VERBOSE ) {
+				System.out.printf( "query: %s\n", qn );
+			}
+			
+			String qs = ma.getSequence(qn);
+			
+			int[] ngm = nonGapMap(qs);
+		
+			int[] dist_bs = new int[N_REP];
+			
+			if( removeSuffix > 0 ) {
+				qn = qn.substring(0, qn.length() - removeSuffix );
+			}
+			LN reftreePruned = LN.deepClone(reftree);
+		    LN[] opb = LN.removeTaxon(reftreePruned, qn);
+		
+		    
+			for( int bs = 0; bs < N_REP; bs++ ) {
+				int[] ngm_bs = bsSample(ngm);
+				
+				int edMin = Integer.MAX_VALUE;
+				int idxMin = -1;
+				int nMin = 0;
+				for( int i = 0; i < ma.names.length; i++ ) {
+					String on = ma.names[i];
+					if( qnSet.contains(on)) {
+						//System.out.printf( "drop: %s\n", on );
+						continue;
+					}
+					
+					String os = ma.getSequence(i);
+					
+					int ed = editDist_explicit(qs, os, ngm_bs);
+					//int ed = editDist_nogaps(qs, os);
+					if( VERBOSE ) {
+						System.out.printf( "(%s %d) ", on, ed );
+					}
+					
+					if( ed < edMin ) {
+						edMin = ed;
+						idxMin = i;
+						
+						nMin = 1;
+					} else if( ed == edMin ) {
+						nMin++;
+					}
+					
+				}
+				
+				if( VERBOSE ) {
+					System.out.printf( "\nbest: %d %d %s\n", edMin, idxMin, ma.names[idxMin] );
+				}
+	
+			
+				
+			    
+			    //String[] ois = splitmap.get(qn);
+			    String nnName = ma.names[idxMin];
+			    
+			    LN[] list = LN.getAsList(reftreePruned);
+			    
+			    for( LN n : list ) {
+			    	if( n.data.isTip( nnName )) {
+			    		
+			    	
+			    		n = LN.getTowardsTree(n);
+			    		
+			    		LN[] ipb = {n, n.back};
+			    		
+			    		int[] fuck = {0, 0};
+			    		double lenOT = ClassifierLTree.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
+
+			    		dist_bs[bs] = fuck[0];
+			    		
+			    		//			            int ndOT = fuck[0];
+//			            if( seq != null && gap != null ) {
+//			            	System.out.printf( "%s\t%s\t%d\t%f\t%f\t%d\t%d\t%s\t%s\n", seq, gap, ndOT, lenOT, lenOT/reftreeDiameter, nMin, edMin, qn, qnOrig );
+//			            } else {
+//			            	System.out.printf( "%d %f\n", ndOT, lenOT );
+//			            }
+			    		
+			    		break;
+			    	}
+			    }
+				
+			}
+			
+			double ndOT = rmsd(dist_bs);
+        	System.out.printf( "%s\t%s\t%f\t%f\t%f\t%d\t%d\t%s\t%s\n", seq, gap, ndOT, 0.0, 0.0, 0, 0, qn, qnOrig );
+		}
+	}
+	private static int[] bsSample(int[] ngm) {
+		int[] bs_ngm = new int[ngm.length];
+		
+		for( int i = 0; i < bs_ngm.length; i++ ) {
+			bs_ngm[i] = ngm[rnd.nextInt(ngm.length)];
+		}
+		return bs_ngm;
+	}
+
+	static double rmsd( int[] dist ) {
+		double sum_squares = 0.0;
+		
+		for( int _d : dist ) {
+			double d = (double)_d;
+			sum_squares += (d * d);
+		}
+		
+		double mean_squares = sum_squares / dist.length;
+		return Math.sqrt(mean_squares);
+	}
+	
+	//	private static void wellDoIt( File treefile, File phyfile, String[] seq ) {
+//		LN tree;
+//		{
+//			TreeParser tp = new TreeParser( treefile );
+//			tree = tp.parse();
+//		}
+//		
+//		Set<String> taxonSet = new HashSet<String>();
+//		
+//		
+//		{
+//			LN[] list = LN.getAsList(tree);
+//			for( LN n : list ) {
+//				if( n.data.isTip ) {
+//					taxonSet.add( n.data.getTipName());
+//				}
+//			}
+//		}
+//		
+//		
+//		
+//		
+//		MultipleAlignment ma;
+//		try {
+//			ma = MultipleAlignment.loadPhylip(GZStreamAdaptor.open(phyfile));
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			throw new RuntimeException( "bailing out");
+//		} 
+//		
+//
+//		
+//		ArrayList<String> queryNames = new ArrayList<String>();
+//		for( String name : ma.names ) {
+//			if( !taxonSet.contains(name)) {
+//				queryNames.add( name );
+//			}
+//		}
+//		
+////		System.out.printf( "n tree: %d, n ma: %d\n", taxonSet.size(), ma.names.length );
+//		
+//		for( String qn : queryNames ) {
+//			
+//			if( VERBOSE ) {
+//				System.out.printf( "query: %s\n", qn );
+//			}
+//			
+//			String qs = ma.getSequence(qn);
+//			
+//			int edMin = Integer.MAX_VALUE;
+//			int idxMin = -1;
+//			int nMin = 0;
+//			for( int i = 0; i < ma.names.length; i++ ) {
+//				String on = ma.names[i];
+//				if( qn.equals(on)) {
+//					continue;
+//				}
+//				
+//				String os = ma.getSequence(i);
+//				
+//				int ed = editDist_nogaps(qs, os);
+//				if( VERBOSE ) {
+//					System.out.printf( "(%s %d) ", on, ed );
+//				}
+//				
+//				if( ed < edMin ) {
+//					edMin = ed;
+//					idxMin = i;
+//					
+//					nMin = 1;
+//				} else if( ed == edMin ) {
+//					nMin++;
+//				}
+//				
+//			}
+//			
+//			if( VERBOSE ) {
+//				System.out.printf( "\nbest: %d %d %s\n", edMin, idxMin, ma.names[idxMin] );
+//			}
+//
+//		    LN reftreePruned = LN.deepClone(reftree);
+//		    LN[] opb = LN.removeTaxon(reftreePruned, qn);
+//		
+//		    //String[] ois = splitmap.get(qn);
+//		    String nnName = ma.names[idxMin];
+//		    
+//		    if( false ) {
+//		    	System.out.printf( "%s\n%s\n", qs, ma.data[idxMin] );
+//		    }
+//		    
+//		    LN[] list = LN.getAsList(reftreePruned);
+//		    
+//		    for( LN n : list ) {
+//		    	if( n.data.isTip( nnName )) {
+//		    		
+//		    		int wc = 0;
+//		    		
+//		    		n = LN.getTowardsTree(n);
+//		    		
+//		    		LN[] ipb = {n, n.back};
+//		    		
+//		    		int[] fuck = {0, 0};
+//		    		double lenOT = ClassifierLTree.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
+//		            int ndOT = fuck[0];
+//		            if( seq != null && gap != null ) {
+//		            	System.out.printf( "%s\t%s\t%d\t%f\t%f\t%d\t%d\t%s\n", seq, gap, ndOT, lenOT, lenOT/reftreeDiameter, nMin, edMin, qn );
+//		            } else {
+//		            	System.out.printf( "%d %f\n", ndOT, lenOT );
+//		            }
+//		    		
+//		    		break;
+//		    	}
+//		    }
+//			
+//		}
+//	}
+//	
 	private static String padzero(int nc, int n) {
 		String s = "" + n;
 		while( s.length() < nc ) {
@@ -376,6 +735,40 @@ public class NearestNeighborClass {
 			qge = qg;
 			oge = og;
 			
+		}
+		
+		return ed;
+	}
+	
+	static int[] nonGapMap( String qs ) {
+		int l = qs.length();
+		int nng = 0;
+		for( int i = 0; i < l; i++ ) {
+			if( qs.charAt(i) != '-') {
+				nng++;
+			}
+		}
+		
+		int[] ngm = new int[nng];
+		
+		for( int i = 0, j = 0; i < l; i++ ) {
+			if( qs.charAt(i) != '-') {
+				ngm[j] = i;
+				j++;
+			}
+		}
+		
+		return ngm;
+	}
+	
+	public static int editDist_explicit( String qs, String os, int[] pos ) {
+		int ed = 0;
+		
+		for( int p : pos ) {
+			char osc = os.charAt(p);
+			if( qs.charAt(p) != osc ) {
+				ed++;
+			}
 		}
 		
 		return ed;
