@@ -114,7 +114,7 @@ public class MultipleAlignment implements Serializable {
                     throw new RuntimeException("wrong sequence length: " + data.length() + " vs " + seqLen );
                 }
                 ma.names[i] = name;
-                ma.data[i] = data;
+                ma.data[i] = data.toUpperCase();
                 
             }
 
