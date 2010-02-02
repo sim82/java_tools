@@ -137,7 +137,7 @@ public class NearestNeighborClass {
 			TreeParser tp = new TreeParser(rtfile);
 			reftree = tp.parse();
 			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
-			final boolean DO_BS = !false;
+			final boolean DO_BS = true;
 
 			boolean end = false;
 			for (int seq = 0; !end; seq++) {
@@ -404,8 +404,12 @@ public class NearestNeighborClass {
 
 			int[] ngm = nonGapMap(qs);
 
-			int[] dist_bs = new int[N_REP];
+			int[] nd_bs = new int[N_REP];
+			
+			double[] bdn_bs = new double[N_REP];
+			double[] bd_bs = new double[N_REP];
 
+			
 			if (removeSuffix > 0) {
 				qn = qn.substring(0, qn.length() - removeSuffix);
 			}
@@ -465,8 +469,11 @@ public class NearestNeighborClass {
 						double lenOT = ClassifierLTree
 								.getPathLenBranchToBranch(opb, ipb, 0.5, fuck);
 
-						dist_bs[bs] = fuck[0];
-
+						nd_bs[bs] = fuck[0];
+						bd_bs[bs] = lenOT;
+						bdn_bs[bs] = lenOT / reftreeDiameter;
+						
+						
 						// int ndOT = fuck[0];
 						// if( seq != null && gap != null ) {
 						// System.out.printf(
@@ -483,9 +490,12 @@ public class NearestNeighborClass {
 
 			}
 
-			double ndOT = rmsd(dist_bs);
+			double ndOT = rmsd(nd_bs);
+			double bd = rmsd(bd_bs);
+			double bdn = rmsd( bdn_bs );
+			
 			System.out.printf("%s\t%s\t%f\t%f\t%f\t%d\t%d\t%s\t%s\n", seq, gap,
-					ndOT, 0.0, 0.0, 0, 0, qn, qnOrig);
+					ndOT, bd, bdn, 0, 0, qn, qnOrig);
 		}
 	}
 
@@ -510,6 +520,17 @@ public class NearestNeighborClass {
 		return Math.sqrt(mean_squares);
 	}
 
+	static double rmsd(double[] dist) {
+		double sum_squares = 0.0;
+
+		for (double d : dist) {
+			sum_squares += (d * d);
+		}
+
+		double mean_squares = sum_squares / dist.length;
+		return Math.sqrt(mean_squares);
+	}
+	
 	// private static void wellDoIt( File treefile, File phyfile, String[] seq )
 	// {
 	// LN tree;

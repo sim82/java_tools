@@ -64,6 +64,17 @@ public class LN {
 		return list;
 	}
 
+	public static String[] getBranchNameList( LN n ) {
+		LN[][] brl = getBranchList(n);
+		
+		String[] nl = new String[brl.length];
+		for( int i = 0; i < nl.length; i++ ) {
+			nl[i] = brl[i][0].backLabel;
+		}
+		
+		return nl;
+	}
+	
 	public static LN[][] getBranchList( LN n ) 
 	{	if( n.data.isTip ) 
 		{	throw new RuntimeException("we don't like tips!");
