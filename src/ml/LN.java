@@ -131,13 +131,44 @@ public class LN {
 			getAllBranchListForward(n.next.next.back, list);
 		}
 	}
+    
+    public static LN[][] getAllBranchList2( LN n ) 
+	{	if( n.data.isTip ) 
+		{	throw new RuntimeException("we don't like tips!");
+		}
+		
+		ArrayList<LN[]> list = new ArrayList<LN[]>();
+		
+		getAllBranchListForward(n, list);
+		getAllBranchListForward(n.next, list);
+		getAllBranchListForward(n.next.next, list);
+		
+		return list.toArray(new LN[list.size()][]);
+	}
+	
+    private static void getAllBranchList2Forward(LN n,
+			ArrayList<LN[]> list) 
+    {	
+    	if( n == null ) {
+    		return;
+    	}
+    	LN[] b = {n, n.back};
+		branchSanityCheck(b);
+		list.add(b);
+    			
+		getAllBranchListForward(n.next.back, list);
+		getAllBranchListForward(n.next.next.back, list);
+		
+	}
+    
+    
 	public static void branchSanityCheck(LN[] b) {
 		boolean x = (b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel;
 		
 		
-		if( ((b[0].backLabel != null && b[1].backLabel != null) && b[0].backLabel.equals(b[1].backLabel)) 
+		if( ((b[0].backLabel != null && b[1].backLabel != null) && !b[0].backLabel.equals(b[1].backLabel)) 
 			|| ((b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel)) 
-		{	throw new RuntimeException("! b[0].backLabel.equals(b[1].backLabel)");
+		{	throw new RuntimeException("! b[0].backLabel.equals(b[1].backLabel): " + b[0].backLabel + " " + b[1].backLabel);
 		}
 		if( b[0].backLen != b[1].backLen )
 		{	throw new RuntimeException( "b[0].backLen != b[1].backLen" );
@@ -215,19 +246,14 @@ public class LN {
     }
 
 	static LN getTowardsNonTip(LN n) {
-		LN start = n;
-		LN cur = n.next;
-
-		while (cur != start) {
-// FIXME: is this right
-			cur = cur.next;
-
-			if (!cur.back.data.isTip) {
+		for( int i = 0; i < 3; i++, n = n.next) {
+			if (!n.back.data.isTip) {
 				break;
 			}
 		}
-
-		return cur;
+		
+		return n;
+		
 	}
 
     static LN getTowardsTip(LN n) {
@@ -454,6 +480,13 @@ public class LN {
                 node.back.next.back.backLen = newLen;
                 node.back.next.next.back.backLen = newLen;
                 
+                double newSupport = Math.min(node.back.next.back.backSupport, node.back.next.next.back.backSupport);
+                //System.out.printf( "remove: %f %f %f\n", node.back.next.back.backSupport, node.back.next.next.back.backSupport, newSupport );
+                node.back.next.back.backSupport = newSupport;
+                node.back.next.next.back.backSupport = newSupport;
+                
+                
+                
                 node.back.next.back.back = node.back.next.next.back;
                 node.back.next.next.back.back = node.back.next.back;
 
@@ -567,6 +600,31 @@ public class LN {
 		}
 	}
 
+	public static double longestPathCorrected( LN n ) {
+		if( !n.data.isTip ) {
+			throw new RuntimeException("this method is only for tips");
+		}
+
+
+		n = LN.getTowardsTree(n);
+
+		return (n.backLen/2) + longestPathRec( n.back );
+	}
+
+
+	public static double longestPathCorrectedRec( LN n ) {
+		if( n.data.isTip ) {
+			// ouch! I hope this works
+			return -(n.backLen / 2);
+		} else {
+			double len1 = longestPathRec(n.next.back) + n.next.backLen;
+			double len2 = longestPathRec(n.next.next.back) + n.next.next.backLen;
+
+			return Math.max(len1, len2);
+
+		}
+	}
+	
     public static LN deepCloneDirected( LN n, LN prev ) {
         assert( n.data == n.next.data && n.data == n.next.next.data );
 
@@ -715,6 +773,10 @@ public class LN {
 //			System.out.printf( "%s\n", s );
 //		}
 		
+		int nn1 = LN.countNodes(ref[0]);
+		int nn2 = LN.countNodes(other);
+		
+		//System.out.printf( "counts: %d %d\n", nn1, nn2 );
 		
 		LN[] ll = LN.getAsList(ref[0], false);
 		LN[] lr = LN.getAsList(ref[1], false);
@@ -865,5 +927,37 @@ public class LN {
 		
 		return nt;
 	}
+
+	static LN getNonTipNode( LN n ) {
+		return LN.getNonTipNode(n, true);
+	}
+	static LN getNonTipNode( LN n, boolean back ) {
+		if( n == null ) {
+			return null;
+		} else if( !n.data.isTip && !n.back.data.isTip ) {
+			return n;
+		} else {
+			LN good = null;
+			
+			if( back ) { 
+				good = getNonTipNode(n.back, false );
+				
+				if( good != null ) {
+					return good;
+				}
+			}
+			
+			good = getNonTipNode(n.next.back, false);
+			if( good != null ) {
+				return good;
+			}
+			good = getNonTipNode(n.next.next.back, false);
+			
+			return good;
+			
+		}
+		
+		
+	}	
 	
 }

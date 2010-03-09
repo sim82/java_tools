@@ -23,7 +23,7 @@ public class GigaRx {
 			try {
 				rxsock.receive(rxp);
 				
-				//System.out.printf( "received packet of length: %d from %s\n", rxp.getLength(), rxp.getAddress().toString() );
+				System.out.printf( "received packet of length: %d from %s\n", rxp.getLength(), rxp.getAddress().toString() );
 		
 				i++;
 				if( i % 1000 == 0 ) {

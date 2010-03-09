@@ -288,7 +288,7 @@ public class ClassifierLTree {
     	} else {
 	    	
     		// WARNING: setting 'no prune' mode!
-    		ClassifierLTree.DO_PRUNE = false;
+    		ClassifierLTree.DO_PRUNE = !false;
     		
     		// classic mode
     		
