@@ -567,6 +567,31 @@ public class LN {
 		}
 	}
 
+	public static double longestPathCorrected( LN n ) {
+		if( !n.data.isTip ) {
+			throw new RuntimeException("this method is only for tips");
+		}
+
+
+		n = LN.getTowardsTree(n);
+
+		return (n.backLen/2) + longestPathRec( n.back );
+	}
+
+
+	public static double longestPathCorrectedRec( LN n ) {
+		if( n.data.isTip ) {
+			// ouch! I hope this works
+			return -(n.backLen / 2);
+		} else {
+			double len1 = longestPathRec(n.next.back) + n.next.backLen;
+			double len2 = longestPathRec(n.next.next.back) + n.next.next.backLen;
+
+			return Math.max(len1, len2);
+
+		}
+	}
+	
     public static LN deepCloneDirected( LN n, LN prev ) {
         assert( n.data == n.next.data && n.data == n.next.next.data );
 

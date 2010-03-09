@@ -42,7 +42,7 @@ public class TreeParser {
 		TreeParser tp = new TreeParser(f);
 		return tp.parse();
 	}
-	
+	static boolean QUIET = false;
 //	public TreeParser(String input) {
 //	//	this.input = input;
 //		this.inputA = input.toCharArray();
@@ -114,6 +114,10 @@ public class TreeParser {
 	}
 
 	public void printLocation() {
+		if( QUIET ) {
+			return;
+		}
+		
 		int pos1 = Math.max(0, ptr - 40);
 		int pos2 = Math.min(inputA.length, ptr + 40);
 
@@ -488,5 +492,14 @@ public class TreeParser {
 		return nInnerNodes;
 	}
 
+	public static void main(String[] args) {
+		TreeParser.QUIET = true;
+		try {
+			LN t = TreeParser.parse(new File( args[0] ));
+			System.out.printf( "good\n" );
+		} catch( RuntimeException e ) {
+			System.out.printf( "bad\n" );
+		}
+	}
 
 }

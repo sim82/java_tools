@@ -125,7 +125,7 @@ public class NearestNeighborClass {
 
 		} else if (args[1].equals("--autodist")) {
 
-			String[] dp = { "200_60" };
+			String[] dp = { "70_20" };
 
 			String ds = args[2];
 
@@ -137,7 +137,7 @@ public class NearestNeighborClass {
 			TreeParser tp = new TreeParser(rtfile);
 			reftree = tp.parse();
 			reftreeDiameter = ClassifierLTree.treeDiameter(reftree);
-			final boolean DO_BS = true;
+			final boolean DO_BS = false;
 
 			boolean end = false;
 			for (int seq = 0; !end; seq++) {
