@@ -685,7 +685,7 @@ public class ClassifierLTree {
     
     
     
-    private static Map<String, String> parseRealNeighbors(File rnFile) {
+    public static Map<String, String> parseRealNeighbors(File rnFile) {
         try {
             BufferedReader r = new BufferedReader(new FileReader(rnFile));
 

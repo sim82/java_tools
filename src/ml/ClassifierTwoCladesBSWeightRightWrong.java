@@ -14,17 +14,17 @@ import com.sun.jmx.remote.util.OrderClassLoaders;
 
 import ml.ClassifierOutput.Res;
 
-public class ClassifierTwoCladesBSWeight {
+public class ClassifierTwoCladesBSWeightRightWrong {
 	static class Res {
 		String name;
-		double wgh1;
-		double wgh2;
+		double wghr;
+		double wghw;
 		double wghog;
 		
 		Res( String name, double wgh1, double wgh2, double wghog ) {
 			this.name = name;
-			this.wgh1 = wgh1;
-			this.wgh2 = wgh2;
+			this.wghr = wghr;
+			this.wghw = wghw;
 			this.wghog = wghog;
 		}
 	}
@@ -34,7 +34,9 @@ public class ClassifierTwoCladesBSWeight {
 		File classFile = new File( args[1] );
 			
 		String outgroup = args[2];
+		File rnFile = new File( args[3] );
 		
+		Map<String, String[]> splitMap = ClassifierLTree.parseSplits(rnFile);
 		
 		LN n = TreeParser.parse(treeFile);
 		
@@ -46,6 +48,23 @@ public class ClassifierTwoCladesBSWeight {
 		Set<String> nl1 = getBranchLabelSet( LN.getAsList(t1.back, false) );
 		Set<String> nl2 = getBranchLabelSet( LN.getAsList(t2.back, false) );
 		
+		Set<String> tl1 = LN.getTipSet( LN.getAsList(t1.back, false) );
+		Set<String> tl2 = LN.getTipSet( LN.getAsList(t2.back, false) );
+		
+		
+		
+		if( false ) {
+			String tl1s = "";
+			String tl2s = "";
+			for( String s : tl1 ) {
+				tl1s += " " + s;
+			}
+			for( String s : tl2 ) {
+				tl2s += " " + s;
+			}
+			System.out.printf( "set1: %s\n", tl1s );
+			System.out.printf( "set2: %s\n", tl2s );
+		}
 //		System.out.println( "b1:");
 //		print( nl1 );
 //		
@@ -62,6 +81,11 @@ public class ClassifierTwoCladesBSWeight {
 		Map<String,Res> orm = new TreeMap<String, Res>();
 		
 		for( ClassifierOutput.Res res : cf.reslist ) {
+
+			String rb = LN.findBranchBySplit(n, splitMap.get(res.seq))[0].backLabel;
+			
+			
+			
 //			String seq = res.seq + "_" + res.support;
 			String seq = res.seq;
 			Res or = orm.get(res.seq);
@@ -72,10 +96,10 @@ public class ClassifierTwoCladesBSWeight {
 			}
 			
 			
-			if( nl1.contains(res.branch)) {
-				or.wgh1 += res.support;
-			} else if( nl2.contains(res.branch)) {
-				or.wgh2 += res.support;
+			if( (nl1.contains(res.branch) && nl1.contains(rb)) || (nl2.contains(res.branch) && nl2.contains(rb))) {
+				or.wghr += res.support;
+			} else if((nl1.contains(res.branch) && nl2.contains(rb)) || (nl2.contains(res.branch) && nl1.contains(rb))){
+				or.wghw += res.support;
 			} else {
 				or.wghog += res.support;
 			}
@@ -87,16 +111,16 @@ public class ClassifierTwoCladesBSWeight {
 //		}
 		
 		
-		ml.ClassifierTwoCladesBSWeight.Res[] orl = orm.values().toArray(new Res[orm.size()]);
+		ml.ClassifierTwoCladesBSWeightRightWrong.Res[] orl = orm.values().toArray(new Res[orm.size()]);
 		Arrays.sort(orl, new Comparator<Res>() {
 
 			@Override
-			public int compare(ml.ClassifierTwoCladesBSWeight.Res o1,
-					ml.ClassifierTwoCladesBSWeight.Res o2) {
+			public int compare(ml.ClassifierTwoCladesBSWeightRightWrong.Res o1,
+					ml.ClassifierTwoCladesBSWeightRightWrong.Res o2) {
 				// TODO Auto-generated method stub
 				
-				int w1 = (int)o1.wgh1 - (int)o1.wgh2 - (int)o1.wghog * 10;
-				int w2 = (int)o2.wgh1 - (int)o2.wgh2 - (int)o2.wghog * 10;
+				int w1 = (int)o1.wghr - (int)o1.wghw - (int)o1.wghog * 10;
+				int w2 = (int)o2.wghr - (int)o2.wghw - (int)o2.wghog * 10;
 				
 				if( w1 < w2 ) {
 					return 1;
@@ -110,7 +134,7 @@ public class ClassifierTwoCladesBSWeight {
 		});
 		
 		for( Res res : orl ) {
-			System.out.printf( "%s\t%f\t%f\t%f\n", res.name, res.wgh1, res.wgh2, res.wghog );
+			System.out.printf( "%s\t%f\t%f\t%f\n", res.name, res.wghr, res.wghw, res.wghog );
 		}
 	}
 	
