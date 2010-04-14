@@ -34,7 +34,9 @@ import wombat.RunnableSet;
 import wombat.StreamConsumerThread;
 
 public class TxExec {
-	static RxData execute( TxData tx, File tmpRoot, boolean installHook ) {
+	static boolean noCleanup = false;
+	
+	public static RxData execute( TxData tx, File tmpRoot, boolean installHook ) {
 		Random rnd = new Random();
 		long firstTime = System.currentTimeMillis();
 		
@@ -190,8 +192,11 @@ public class TxExec {
 		rx.timeStart = startTime;
 		rx.timeEnd = endTime;
 		
-		deleteTmpdir( tmpDir );
-		
+		if( !noCleanup ) {
+			deleteTmpdir( tmpDir );
+		} else {
+			System.out.printf( "keeping temdir %s\n", tmpDir ) ;
+		}
 		
 		return rx;
 	}
@@ -214,6 +219,10 @@ public class TxExec {
 		} else {
 			tmpDir = new File( "/space/pack_tmp"); 
 		}
+		
+		
+		noCleanup = args.length > 2 && args[2].equals( "-nc" ); 
+		
 		
 		File rxFile = new File( f.getPath() + ".rx" );
 		execute(f, tmpDir, rxFile, true );

@@ -623,5 +623,30 @@ public class MultipleAlignment implements Serializable {
 
 
 	}
-	
+
+	public void writeSpecial( PrintStream w, String[] snames, int s, int e ) {
+		// TODO Auto-generated method stub
+		w.printf( "%d %d\n", e - s, seqLen);
+
+        int maxNameLen = 0;
+
+        for( int i = s; i < e; i++ ) {
+            maxNameLen = Math.max( maxNameLen, snames[i].length());
+        }
+
+        for( int i = s; i < e; i++ ) {
+        	
+        	int oidx = nameToIdx(snames[i]);
+            w.printf( "%s%s\n", padSpaceRight(names[oidx], maxNameLen + 2), data[oidx]);
+        }		
+	}
+	public void writeSpecial( File f, String[] snames, int s, int e ) {
+		try {
+			writeSpecial(new PrintStream( new FileOutputStream(f)), snames, s, e);
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			throw new RuntimeException( "bailing out" );
+		}
+	}
 }

@@ -108,6 +108,7 @@ public class Optics {
 		double[] p = {1,4,6,2,5,7,1.5,3,4.5,6.5,1.7};
 		for( int i = 0; i < N; i++ ) {
 			objSet[i] = new Point( (float)p[i] );
+		//	objSet[i] = new Point( rnd.nextFloat() );
 		}
 		
 		
@@ -135,7 +136,7 @@ public class Optics {
 		for( int i = 0; i < ll.length; i++ ) {
 			ll[i] = l.get(i);
 		}
-		System.out.printf( "neighbors %d: %d\n", obj, ll.length );
+		//System.out.printf( "neighbors %d: %d\n", obj, ll.length );
 		return ll;
 	}
 	

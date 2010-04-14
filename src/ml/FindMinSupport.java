@@ -47,8 +47,8 @@ public class FindMinSupport {
 	}
 	private static boolean CREATE_REDUCED_ALIGNMENTS = !true;
 	private static boolean CREATE_SUBSEQ_ALIGNMENTS = !true;
-	private static boolean CREATE_REDUCED_TREES = !true;
-	private static boolean CREATE_MAPPING_FILES = !true;
+	private static boolean CREATE_REDUCED_TREES = true;
+	private static boolean CREATE_MAPPING_FILES = true;
 	private static final boolean CREATE_PAIRED_END_ALIGNMENTS = !true;
 	private static final boolean CREATE_DIST_SUBSEQ_ALIGNMENTS = true;
 	
@@ -300,14 +300,15 @@ public class FindMinSupport {
 	public static void main(String[] args) {
 		//    createLeastGappySubseq("---abc-ded-f--gi-jkl", 4);
 
-		createReducedTrees("RAxML_bipartitions.140.BEST.WITH", "140");
+//		createReducedTrees("RAxML_bipartitions.140.BEST.WITH", "140");
 //		createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
 //		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 //		createReducedTrees("RAxML_bipartitions.218.BEST.WITH", "218");
 //		createReducedTrees("RAxML_bipartitions.500.BEST.WITH", "500");
 //		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
 //		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
-		//createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
+//		createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
+		createReducedTrees("RAxML_bipartitions.1605.BEST.WITH", "1605");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -480,8 +481,8 @@ public class FindMinSupport {
 
 			
 			if( CREATE_DIST_SUBSEQ_ALIGNMENTS ) {
-				final int meanLen = 70;
-				final int sd = 20;
+				final int meanLen = 200;
+				final int sd = 60;
 				final int nSamples = 20;
 				final int minLen = 20;
 				

@@ -322,8 +322,13 @@ public class Tx {
 			batchfile = "/space/tmp/run.wb";
 		}
 		
-		BufferedReader br = new BufferedReader(new FileReader(batchfile));
+		final BufferedReader br;
 		
+		if( batchfile.equals( "-" )) {
+			br = new BufferedReader(new InputStreamReader(System.in));
+		} else {
+			br = new BufferedReader(new FileReader(batchfile));
+		}
 		String line;
 		int serial = 1;
 		

@@ -40,6 +40,7 @@ public class ClassifierCompareTwo {
 			boolean reftreeRemove = args.length >= 6 && args[5].equals("--remove" );  
 					
 			
+	
 			ClassifierOutput class1Out = ClassifierOutput.read(class1File);
 			ClassifierOutput class2Out = ClassifierOutput.read(class2File);
 			
