@@ -71,8 +71,12 @@ class TeeStreamConsumer extends Thread {
 
 
 public class Tx {
-	final static long MAX_SIZE = 1024 * 1024 * 20;
+	final static long MAX_SIZE = 1024 * 1024 * 100;
 	public static void store( TxData.FileMapping fm ) {
+		store( fm, false );
+	}
+	
+	public static void store( TxData.FileMapping fm, boolean gzpassthrough ) {
 		File f = new File(fm.origName);
 		if( !f.canRead() || !f.isFile() ) {
 			throw new RuntimeException( "cannot store file " + fm.origName	);
@@ -82,7 +86,7 @@ public class Tx {
 		fm.isGz = true;
 		fm.md5sum = new byte[16];
 		
-		fm.storedFile = Tx.readFile(f, fm.isGz,  fm.md5sum );
+		fm.storedFile = Tx.readFile(f, !gzpassthrough && fm.isGz, fm.md5sum );
 		
 		String md5string = md5ToString( fm.md5sum );
 		System.out.printf( "file stored: '%s' => '%s' %s\n", fm.origName, fm.tmpName, md5string );
@@ -92,7 +96,7 @@ public class Tx {
 		StringTokenizer st = new StringTokenizer(commandline);
 
 		ArrayList<TxData.FileMapping> fmsd = new ArrayList<TxData.FileMapping>();
-
+		ArrayList<Boolean>fmspassthrough = new ArrayList<Boolean>();
 		
 		ArrayList<String> esd = new ArrayList<String>();
 		Map<String,Integer>currentMappings = new HashMap<String, Integer>();
@@ -103,26 +107,36 @@ public class Tx {
 			int ci = esd.size(); 
 			esd.add(token);
 			
-			
+			final boolean gzpassthrough;
 			
 			final String name;
 			if( token.startsWith("%r%") ) {
 				name = token.substring(3);
+				gzpassthrough = false;
 			} else if( token.startsWith( "/" ) || token.startsWith("./") ){
 				
 				File probe = new File( token );
 				// FIXME: review this when there is more time: do we really want to check for WRITE access?
 				if( probe.isFile() && probe.canWrite() ) {
 					name = token;
+					gzpassthrough = false;
 				} else {
-					if( token.startsWith( "/" ) ) {
-						System.out.printf( "WARNING: command contains reference to global file that could not be stored:.\n%s\n", token );
+					File gzprobe = new File( token + ".gz" );
+					if( gzprobe.isFile() && gzprobe.canWrite() ) {
+						System.out.printf( "found referenced file with .gz ending. assuming transparent gz passthrough\n" );
+						name = token;
+						gzpassthrough = true;
+					} else {
+						if( token.startsWith( "/" ) ) {
+							System.out.printf( "WARNING: command contains reference to global file that could not be stored:.\n%s\n", token );
+						}
+						name = null;
+						gzpassthrough = false;
 					}
-					
-					name = null;
 				}
 			} else { 
 				name = null;
+				gzpassthrough = false;
 			}
 			
 			if( name != null ) {
@@ -145,6 +159,7 @@ public class Tx {
 					posToFm.put( ci, cim );
 					currentMappings.put( cname, cim );
 					fmsd.add(fm);
+					fmspassthrough.add(gzpassthrough);
 				} else {
 					posToFm.put( ci, currentMappings.get( cname ));
 				}
@@ -159,8 +174,8 @@ public class Tx {
 		
 		tx.fms = fmsd.toArray( new TxData.FileMapping[fmsd.size()] );
 		
-		for( TxData.FileMapping fm : tx.fms ) {
-			store(fm);
+		for( int i = 0; i < tx.fms.length; i++ ) {
+			store(tx.fms[i], fmspassthrough.get(i));
 		}
 		
 		for( Map.Entry<Integer,Integer> e : posToFm.entrySet() ) {
