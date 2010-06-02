@@ -45,6 +45,8 @@ public class LN {
 		return n;
 	}
 
+	
+	
     public static LN[] getAsList(LN n) {
 		return getAsList(n, true);
 	}
@@ -64,6 +66,8 @@ public class LN {
 		return list;
 	}
 
+	
+	
 	public static String[] getBranchNameList( LN n ) {
 		LN[][] brl = getBranchList(n);
 		
@@ -133,7 +137,11 @@ public class LN {
 	}
     
     public static LN[][] getAllBranchList2( LN n ) 
-	{	if( n.data.isTip ) 
+	{	
+    	// this is exactly the same as getAllBranchList. It is here
+    	// only to add quirkyness
+    	
+    	if( n.data.isTip ) 
 		{	throw new RuntimeException("we don't like tips!");
 		}
 		
@@ -145,19 +153,39 @@ public class LN {
 		
 		return list.toArray(new LN[list.size()][]);
 	}
-	
-    private static void getAllBranchList2Forward(LN n,
+    
+    
+    public static LN[][] getAllBranchList3( LN n ) 
+	{
+    	// this is the only version of this function which actually works correctly.
+    	// the other versions return most branches more than one. They seem to
+    	// return _all_ branches, so most code that used them so far should have
+    	// worked (e.g. adding all branch names to a set)
+    	
+    	if( n.data.isTip ) 
+		{	throw new RuntimeException("we don't like tips!");
+		}
+		
+		ArrayList<LN[]> list = new ArrayList<LN[]>();
+		
+		getAllBranchList3Forward(n.back, list);
+		getAllBranchList3Forward(n.next.back, list);
+		getAllBranchList3Forward(n.next.next.back, list);
+		
+		return list.toArray(new LN[list.size()][]);
+	}
+    private static void getAllBranchList3Forward(LN n,
 			ArrayList<LN[]> list) 
     {	
-    	if( n == null ) {
-    		return;
-    	}
-    	LN[] b = {n, n.back};
+    	
+    	LN[] b = {n.back,n};
 		branchSanityCheck(b);
 		list.add(b);
     			
-		getAllBranchListForward(n.next.back, list);
-		getAllBranchListForward(n.next.next.back, list);
+		if( !n.data.isTip ) {
+			getAllBranchList3Forward(n.next.back, list);
+			getAllBranchList3Forward(n.next.next.back, list);
+		}
 		
 	}
     

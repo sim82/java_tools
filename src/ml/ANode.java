@@ -18,7 +18,8 @@ public class ANode {
 	static int serialCount = 1;
 
 	public final int serial = serialCount++;
-
+	int localSerial = -1;
+	
 	boolean isTip;
 	private String tipName;
     private double support;
