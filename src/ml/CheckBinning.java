@@ -60,7 +60,7 @@ public class CheckBinning {
 //			
 //			System.out.printf( "sizes: %d %d\n", ts1.size(), ts2.size() );
 			
-			System.out.printf( " (%s %s) ", brOrig, res.branch ); 
+//			System.out.printf( " (%s %s) ", brOrig, res.branch ); 
 			
 			for( LN[] branch : branches ) {
 				
@@ -68,10 +68,8 @@ public class CheckBinning {
 				
 				
 				
-				
-				
 				String cbr = branch[0].backLabel;
-				
+//				System.out.printf( "label: %s\n", cbr );
 				
 				if( done.contains( cbr )) {
 					continue;
@@ -91,6 +89,7 @@ public class CheckBinning {
 				
 				LN[] rtBranch = LN.findCorrespondingBranch(branch, rtp);
 				double support = rtBranch[0].backSupport;
+				//System.out.printf( "support: %f\n", support );
 				if( support < 75 ) {
 					continue;
 				}
@@ -131,7 +130,12 @@ public class CheckBinning {
 			}
 			
 		}
-		System.out.printf( "same: %d of %d %f%% %d\n", nSame, nSplits, nSame / (float)nSplits * 100.0, nExcl ); 
+		
+		if( VERBOSE ) {
+			System.out.printf( "same: %d of %d %f%% %d\n", nSame, nSplits, nSame / (float)nSplits * 100.0, nExcl );
+		} else {
+			System.out.printf( "%f\n", nSame / (float)nSplits * 100.0 );
+		}
 		
 		
 	}

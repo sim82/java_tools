@@ -245,7 +245,7 @@ public class TxExec {
 				StringTokenizer st = new StringTokenizer(line);
 				
 				if( st.countTokens() != 3 ) {
-					System.out.printf( "at the moment we expect a tx runner commandline to consist of 3 token: ", line );
+					System.out.printf( "at the moment we expect a tx runner commandline to consist of 3 token: %s\n", line );
 					return;
 				}
 				
