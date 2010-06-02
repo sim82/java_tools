@@ -426,8 +426,83 @@ public class MultipleAlignment implements Serializable {
             Logger.getLogger(MultipleAlignment.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    public void writeFuckholm( File file ) {
+        try {
+        	
+        	
+            PrintStream w;
+            
+            // transparent gz compression
+            if( file.getName().endsWith(".gz")) {
+            	w = new PrintStream(new GZIPOutputStream( new FileOutputStream(file)));
+            } else {
+            	w = new PrintStream(new FileOutputStream(file));
+            }
 
-    private void buildNameIndex() {
+            writeFuckholm(w);
+            w.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MultipleAlignment.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    private void writeFuckholm(PrintStream w) {
+    	
+    	w.println( "# STOCKHOLM 1.0" );
+
+        int maxNameLen = 0;
+
+        for( int i = 0; i < nTaxon; i++ ) {
+            maxNameLen = Math.max( maxNameLen, names[i].length());
+        }
+
+        for( int i = 0; i < nTaxon; i++ ) {
+            w.printf( "%s%s\n", padSpaceRight(names[i], maxNameLen + 2), data[i]);
+        }
+        
+        w.println( "//\n" );
+	}
+
+    
+    public void writeFastaNogaps( File file ) {
+        try {
+        	
+        	
+            PrintStream w;
+            
+            // transparent gz compression
+            if( file.getName().endsWith(".gz")) {
+            	w = new PrintStream(new GZIPOutputStream( new FileOutputStream(file)));
+            } else {
+            	w = new PrintStream(new FileOutputStream(file));
+            }
+
+            writeFastaNogaps(w);
+            w.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MultipleAlignment.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    private void writeFastaNogaps(PrintStream w) {
+    	
+    	
+
+        
+        for( int i = 0; i < nTaxon; i++ ) {
+            w.printf( ">%s\n", names[i] );
+            
+            for( char c : data[i].toCharArray() ) {
+            	if( c != '-' ) {
+            		w.print(c);
+            	}
+            }
+            w.println();
+        }
+        
+        
+	}
+
+    
+	private void buildNameIndex() {
         nameMap = new HashMap<String, Integer>();
         for( int i = 0; i < nTaxon; i++ ) {
             if( names[i] == null ) {

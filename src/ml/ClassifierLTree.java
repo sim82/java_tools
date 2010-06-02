@@ -676,7 +676,7 @@ public class ClassifierLTree {
     		}
     	}
     	
-    	len += (n[0].backLen + b[0].backLen) * seScale;
+    	len += n[0].backLen * seScale + b[0].backLen * seScale;
 //    	
     	return len;
     }
