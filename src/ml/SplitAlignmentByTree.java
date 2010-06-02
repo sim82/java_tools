@@ -21,6 +21,7 @@ public class SplitAlignmentByTree {
 		File aliFile = new File( args[0] );
 		File treeFile = new File( args[1] );
 		
+		boolean fuckholm = args.length > 2 && args[2].equals("--hmmer");
 		
 		MultipleAlignment ma = MultipleAlignment.loadPhylip(aliFile);
 		LN t = TreeParser.parse(treeFile);
@@ -52,10 +53,14 @@ public class SplitAlignmentByTree {
 		MultipleAlignment ma1 = new MultipleAlignment(ma.seqLen, names1, seqs1 );
 		MultipleAlignment ma2 = new MultipleAlignment(ma.seqLen, names2, seqs2 );
 		
+		if( !fuckholm ) {
+			ma1.writePhylip(new File( aliFile.getPath() + ".in" ));
+			ma2.writePhylip(new File( aliFile.getPath() + ".out" ));
+		} else {
+			ma1.writeFuckholm(new File( aliFile.getName() + ".in" ));
+			ma2.writeFastaNogaps(new File( aliFile.getName() + ".out" ));
 		
-		ma1.writePhylip(new File( aliFile.getPath() + ".in" ));
-		ma2.writePhylip(new File( aliFile.getPath() + ".out" ));
-		
+		}
 		
 	}
 }
