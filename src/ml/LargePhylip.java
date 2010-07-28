@@ -24,6 +24,7 @@ public class LargePhylip {
 	long headerSize = -1;
 	
 	static class Rec {
+		// NOTE: the two ByteBuffers are actually slices from the mmapped phylip file (=only pointers)
 		ByteBuffer name;
 		int nameLen;
 		
@@ -58,7 +59,7 @@ public class LargePhylip {
 				fileSize = file.length();
 				
 				mbuf = fc.map(MapMode.READ_ONLY, 0, fileSize );
-				System.out.printf( "mbuf size: %d\n", mbuf.capacity() );
+//				System.out.printf( "mbuf size: %d\n", mbuf.capacity() );
 				long ptr = 0;
 				mbuf.position(0);
 				
@@ -109,7 +110,7 @@ public class LargePhylip {
 						int ntaxa = Integer.parseInt(name);
 						int seqlen = Integer.parseInt(data);
 						
-						System.out.printf( "header: %d %d\n", ntaxa, seqlen );
+//						System.out.printf( "header: %d %d\n", ntaxa, seqlen );
 						haveHeader = true;
 						
 						recs = new Rec[ntaxa];
@@ -139,7 +140,14 @@ public class LargePhylip {
 			
 		}
 	}
+	Rec getRecord( int n ) {
+		
+		return recs[n];
+	}
 	
+	int size() {
+		return recs.length;
+	}
 	long dataOffset( int n ) {
 		return headerSize + n * (maxNameLen + 1 + seqLen + 1);
 	}

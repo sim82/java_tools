@@ -17,6 +17,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class CSVFile {
@@ -66,9 +68,13 @@ public class CSVFile {
 		return cta;
 	}
 	
+	
+	
 	static CSVFile load( File file, String colTypes ) {
 		return load( file, ctaFromString(colTypes));
 	}
+	
+
 	
 	static CSVFile load( File file, ColType[] colTypes ) {
 //		if( colTypes != null || colTypes != null ) {
@@ -148,6 +154,9 @@ public class CSVFile {
 	}
 	
 	
+
+	
+	
 	void print() {
 		if( colTypes == null || colTypes == null ) {
 			throw new RuntimeException( "CSVFile not initialized" );
@@ -212,5 +221,7 @@ public class CSVFile {
 			return (double[]) colArrays[col];
 		}
 	}
+
+	
 	
 }
