@@ -68,7 +68,7 @@ public class EpaBinning {
 			
 			
 
-			Map<String,LN> tipIndex = new HashMap<String,LN>();
+			Map<String,LN> tipIndex = new HashMap<String,LN>();          
 			Map<Integer,LN> nodeIndex = new HashMap<Integer,LN>();
 			
 			// build indices: tipname => LN and node-serialnumber => LN
@@ -84,13 +84,14 @@ public class EpaBinning {
 			}
 
 			
-			
-			if( split.length == 1 ) {
+			if( split.length < 1 ) {
+				throw new RuntimeException( "clades with no taxa are not allowed" );
+			} else if( split.length == 1 ) {
 				// trivial case, won't work with the algorithm below
 
 				//return findBranchBySplitTrivial( n, split[0] );
 				if( !addConnecting ) {
-					throw new RuntimeException( "branches with one taxon are only allowd in 'add-connecting' mode.");
+					throw new RuntimeException( "clades with one taxon are only allowd in 'add-connecting' mode.");
 				} else {
 					brLabels.add(LN.getTowardsTree(tipIndex.get(split[0])).backLabel);
 					return brLabels;
@@ -129,6 +130,7 @@ public class EpaBinning {
 				// and use a priority queue:
 				
 				for( int next : openNodes ) {
+					// OPT-REMARK: this stuff could be 
 					LN oln = nodeIndex.get(next);
 
 					int markedCount = 0;
@@ -270,6 +272,10 @@ public class EpaBinning {
 			wgh = new double[numBins];
 		}
 	}
+	static void printUsage() {
+		System.out.printf( "\n\nusage:\njava -jar eb.jar <classifier output> <original labelled tree> (-og <out group>|(-bd|-bx) <bin-def file>)\n -og <outgroup>: use two clades, separated by <outgroup>\n -bd/-bx: <bin-def file> use clades specified in <bin-def file>. -bd/-bx: include/exclude connecting branches\n" );
+	}
+	
 	public static void main(String[] args) {
 		boolean includeConnecting;
 		
@@ -281,7 +287,9 @@ public class EpaBinning {
 	
 		
 		if( args.length < 2 ) {
-			throw new RuntimeException( "missing args:\n<classifier output> <original labelled tree> (-og <out group>|-bd <bin-def file>)" );
+			System.out.printf( "ERROR: missing args\n" );
+			printUsage();
+			System.exit(-1);
 		}
 		File classFile = new File( args[0] );
 		File treeFile = new File( args[1] );
@@ -304,7 +312,9 @@ public class EpaBinning {
 			addConnecting = args[2].equals("-bd");
 			
 		} else {
-			throw new RuntimeException( "missing bin specification (either -og <out group> or -bd <bin-def file>)");
+			System.out.printf( "ERROR: missing bin specification (need either -og <out group> or (-bd|-bx) <bin-def file>)");
+			printUsage();
+			throw new RuntimeException( "bailing out." );
 		}
 		 
 		final boolean printBins =  args.length >= 5 && (args[4].equals("-pb" ) || args[4].equals("-px" ));
@@ -412,6 +422,12 @@ public class EpaBinning {
 			}
 		});
 		
+		if( sets != null ) {
+			for( String bn : binNames ) {
+				System.out.printf( "\t%s", bn );
+			}
+			System.out.println( "\tnone" );
+		}
 		for( Res res : orl ) {
 			System.out.printf( "%s", res.name );
 			for( int i = 0; i < bins.length; i++ ) {
