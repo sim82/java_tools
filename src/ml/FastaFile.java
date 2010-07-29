@@ -14,12 +14,17 @@
 package ml;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import javax.management.RuntimeErrorException;
+
 public class FastaFile {
-	class Entry {
+	static class Entry {
 		String name;
 		String data;
 	}
@@ -27,8 +32,16 @@ public class FastaFile {
 	
 	ArrayList<Entry>entries = new ArrayList<Entry>();
 	
-	
-	FastaFile parse( BufferedReader r ) {
+	static FastaFile parse( File f ) {
+		try {
+			return FastaFile.parse(new BufferedReader(new FileReader(f)));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "bailing out." );
+		}
+	}
+	static FastaFile parse( BufferedReader r ) {
 		
 		FastaFile ff = new FastaFile();
 		
@@ -42,13 +55,23 @@ public class FastaFile {
 			
 			while( (line = r.readLine()) != null ) {
 				if( line.startsWith(">")) {
+					
+					
 					curEntry = new Entry();
+									
 					
-					StringTokenizer ts = new StringTokenizer(line);
-					ts.nextToken();
+					int start = 1;
 					
-					curEntry.name = ts.nextToken();
+					while( Character.isWhitespace(line.charAt(start)) ) {
+						start++;
+					}
+					int end = start;
+					while( !Character.isWhitespace(line.charAt(end)) ) {
+						end++;
+					}
 					
+					curEntry.name = line.substring(start, end);
+					curEntry.data = "";
 					ff.entries.add( curEntry );
 				} else {
 					StringTokenizer ts = new StringTokenizer(line);
