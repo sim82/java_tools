@@ -66,10 +66,8 @@ public class LN {
 		return list;
 	}
 
-	
-	
-	public static String[] getBranchNameList( LN n ) {
-		LN[][] brl = getBranchList(n);
+	public static String[] getAllBranchNameList( LN n ) {
+		LN[][] brl = getAllBranchList(n);
 		
 		String[] nl = new String[brl.length];
 		for( int i = 0; i < nl.length; i++ ) {
@@ -78,6 +76,17 @@ public class LN {
 		
 		return nl;
 	}
+	
+//	public static String[] getBranchNameList( LN n ) {
+//		LN[][] brl = getBranchList(n);
+//		
+//		String[] nl = new String[brl.length];
+//		for( int i = 0; i < nl.length; i++ ) {
+//			nl[i] = brl[i][0].backLabel;
+//		}
+//		
+//		return nl;
+//	}
 	
 	public static LN[][] getBranchList( LN n ) 
 	{	if( n.data.isTip ) 
@@ -628,26 +637,41 @@ public class LN {
 		}
 	}
 
+	public static ArrayList<String> trace = new ArrayList<String>();
+	
 	public static double longestPathCorrected( LN n ) {
 		if( !n.data.isTip ) {
 			throw new RuntimeException("this method is only for tips");
 		}
-
+		trace.clear();
+		trace.add(n.data.getTipName());
 
 		n = LN.getTowardsTree(n);
 
-		return (n.backLen/2) + longestPathRec( n.back );
+		//return (n.backLen/2) + longestPathCorrectedRec( n.back );
+		return (n.backLen/2) + longestPathCorrectedRec( n.back );
 	}
 
 
 	public static double longestPathCorrectedRec( LN n ) {
+		
 		if( n.data.isTip ) {
+			trace.add(n.data.getTipName());
 			// ouch! I hope this works
+			//System.out.printf( "xxx: %f\n", -(n.backLen / 2) ); 
 			return -(n.backLen / 2);
 		} else {
-			double len1 = longestPathRec(n.next.back) + n.next.backLen;
-			double len2 = longestPathRec(n.next.next.back) + n.next.next.backLen;
-
+			// hahaha, this 'trace' stuff is hillarious
+			
+			double len1 = longestPathCorrectedRec(n.next.back) + n.next.backLen;
+			String lt1 = trace.remove( trace.size() - 1);
+			double len2 = longestPathCorrectedRec(n.next.next.back) + n.next.next.backLen;
+			String lt2 = trace.remove( trace.size() - 1);
+			if( len1 > len2 ) {
+				trace.add( lt1 );
+			} else {
+				trace.add( lt2 );
+			}
 			return Math.max(len1, len2);
 
 		}

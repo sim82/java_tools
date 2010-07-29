@@ -942,7 +942,7 @@ public class ClassifierLTree {
 			if( node.data.isTip && node.back != null ) {
 				cnt++;
 
-				longestPath = Math.max( longestPath, LN.longestPath(node));
+				longestPath = Math.max( longestPath, LN.longestPathCorrected(node));
 			}
 		}
 
