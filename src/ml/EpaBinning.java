@@ -64,14 +64,6 @@ public class EpaBinning {
 		}
 		
 		private static Set<String> findSubtreeByTipSet( final LN[] list, String[] split, boolean addConnecting ) {
-			if( split.length == 1 ) {
-				// trivial case, won't work with the algorithm below
-
-				//return findBranchBySplitTrivial( n, split[0] );
-				
-				throw new RuntimeException( "branches with one taxon are not allowed");
-			}
-
 			Set<String> brLabels = new HashSet<String>();
 			
 			
@@ -90,7 +82,22 @@ public class EpaBinning {
 				}
 				
 			}
-			//
+
+			
+			
+			if( split.length == 1 ) {
+				// trivial case, won't work with the algorithm below
+
+				//return findBranchBySplitTrivial( n, split[0] );
+				if( !addConnecting ) {
+					throw new RuntimeException( "branches with one taxon are only allowd in 'add-connecting' mode.");
+				} else {
+					brLabels.add(LN.getTowardsTree(tipIndex.get(split[0])).backLabel);
+					return brLabels;
+				}
+			}
+
+						//
 			// this algorithm is adapted from LN.findBranchBySplit. Look there for a (rubbish) description.
 			// basically it just floods the tree from the tips inward...
 			//
@@ -300,7 +307,8 @@ public class EpaBinning {
 			throw new RuntimeException( "missing bin specification (either -og <out group> or -bd <bin-def file>)");
 		}
 		 
-		final boolean printBins =  args.length >= 5 && args[4].equals("-pb" );
+		final boolean printBins =  args.length >= 5 && (args[4].equals("-pb" ) || args[4].equals("-px" ));
+		final boolean dieYoung = printBins && args[4].equals("-px" );
 		
 		
 		Bin[] bins;
@@ -349,6 +357,10 @@ public class EpaBinning {
 		if( printBins ) {
 			System.out.printf( "trash: " );
 			bo.print();
+		}
+		
+		if( dieYoung ) {
+			return;
 		}
 		
 		Map<String,Res> orm = new TreeMap<String, Res>();
