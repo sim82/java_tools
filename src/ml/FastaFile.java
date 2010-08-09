@@ -56,7 +56,6 @@ public class FastaFile {
 			while( (line = r.readLine()) != null ) {
 				if( line.startsWith(">")) {
 					
-					
 					curEntry = new Entry();
 									
 					
@@ -66,7 +65,10 @@ public class FastaFile {
 						start++;
 					}
 					int end = start;
-					while( !Character.isWhitespace(line.charAt(end)) ) {
+					
+					
+					while( end < line.length() && !Character.isWhitespace(line.charAt(end)) ) {
+						
 						end++;
 					}
 					
