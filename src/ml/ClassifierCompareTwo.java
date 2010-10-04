@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -44,24 +46,36 @@ public class ClassifierCompareTwo {
 			ClassifierOutput class1Out = ClassifierOutput.read(class1File);
 			ClassifierOutput class2Out = ClassifierOutput.read(class2File);
 			
-			ArrayList<Res> res1list = class1Out.reslist;
-			ArrayList<Res> res2list = class2Out.reslist;
+//			ArrayList<Res> res1list = class1Out.reslist;
+//			ArrayList<Res> res2list = class2Out.reslist;
+			
+			Res[] res1list = class1Out.reslist.toArray(new Res[class1Out.reslist.size()]);
+			Res[] res2list = class2Out.reslist.toArray(new Res[class2Out.reslist.size()]);
+			
+			Comparator<Res> resCmp = new Comparator<Res>() {
+				@Override
+				public int compare(Res o1, Res o2) {
+					return o1.seq.compareTo(o2.seq);
+				}
+			};
+			Arrays.sort(res1list, resCmp);
+			Arrays.sort(res2list, resCmp);
 			
 			LN olt1 = TreeParser.parse(olt1File);
 			LN olt2 = TreeParser.parse(olt2File);
 			LN reftreeOrig = TreeParser.parse(reftreeFile);
 					
 			
-			if( res1list.size() != res2list.size() ) {
+			if( res1list.length != res2list.length ) {
 				throw new RuntimeException( "result lists have different size" );
 			}
 			
 			double ndMean = 0.0;
 			double bdMean = 0.0;
 			
-			for( int i = 0; i < res1list.size(); i++ ) {
-				Res res1 = res1list.get(i);
-				Res res2 = res2list.get(i);
+			for( int i = 0; i < res1list.length; i++ ) {
+				Res res1 = res1list[i];
+				Res res2 = res2list[i];
 				
 				if( !res1.seq.equals(res2.seq)) {
 					throw new RuntimeException( "different sequences in classifier outputs" );
@@ -94,8 +108,8 @@ public class ClassifierCompareTwo {
 				bdMean += pathlen.bd;
 			}
 			
-			if( res1list.size() > 1 ) {
-				double n = res1list.size(); 
+			if( res1list.length > 1 ) {
+				double n = res1list.length; 
 				System.out.printf( "mean: %f %f\n", bdMean / n, ndMean / n ); 
 			}
 		} else if( args.length == 4 ) {

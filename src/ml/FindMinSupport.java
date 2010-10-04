@@ -628,6 +628,7 @@ public class FindMinSupport {
 	static String createRandomSubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
+			System.err.printf( "bad seq: '%s'\n", seq );
 			throw new RuntimeException("less than " + length + " non-gap characters in sequence");
 		}
 
@@ -638,7 +639,17 @@ public class FindMinSupport {
 		
 		return genAlignedSubseq(seq, nm, sp, ep);
 	}
-	
+	static String createRandomSubseqClamped(String seq, int length) {
+		final int[] nm = getNonGapCharacterMap(seq);
+		length = Math.min( length, nm.length );
+
+		final int maxStartPos = nm.length - length + 1;
+
+		final int sp = rand.nextInt(maxStartPos);
+		final int ep = sp + length - 1;
+		
+		return genAlignedSubseq(seq, nm, sp, ep);
+	}
 	static String createLeastGappySubseq(String seq, int length) {
 		final int[] nm = getNonGapCharacterMap(seq);
 		if (nm.length < length) {
