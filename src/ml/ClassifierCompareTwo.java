@@ -85,10 +85,14 @@ public class ClassifierCompareTwo {
 				
 				LN.PathLen pathlen = LN.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5 );
 				
+				// 'longest path to tip (lptt)': the maximum possible branch dist returned by LN.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5 ).
+				// The branch-dist normalized by the lptt was suggested by pavlos.
+				// assume that the first placement (ibr1/ibr1ref) is the 'correct' one. Calculate the 'longest path to tip (lptt)' for this placement 
+				double lptt = LN.getLongestPathBranchToTip(ibr1ref);
 				
 				//System.out.printf( "dist: %f %d (%f %d)\n", pathlen.bd, pathlen.nd, bd, ndout[0] );
 	//			System.out.printf( "branches: %s %s\n", res1.branch, res2.branch );
-				System.out.printf( "%s %s %s %f %d\n", res1.seq, res1.branch, res2.branch, pathlen.bd, pathlen.nd );
+				System.out.printf( "%s %s %s %f %d %f\n", res1.seq, res1.branch, res2.branch, pathlen.bd, pathlen.nd, pathlen.bd / lptt );
 				
 				ndMean += pathlen.nd;
 				bdMean += pathlen.bd;

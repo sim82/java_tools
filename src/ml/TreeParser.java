@@ -281,7 +281,20 @@ public class TreeParser {
 
             final double support;
             String nodeLabel = null;
-            
+//            
+//            while( inputA[ptr] != ':' && inputA[ptr] != ',' && inputA[ptr] != ')' && inputA[ptr] != ';' ) {
+//            	
+//            	ptr++;
+//            }
+
+        	// the stuff between the closing ')' and the ':' of the branch length (or a ',' or the terminating ';')
+        	// is interpreted as node-label. If the node label corresponds to a float value
+        	// it is interpreted as branch support (or node support as a rooted-trees-only-please biologist would say)
+            int lend = findEndOfBranch(ptr);
+        	
+        	nodeLabel = substring(ptr, lend);
+        	ptr = lend;
+        	
             if( inputA[ptr] == ';') {
             	// oh my god. a fucking rooted tree
             	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
@@ -292,14 +305,9 @@ public class TreeParser {
             }
             
             if( inputA[ptr] != ':' && inputA[ptr] != ',' && inputA[ptr] != ')' ) {
-            	// the stuff between the closing '(' and the ':' of the branch length
-            	// is interpreted as node-label. If the node label corresponds to a float value
-            	// it is interpreted as branch support (or node support as a rooted-trees-only-please biologist would say)
+
             	
-            	int lend = findEndOfBranch(ptr);
             	
-            	nodeLabel = substring(ptr, lend);
-            	ptr = lend;
             	
             	boolean isDigit = true;
             	for( int i = 0; i < nodeLabel.length(); i++ ) {
@@ -431,7 +439,8 @@ public class TreeParser {
 		char[] termchars = { 
 			':',
 			',',
-			')'
+			')',
+			';'
 		};
 		
 		try {
