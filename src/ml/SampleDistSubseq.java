@@ -26,7 +26,7 @@ public class SampleDistSubseq {
 		String[] outData = new String[nSamples * ma.nTaxon];
 		int outPtr = 0;
 		
-		Random rand = new Random();
+		Random rand = new Random(12345);
 		
 		for( int i = 0; i < ma.nTaxon; i++ ) {
 			String name = ma.names[i];
@@ -41,7 +41,7 @@ public class SampleDistSubseq {
 				if( nSamples > 1 ) {
 					outNames[outPtr] += "_" + FindMinSupport.padchar( "" + j, 0, 2 );
 				}
-				outData[outPtr] = FindMinSupport.createRandomSubseq(data, len);
+				outData[outPtr] = FindMinSupport.createRandomSubseqClamped(data, len);
 				
 				outPtr++;
 			}
