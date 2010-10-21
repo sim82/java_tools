@@ -167,7 +167,7 @@ public class LN {
     public static LN[][] getAllBranchList3( LN n ) 
 	{
     	// this is the only version of this function which actually works correctly.
-    	// the other versions return most branches more than one. They seem to
+    	// the other versions return most branches more than once. They seem to
     	// return _all_ branches, so most code that used them so far should have
     	// worked (e.g. adding all branch names to a set)
     	
