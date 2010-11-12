@@ -24,9 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
+
 import ml.ClassifierOutput.Res;
 
-public class ClassifierCompareTwo {
+public class CopyOfClassifierCompareTwo {
 	public static void main(String[] args) {
 		
 		
@@ -75,6 +77,14 @@ public class ClassifierCompareTwo {
 			double bdMean = 0.0;
 			double bdnMean = 0.0;
 			double pdMean = 0.0;
+
+			HashMap <UnorderedPair<UnorderedPair<Integer, Integer>, UnorderedPair<Integer, Integer>>, LN.PathLen> lpCache = new HashMap<UnorderedPair<UnorderedPair<Integer, Integer>, UnorderedPair<Integer, Integer>>, LN.PathLen>();
+			HashMap <UnorderedPair<Integer, Integer>, Double> lpttCache = new HashMap<UnorderedPair<Integer, Integer>, Double>();
+			Map <UnorderedPair<Integer, Integer>, LN[]> cbrCache = new HashMap<UnorderedPair<Integer, Integer>, LN[]>();
+			
+			
+			HashMap <String,LN[]> olt1Name2Br = new HashMap<String, LN[]>();
+			HashMap <String,LN[]> olt2Name2Br = new HashMap<String, LN[]>();
 			
 			for( int i = 0; i < res1list.length; i++ ) {
 				Res res1 = res1list[i];
@@ -91,22 +101,69 @@ public class ClassifierCompareTwo {
 					reftree = reftreeOrig;	
 				}
 				
-				LN[] ibr1 = LN.findBranchByName(olt1, res1.branch);
-				LN[] ibr2 = LN.findBranchByName(olt2, res2.branch);
 				
-				LN[] ibr1ref = LN.findCorrespondingBranch(ibr1, reftree);
-				LN[] ibr2ref = LN.findCorrespondingBranch(ibr2, reftree);
+				
+				LN[] ibr1 = olt1Name2Br.get(res1.branch);
+				if( ibr1 == null ) {
+					ibr1 = LN.findBranchByName(olt1, res1.branch);
+					olt1Name2Br.put( res1.branch, ibr1 );
+				}
+				
+				
+				LN[] ibr2 = olt2Name2Br.get( res2.branch );
+				
+				if( ibr2 == null ) {
+					ibr2 = LN.findBranchByName(olt2, res2.branch);
+					olt2Name2Br.put( res2.branch, ibr2 );
+				}
+				
+				UnorderedPair<Integer, Integer> ibr1key = new UnorderedPair<Integer, Integer>(ibr1[0].data.serial, ibr1[1].data.serial); 
+				UnorderedPair<Integer, Integer> ibr2key = new UnorderedPair<Integer, Integer>(ibr2[0].data.serial, ibr2[1].data.serial);
+				
+				
+				
+				LN[] ibr1ref = cbrCache.get( ibr1key );
+				
+				if( ibr1ref == null ) {
+					ibr1ref = LN.findCorrespondingBranch(ibr1, reftree);
+					cbrCache.put( ibr1key, ibr1ref );
+				}
+				
+				
+				LN[] ibr2ref = cbrCache.get( ibr2key );
+				
+				if( ibr2ref == null ) {
+					ibr2ref = LN.findCorrespondingBranch(ibr2, reftree);
+					cbrCache.put( ibr2key, ibr2ref);
+				}
 				
 		//		int[] ndout = {-1};
 		//		double bd = ClassifierLTree.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5, ndout);
 				
-				LN.PathLen pathlen = LN.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5 );
+				UnorderedPair<UnorderedPair<Integer, Integer>, UnorderedPair<Integer, Integer>> key = new UnorderedPair<UnorderedPair<Integer,Integer>, UnorderedPair<Integer,Integer>>(new UnorderedPair<Integer, Integer>(ibr1ref[0].data.serial,ibr1ref[1].data.serial), new UnorderedPair<Integer, Integer>(ibr2ref[0].data.serial,ibr2ref[1].data.serial)); 
+				
+				LN.PathLen pathlen = lpCache.get(key); 
+				
+				if( pathlen == null ) {
+					pathlen = LN.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5 );
+					lpCache.put(key, pathlen);
+				} else {
+					
+					//System.out.printf( "<<<<<<<<< HIT\n" );
+				}
 				
 				// 'longest path to tip (lptt)': the maximum possible branch dist returned by LN.getPathLenBranchToBranch(ibr1ref, ibr2ref, 0.5 ).
 				// The branch-dist normalized by the lptt was suggested by pavlos.
 				// assume that the first placement (ibr1/ibr1ref) is the 'correct' one. Calculate the 'longest path to tip (lptt)' for this placement 
-				double lptt = LN.getLongestPathBranchToTip(ibr1ref);
-				
+				UnorderedPair<Integer, Integer> brKey = new UnorderedPair<Integer, Integer>(ibr1ref[0].data.serial, ibr1ref[1].data.serial);
+				final double lptt;
+				if( lpttCache.containsKey(brKey)) {
+					lptt = lpttCache.get(brKey);
+//					System.out.printf( ">>>>>>>>>>>>> HIT2\n");
+				} else {
+					lptt = LN.getLongestPathBranchToTip(ibr1ref);
+					lpttCache.put(brKey, lptt );
+				}
 				//System.out.printf( "dist: %f %d (%f %d)\n", pathlen.bd, pathlen.nd, bd, ndout[0] );
 	//			System.out.printf( "branches: %s %s\n", res1.branch, res2.branch );
 				System.out.printf( "%s %s %s %f %d %f\n", res1.seq, res1.branch, res2.branch, pathlen.bd, pathlen.nd, pathlen.bd / lptt );

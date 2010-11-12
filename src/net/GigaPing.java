@@ -15,11 +15,11 @@ public class GigaPing {
 		//sock.bind(new InetSocketAddress());
 		
 		byte[] buf = new byte[MTU];
-		
+		final byte[] abuf = new byte[4];
 		
 		final byte[] addr = {(byte) 127, (byte) 0, 0, 1};
 		
-		Runnable reader = new Runnable() {
+		class MyReader implements Runnable {
 			
 			@Override
 			public void run() {
@@ -32,7 +32,14 @@ public class GigaPing {
 						rxsock.receive(rxp);
 						
 						//System.out.printf( "received packet of length: %d from %s\n", rxp.getLength(), rxp.getAddress().toString() );
-						DatagramPacket retp = new DatagramPacket(rxb, rxb.length, InetAddress.getByAddress(addr), 21844 );
+						byte[] bb = rxp.getData();
+						int serial = bb[0] + (bb[1] << 8) + (((int)bb[2]) << 16) + (((int)bb[3]) << 24);
+						
+						
+//						System.out.printf( "%d received packet of length: %d from %s:%d (%d) (%d %d %d %d)\n", i, rxp.getLength(), rxp.getAddress().toString(), rxp.getPort(), serial, bb[0], bb[1], bb[2], bb[3] );
+				
+						
+						DatagramPacket retp = new DatagramPacket(abuf, 4, rxp.getAddress(), 21844 );
 						rxsock.send( retp );
 						
 						i++;
@@ -48,9 +55,12 @@ public class GigaPing {
 			}
 		};
 		
-		Thread rt = new Thread( reader );
+		Thread rt = new Thread( new MyReader() );
 		rt.start();
+//		Thread rt2 = new Thread( new MyReader() );
+//		rt2.start();
 		
+		rt.join();
 		
 		//byte[] buf = {0,1,2,5,8,16,32,64};
 		
@@ -79,5 +89,7 @@ public class GigaPing {
 		long dt = System.currentTimeMillis() - time;
 		
 		System.out.printf( "%d bytes in %d ms: %.2f Mb/s\n", i * MTU, dt, (i * MTU) / (dt * 1000.0) );
+		
+		Double.toString(123);
 	}
 }

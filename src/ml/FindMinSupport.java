@@ -307,8 +307,8 @@ public class FindMinSupport {
 //		createReducedTrees("RAxML_bipartitions.500.BEST.WITH", "500");
 //		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
 //		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
-//		createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
-		createReducedTrees("RAxML_bipartitions.1605.BEST.WITH", "1605");
+		createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
+//		createReducedTrees("RAxML_bipartitions.1605.BEST.WITH", "1605");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -481,7 +481,7 @@ public class FindMinSupport {
 
 			
 			if( CREATE_DIST_SUBSEQ_ALIGNMENTS ) {
-				final int meanLen = 200;
+				final int meanLen = 500;
 				final int sd = 60;
 				final int nSamples = 20;
 				final int minLen = 20;
@@ -979,7 +979,7 @@ public class FindMinSupport {
 		return ra;
 	}
 
-	private static boolean isGapCharacter(char c) {
+	static boolean isGapCharacter(char c) {
 		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
 	}
 

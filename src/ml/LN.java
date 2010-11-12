@@ -957,6 +957,22 @@ public class LN {
     	return len;
     }
 
+    
+    private static double longestPathToTip( LN n ) {
+    	if( n.data.isTip ) {
+    		return -(n.backLen/2.0);
+    	} else {
+    		return Math.max(n.backLen + longestPathToTip( n.next.back ), n.backLen + longestPathToTip( n.next.next.back ));
+    	}
+    	
+    }
+    static double getLongestPathBranchToTip( LN b[] ) {
+    	double l1 = longestPathToTip( b[0] ) + (b[0].backLen/2.0);
+    	double l2 = longestPathToTip( b[1] ) + (b[1].backLen/2.0);
+    	
+    	return Math.max( l1, l2 );
+    }
+    
 	public static LN insertBranch(LN[] br, double len) {
 		LN nl = LN.create();
 		
