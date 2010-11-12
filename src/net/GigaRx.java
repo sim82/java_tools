@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class GigaRx {
 	public static void main(String[] args) throws IOException, InterruptedException {
@@ -22,8 +25,12 @@ public class GigaRx {
 			DatagramPacket rxp = new DatagramPacket(rxb, rxb.length );
 			try {
 				rxsock.receive(rxp);
+		
+				byte[] bb = rxp.getData();
+				int serial = bb[0] + (bb[1] << 8) + (((int)bb[2]) << 16) + (((int)bb[3]) << 24);
 				
-				System.out.printf( "received packet of length: %d from %s\n", rxp.getLength(), rxp.getAddress().toString() );
+				
+				System.out.printf( "%d received packet of length: %d from %s (%d) (%d %d %d %d)\n", i, rxp.getLength(), rxp.getAddress().toString(), serial, bb[0], bb[1], bb[2], bb[3] );
 		
 				i++;
 				if( i % 1000 == 0 ) {

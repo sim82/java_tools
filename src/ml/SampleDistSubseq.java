@@ -17,8 +17,28 @@ public class SampleDistSubseq {
 		
 		
 		MultipleAlignment ma = MultipleAlignment.loadPhylip(inFile);
-		final int meanLen = 200;
-		final int sdLen = 60;
+		final int meanLen;
+		if( args.length > 1 ) {
+			meanLen = Integer.parseInt(args[1]);
+		} else {
+			meanLen = 200;
+		}	
+		final int sdLen;
+		if( args.length > 2 ) {
+			sdLen = Integer.parseInt(args[2]);
+		} else {
+			sdLen = 60;
+		}
+		
+		
+		final boolean writeFasta;
+		if( args.length > 3 ) {
+			writeFasta = args[3].equals("-fasta");
+			
+		} else {
+			writeFasta = false;
+		}
+		
 		final int nSamples = 20;
 		final int minLen = 20;
 		
@@ -47,9 +67,24 @@ public class SampleDistSubseq {
 			}
 		}
 		
-		MultipleAlignment outMa = new MultipleAlignment(ma.seqLen, outNames, outData );
-		outMa.writePhylip(System.out);
+		if (!writeFasta) {
+			MultipleAlignment outMa = new MultipleAlignment(ma.seqLen, outNames, outData );
+			outMa.writePhylip(System.out);
+		} else {
+			// this is all pretty stupid, but hey, this is java which was invented for inefficient shit ...
+			
+			for( int i = 0; i < outNames.length; i++ ) {
+				System.out.println( ">" + outNames[i] );
+				for( int j = 0; j < outData[i].length(); j++ ) {
+					char c = outData[i].charAt(j);
+					if( !FindMinSupport.isGapCharacter(c)) {
+						System.out.write( c );
+					}
+				}
+				System.out.write( '\n' );
+			}
 		
+		}
 		
 	}
 }
