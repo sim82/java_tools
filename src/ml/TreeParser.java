@@ -294,7 +294,7 @@ public class TreeParser {
         	
         	nodeLabel = substring(ptr, lend);
         	ptr = lend;
-        	
+//        	System.out.printf( "node label: %s\n", nodeLabel);
             if( inputA[ptr] == ';') {
             	// oh my god. a fucking rooted tree
             	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
@@ -304,28 +304,27 @@ public class TreeParser {
             	return nl;
             }
             
-            if( inputA[ptr] != ':' && inputA[ptr] != ',' && inputA[ptr] != ')' ) {
-
+            
+            
             	
             	
-            	
-            	boolean isDigit = true;
-            	for( int i = 0; i < nodeLabel.length(); i++ ) {
-            		isDigit &= Character.isDigit(nodeLabel.charAt(i));
-            		
-            		if( i == 0 ) {
-            			isDigit &= (nodeLabel.charAt(i) != '0');
-            		}
-            	}
-            	
-            	if( isDigit ) {
-            		support = Double.parseDouble(nodeLabel);
-            	} else {
-            		
-            		support = -1;
-            	}
-            	
-            	
+        	boolean isDigit = true;
+        	for( int i = 0; i < nodeLabel.length(); i++ ) {
+        		isDigit &= Character.isDigit(nodeLabel.charAt(i));
+        		
+        		if( i == 0 ) {
+        			isDigit &= (nodeLabel.charAt(i) != '0');
+        		}
+        	}
+        	
+        	if( isDigit ) {
+        		support = Double.parseDouble(nodeLabel);
+        	} else {
+        		
+        		support = -1;
+        	}
+        	
+        	
 //                int lend = findFloat(ptr);
 //                if (lend == ptr) {
 //                    printLocation();
@@ -334,9 +333,6 @@ public class TreeParser {
 //
 //                support = Double.parseDouble(substring(ptr, lend));
 //                ptr = lend;
-            } else {
-                support = -1.0;
-            }
 
 			LN n = LN.create();
             n.data.setSupport(support);

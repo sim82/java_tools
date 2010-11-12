@@ -47,7 +47,7 @@ public class FindMinSupport {
 	}
 	private static boolean CREATE_REDUCED_ALIGNMENTS = !true;
 	private static boolean CREATE_SUBSEQ_ALIGNMENTS = !true;
-	private static boolean CREATE_REDUCED_TREES = true;
+	private static boolean CREATE_REDUCED_TREES = !true;
 	private static boolean CREATE_MAPPING_FILES = true;
 	private static final boolean CREATE_PAIRED_END_ALIGNMENTS = !true;
 	private static final boolean CREATE_DIST_SUBSEQ_ALIGNMENTS = true;
@@ -63,7 +63,7 @@ public class FindMinSupport {
 	public static ReductionResult createNThReducedTree(LN n, int num) {
 		final LN[] nodelist = LN.getAsList(n);
 
-		//System.out.printf("nodes: %d\n", nodelist.length);
+		System.out.printf("nodes: %d\n", nodelist.length);
 
 		int nTT = 0;
 		int i = 0;
@@ -72,6 +72,8 @@ public class FindMinSupport {
         for (final LN node : nodelist) {
             final int nt = numTips(node);
 
+//            System.out.printf( "support: %f\n", node.data.getSupport());
+            
             if (node.data.getSupport() < 100.0) {
                 continue;
             }
@@ -302,13 +304,13 @@ public class FindMinSupport {
 
 //		createReducedTrees("RAxML_bipartitions.140.BEST.WITH", "140");
 //		createReducedTrees("RAxML_bipartitions.855.BEST.WITH", "855");
-//		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
+		createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150");
 //		createReducedTrees("RAxML_bipartitions.218.BEST.WITH", "218");
 //		createReducedTrees("RAxML_bipartitions.500.BEST.WITH", "500");
 //		createReducedTrees("RAxML_bipartitions.628.BEST.WITH", "628");
 //		createReducedTrees("RAxML_bipartitions.714.BEST.WITH", "714");
 //		createReducedTrees("RAxML_bipartitions.1604.BEST.WITH", "1604");
-		createReducedTrees("RAxML_bipartitions.1605.BEST.WITH", "1605");
+//		createReducedTrees("RAxML_bipartitions.1605.BEST.WITH", "1605");
         //createReducedTrees("RAxML_bipartitions.2000.BEST.WITH", "2000");
         //       createReducedTrees("RAxML_bipartitions.150.BEST.WITH", "150" );
 	//createReducedTrees("RAxML_bipartitions.354.BEST.WITH", "354" );
@@ -481,10 +483,11 @@ public class FindMinSupport {
 
 			
 			if( CREATE_DIST_SUBSEQ_ALIGNMENTS ) {
-				final int meanLen = 200;
-				final int sd = 60;
+				final int meanLen = 100;
+				final int sd = 0;
 				final int nSamples = 20;
-				final int minLen = 20;
+				final int minLen = 100;
+				final int maxLen = 100;
 				
 				File alignOutfile = new File(dist_subseq_alignoutdir, alignName + "_" + padchar("" + i, 0, 4) + "_" + meanLen + "_" + sd ); 
 				
@@ -519,7 +522,7 @@ public class FindMinSupport {
 				
 				for( int j = 0; j < nSamples; j++ ) {
 					double gr = rand.nextGaussian();
-					final int len = Math.max( minLen, (int) Math.round(gr * sd + meanLen)); 
+					final int len = Math.min( maxLen, Math.max( minLen, (int) Math.round(gr * sd + meanLen))); 
 				
 					names[outptr] = taxon + "_" + padchar( "" + j, 0, 2 );
 					seqs[outptr] = createRandomSubseq(qs, len);
