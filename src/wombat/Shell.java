@@ -54,7 +54,7 @@ public class Shell {
 					ret.add(line);
 				} 
 			}
-			System.out.printf( "done: %d\n", System.currentTimeMillis() - time1 );
+			//System.out.printf( "done: %d\n", System.currentTimeMillis() - time1 );
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -65,7 +65,22 @@ public class Shell {
 		
 		return ret;
 	}
-	
+	void exit() {
+		
+		try {
+			exec( "exit" );
+			System.out.printf( "exit returned.\n" );
+			pr.waitFor();
+			ec.stopPlease();
+			ec.join();
+			
+			System.out.printf( "joined.\n" );
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 	public static void main(String[] args) {
 		//int[] arr = new int[1024 * 1024 * 256];
 		
@@ -75,5 +90,11 @@ public class Shell {
 		for( String l : out ) {
 			System.out.printf( "out: '%s'\n", l );
 		}
+		
+		sh.exit();
+		
 	}
+
+
+	
 }
