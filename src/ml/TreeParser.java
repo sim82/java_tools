@@ -308,7 +308,7 @@ public class TreeParser {
             
             	
             	
-        	boolean isDigit = true;
+        	boolean isDigit = nodeLabel.length() > 0;
         	for( int i = 0; i < nodeLabel.length(); i++ ) {
         		isDigit &= Character.isDigit(nodeLabel.charAt(i));
         		
@@ -318,7 +318,12 @@ public class TreeParser {
         	}
         	
         	if( isDigit ) {
-        		support = Double.parseDouble(nodeLabel);
+        		try {
+        			support = Double.parseDouble(nodeLabel);
+        		} catch( NumberFormatException e ) {
+        			printLocation();
+        			throw e;
+        		}
         	} else {
         		
         		support = -1;
@@ -498,11 +503,14 @@ public class TreeParser {
 	}
 
 	public static void main(String[] args) {
-		TreeParser.QUIET = true;
+		TreeParser.QUIET = !true;
 		try {
 			LN t = TreeParser.parse(new File( args[0] ));
 			System.out.printf( "good\n" );
 		} catch( RuntimeException e ) {
+			if( !TreeParser.QUIET ) {
+				e.printStackTrace();
+			}
 			System.out.printf( "bad\n" );
 		}
 	}
