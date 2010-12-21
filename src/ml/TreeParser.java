@@ -308,7 +308,7 @@ public class TreeParser {
             
             	
             	
-        	boolean isDigit = true;
+        	boolean isDigit = nodeLabel.length() != 0;
         	for( int i = 0; i < nodeLabel.length(); i++ ) {
         		isDigit &= Character.isDigit(nodeLabel.charAt(i));
         		
