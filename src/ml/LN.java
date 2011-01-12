@@ -958,6 +958,52 @@ public class LN {
     }
 
     
+    
+    private static void shortestLongestPathToTip( LN n, double[] l ) {
+    	if( n.data.isTip ) {
+    		l[0] = l[1] = -(n.backLen/2.0);
+    	} else {
+    		double[] l1 = new double[2];
+    		double[] l2 = new double[2];
+    		shortestLongestPathToTip(n.next.back, l1);
+    		shortestLongestPathToTip(n.next.next.back, l2);
+    		
+    		l1[0] += n.backLen;
+    		l1[1] += n.backLen;
+    		l2[0] += n.backLen;
+    		l2[1] += n.backLen;
+    		
+    		l[0] = Math.min( l1[0], l2[0] );
+    		l[1] = Math.max( l1[1], l2[1] );
+    		
+    		
+    		
+    	}
+    }
+    
+    static double[] getShortestLongestPathBranchToTip( LN b[] ) {
+    	double[] l1 = new double[2];
+		double[] l2 = new double[2];
+		
+		shortestLongestPathToTip(b[0], l1);
+		shortestLongestPathToTip(b[1], l2);
+		l1[0] += b[0].backLen/2.0;
+		l1[1] += b[0].backLen/2.0;
+		
+		l2[0] += b[1].backLen/2.0;
+		l2[1] += b[1].backLen/2.0;
+		
+//    	double l1 = longestPathToTip( b[0] ) + (b[0].backLen/2.0);
+//    	double l2 = longestPathToTip( b[1] ) + (b[1].backLen/2.0);
+    	
+		double l[] = new double[2];
+		
+		l[0] = Math.min( l1[0], l2[0]);
+		l[1] = Math.max( l1[1], l2[1] );
+		
+		return l;
+    }
+    
     private static double longestPathToTip( LN n ) {
     	if( n.data.isTip ) {
     		return -(n.backLen/2.0);
@@ -972,6 +1018,29 @@ public class LN {
     	
     	return Math.max( l1, l2 );
     }
+    
+    
+    private static double longestPathToTipND( LN n ) {
+    	if( n.data.isTip ) {
+    		return 0;
+    	} else {
+    		return Math.max(1 + longestPathToTipND( n.next.back ), 1 + longestPathToTipND( n.next.next.back ));
+    	}
+    	
+    }
+    static double getLongestPathBranchToTipND( LN b[] ) {
+    	double l1 = longestPathToTipND( b[0] );
+    	double l2 = longestPathToTipND( b[1] );
+    	
+    	return Math.max( l1, l2 );
+    }
+    
+//    static double getShortestPathBranchToTip( LN b[] ) {
+//    	double l1 = longestPathToTip( b[0] ) + (b[0].backLen/2.0);
+//    	double l2 = longestPathToTip( b[1] ) + (b[1].backLen/2.0);
+//    	
+//    	return Math.max( l1, l2 );
+//    }
     
 	public static LN insertBranch(LN[] br, double len) {
 		LN nl = LN.create();

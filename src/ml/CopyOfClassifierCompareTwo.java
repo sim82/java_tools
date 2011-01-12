@@ -77,10 +77,13 @@ public class CopyOfClassifierCompareTwo {
 			double bdMean = 0.0;
 			double bdnMean = 0.0;
 			double pdMean = 0.0;
-
+			double ndnMean = 0.0;
+			
 			HashMap <UnorderedPair<UnorderedPair<Integer, Integer>, UnorderedPair<Integer, Integer>>, LN.PathLen> lpCache = new HashMap<UnorderedPair<UnorderedPair<Integer, Integer>, UnorderedPair<Integer, Integer>>, LN.PathLen>();
 			HashMap <UnorderedPair<Integer, Integer>, Double> lpttCache = new HashMap<UnorderedPair<Integer, Integer>, Double>();
+			HashMap <UnorderedPair<Integer, Integer>, double[]> slpttCache = new HashMap<UnorderedPair<Integer, Integer>, double[]>();
 			Map <UnorderedPair<Integer, Integer>, LN[]> cbrCache = new HashMap<UnorderedPair<Integer, Integer>, LN[]>();
+			HashMap <UnorderedPair<Integer, Integer>, Integer> lpttCacheND = new HashMap<UnorderedPair<Integer, Integer>, Integer>();
 			
 			
 			HashMap <String,LN[]> olt1Name2Br = new HashMap<String, LN[]>();
@@ -157,26 +160,44 @@ public class CopyOfClassifierCompareTwo {
 				// assume that the first placement (ibr1/ibr1ref) is the 'correct' one. Calculate the 'longest path to tip (lptt)' for this placement 
 				UnorderedPair<Integer, Integer> brKey = new UnorderedPair<Integer, Integer>(ibr1ref[0].data.serial, ibr1ref[1].data.serial);
 				final double lptt;
+				final int lpttND; //= (int)LN.getLongestPathBranchToTipND(ibr1ref);
 				if( lpttCache.containsKey(brKey)) {
 					lptt = lpttCache.get(brKey);
+					lpttND = lpttCacheND.get(brKey);
 //					System.out.printf( ">>>>>>>>>>>>> HIT2\n");
 				} else {
 					lptt = LN.getLongestPathBranchToTip(ibr1ref);
+					lpttND = (int)LN.getLongestPathBranchToTipND(ibr1ref);
+					
 					lpttCache.put(brKey, lptt );
+					lpttCacheND.put(brKey, lpttND );
 				}
+				
+				final double[] slptt;
+				if( slpttCache.containsKey(brKey)) {
+					slptt = slpttCache.get(brKey);
+				} else {
+					slptt = LN.getShortestLongestPathBranchToTip(ibr1ref);
+					slpttCache.put( brKey, slptt );
+			
+				}
+				
+				
+				
 				//System.out.printf( "dist: %f %d (%f %d)\n", pathlen.bd, pathlen.nd, bd, ndout[0] );
 	//			System.out.printf( "branches: %s %s\n", res1.branch, res2.branch );
-				System.out.printf( "%s %s %s %f %d %f\n", res1.seq, res1.branch, res2.branch, pathlen.bd, pathlen.nd, pathlen.bd / lptt );
+				System.out.printf( "%s %s %s %f %d %f %f %f %f %f %d\n", res1.seq, res1.branch, res2.branch, pathlen.bd, pathlen.nd, pathlen.bd / lptt, lptt, slptt[0], slptt[1], pathlen.nd / (float)lpttND, lpttND );
 				
 				ndMean += pathlen.nd;
 				bdMean += pathlen.bd;
 				bdnMean += pathlen.bd / diameter;
 				pdMean += pathlen.bd / lptt;
+				ndnMean += pathlen.nd / ((double)lpttND);
 			}
 			
 			if( res1list.length > 1 ) {
 				double n = res1list.length; 
-				System.out.printf( "mean: bd: %f nd: %f bdn: %f pd: %f\n", bdMean / n, ndMean / n, bdnMean / n, pdMean / n ); 
+				System.out.printf( "mean: bd: %f nd: %f bdn: %f pd: %f ndn: %f\n", bdMean / n, ndMean / n, bdnMean / n, pdMean / n, ndnMean / n ); 
 			}
 		} else if( args.length == 4 ) {
 			File reftreeFile = new File(args[0] );
