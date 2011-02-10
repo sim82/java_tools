@@ -275,6 +275,8 @@ public class TreeParser {
 
 
 		nInnerNodes++;
+		
+		
 		if (inputA[ptr] == ')') {
 			// 'normal' inner node: two childs
 			ptr++;
@@ -359,6 +361,8 @@ public class TreeParser {
          //   System.out.printf( "l3: %s\n", nx.data.getTipName() );
 			skipWhitespace();
 
+			
+			
 			if( inputA[ptr] != ')' ) {
 				printLocation();
 				throw new RuntimeException("parse error: parseInnerNode (at root) expects ') at " + ptr);
@@ -390,12 +394,14 @@ public class TreeParser {
 	 * @param n2
 	 * @param branchLen
 	 */
-	private static void twiddle( LN n1, LN n2, double branchLen, String branchLabel, double support ) {
+	private void twiddle( LN n1, LN n2, double branchLen, String branchLabel, double support ) {
 		if( n1.back != null ) {
+			printLocation();
 			throw new RuntimeException( "n1.back != null" );
 		}
 
 		if( n2.back != null ) {
+			printLocation();
 			throw new RuntimeException( "n2.back != null" );
 		}
 

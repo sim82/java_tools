@@ -85,12 +85,16 @@ public class Shell {
 		//int[] arr = new int[1024 * 1024 * 256];
 		
 		Shell sh = new Shell();
-		ArrayList<String> out = sh.exec( "ls ~/" );
+		ArrayList<String> out = sh.exec( "ulimit -t 2; /home/sim/a.out" );
 		
 		for( String l : out ) {
 			System.out.printf( "out: '%s'\n", l );
 		}
+        out = sh.exec( "ls ~/" );
 		
+		for( String l : out ) {
+			System.out.printf( "out2: '%s'\n", l );
+		}
 		sh.exit();
 		
 	}

@@ -183,7 +183,7 @@ public class LN {
 		
 		return list.toArray(new LN[list.size()][]);
 	}
-    private static void getAllBranchList3Forward(LN n,
+    static void getAllBranchList3Forward(LN n,
 			ArrayList<LN[]> list) 
     {	
     	
@@ -1035,6 +1035,19 @@ public class LN {
     	return Math.max( l1, l2 );
     }
     
+    static double shortestPathToTipND( LN n ) {
+    	if( n.data.isTip ) {
+    		return 0;
+    	} else {
+    		return Math.min(1 + shortestPathToTipND( n.next.back ), 1 + shortestPathToTipND( n.next.next.back ));
+    	}
+    	
+    }
+   
+    static double getShortestPathBranchToTipND( LN b[] ) {
+    	return Math.min( shortestPathToTipND(b[0]), shortestPathToTipND(b[1]));
+    }
+    
 //    static double getShortestPathBranchToTip( LN b[] ) {
 //    	double l1 = longestPathToTip( b[0] ) + (b[0].backLen/2.0);
 //    	double l2 = longestPathToTip( b[1] ) + (b[1].backLen/2.0);
@@ -1097,4 +1110,90 @@ public class LN {
 		
 	}	
 	
+	static LN moveBranch( LN n, LN[] dest ) {
+		if( n.data.isTip ) {
+			throw new RuntimeException( "cannot move tip" );
+		}
+		
+		{
+			// remove n:
+			// re-link the two neighbor nodes
+			
+			LN n1 = n.next.back;
+			LN n2 = n.next.next.back;
+			n1.back = n2;
+			n2.back = n1;
+			
+			double newLen = n1.backLen + n2.backLen;
+			n1.backLen = newLen;
+			n2.backLen = newLen;
+			
+		}
+
+		assert( dest[0].back == dest[1] && dest[1].back == dest[0] );
+		
+		{
+			// add n:
+			// link with new neighbors
+			
+			LN n1 = dest[0];
+			LN n2 = dest[1];
+			
+			double newLen = n1.backLen / 2;
+			
+			n.next.back = n1;
+			n.next.next.back = n2;
+			
+			n1.back = n.next;
+			n2.back = n.next.next;
+			
+			n.next.backLen = n.next.next.backLen = n1.backLen = n2.backLen = newLen;
+			
+		}
+		
+		
+		return n;
+	}
+	
+	
+	static LN[] removeBranch( LN n ) {
+		if( n.data.isTip ) {
+			throw new RuntimeException( "cannot remove tip" );
+		}
+		LN n1 = n.next.back;
+		LN n2 = n.next.next.back;
+		n1.back = n2;
+		n2.back = n1;
+		
+		double newLen = n1.backLen + n2.backLen;
+		n1.backLen = newLen;
+		n2.backLen = newLen;
+		
+		n.next.back = n.next.next.back = null;
+		
+		LN[] newbranch = {n1, n2};
+		return newbranch;
+	}
+	
+	static void insertBranch( LN n, LN[] dest ) {
+		
+		
+		LN n1 = dest[0];
+		LN n2 = dest[1];
+		
+		if( n1.back != n2 || n2.back != n1 ) {
+			throw new RuntimeException( "bad destination branch" );
+		}
+		
+		double newLen = n1.backLen / 2;
+		
+		n.next.back = n1;
+		n.next.next.back = n2;
+		
+		n1.back = n.next;
+		n2.back = n.next.next;
+		
+		n.next.backLen = n.next.next.backLen = n1.backLen = n2.backLen = newLen;
+		
+	}
 }
