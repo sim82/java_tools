@@ -11,7 +11,7 @@ import java.net.SocketAddress;
 
 public class SimplePing2 {
 	public static void main(String[] args) throws IOException, InterruptedException {
-		final DatagramSocket sock = new DatagramSocket(21844);
+		final DatagramSocket sock = new DatagramSocket(21845);
 		//sock.bind(new InetSocketAddress());
 		
 		Runnable reader = new Runnable() {

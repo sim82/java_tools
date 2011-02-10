@@ -78,7 +78,16 @@ public class FastaFile {
 				} else {
 					StringTokenizer ts = new StringTokenizer(line);
 					while( ts.hasMoreTokens() ) {
-						curEntry.data += ts.nextToken();
+						String token = ts.nextToken();
+						
+						for( int i = 0; i < token.length(); i++ ) {
+							char c = token.charAt(i);
+							if( Character.isLetter(c)) {
+								curEntry.data += c;
+							}
+						}
+						
+						//curEntry.data += ts.nextToken();
 					}
 				}
 			}
