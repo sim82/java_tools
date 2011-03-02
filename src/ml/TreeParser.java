@@ -165,6 +165,18 @@ public class TreeParser {
 			parseBranchLength();
 		}
 		
+		if( node.back == null ) {
+        	// oh my god. a fucking rooted tree
+//        	System.out.println("rooted");
+        	//double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
+        	//System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
+        	LN nnode = node.next.back;
+        	node.next.back.back = node.next.next.back.back = null;
+        	twiddle( node.next.back, node.next.next.back, node.next.backLen + node.next.next.backLen, node.next.backLabel, node.next.backSupport );
+			
+        	node = nnode;
+        }
+		
 		if (inputA[ptr] != ';') {
 			printLocation();
 			throw new RuntimeException("parse error. parse expects ';'");
@@ -297,14 +309,14 @@ public class TreeParser {
         	nodeLabel = substring(ptr, lend);
         	ptr = lend;
 //        	System.out.printf( "node label: %s\n", nodeLabel);
-            if( inputA[ptr] == ';') {
-            	// oh my god. a fucking rooted tree
-            	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
-            	//System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
-            	twiddle( nl, nr, l1 + l2, label1, sup );
-    			
-            	return nl;
-            }
+//            if( inputA[ptr] == ';') {
+//            	// oh my god. a fucking rooted tree
+//            	double sup = Math.max( nl.data.getSupport(), nr.data.getSupport());
+//            	//System.out.printf( "rooted shit: %s %s %f %f %f %f\n", label1, label2, nl.data.getSupport(), nr.data.getSupport(), l1, l2);
+//            	twiddle( nl, nr, l1 + l2, label1, sup );
+//    			
+//            	return nl;
+//            }
             
             
             
