@@ -21,7 +21,7 @@ public class SplitTree {
 					LN cnt = LN.getTowardsTree(cn);
 					
 					n = LN.removeBranch(cnt.back)[0];
-					
+					break;
 				}
 			
 			}
