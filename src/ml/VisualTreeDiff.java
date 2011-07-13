@@ -1,7 +1,12 @@
 package ml;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -185,9 +190,64 @@ public class VisualTreeDiff {
 		
 		
 		PimmxlPrinter.auxSet = branchFound;
-		PimmxlPrinter.printPhyloxml(t1, System.out);
+		
+		boolean archStarted = false;
+		try
+		{
+			PrintStream ps;
+			ps = new PrintStream( new FileOutputStream("tmp.xml"));
+			
+			
+			PimmxlPrinter.printPhyloxml(t1, ps);
+			ps.close();
+			
+				
+			ClassLoader cl = ClassLoader.getSystemClassLoader();
+			Class<?> clazz;
+			
+			
+			clazz = cl.loadClass("org.forester.archaeopteryx.Archaeopteryx");
+			Method[] meth = clazz.getMethods();
+			
+			
+			for( Method m : meth ) {
+				if( m.getName().equals("main")) {
+					System.err.println( m );
+					String argsy[] = {"tmp.xml"};
+					Object argsx[] = {(Object)argsy};
+					m.invoke(null, argsx);
+					
+					
+				}
+			}
+			
+			archStarted = true;
+		} catch (ClassNotFoundException e) {
+			System.err.println( "archeopteryx not in classpath. wiriting to stdout");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "bailing out.");
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "failed java magic. bailing out.");
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "failed java magic. bailing out.");
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new RuntimeException( "failed java magic. bailing out.");
+		}
 		
 		
+		if( !archStarted ) {
+			PimmxlPrinter.printPhyloxml(t1, System.out);
+				
+		
+		}
 	}
 
 	private static BitSet splitToBitset(String[] splitSet,
