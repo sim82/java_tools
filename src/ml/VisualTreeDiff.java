@@ -138,7 +138,10 @@ public class VisualTreeDiff {
 			final boolean c21 = t2_tipset.containsAll(t1_tipset);
 			
 			System.err.printf( "equal: %s\n", (c12 && c21) ? "true" : "false" );
+			if( !(c12 && c21) ) {
+				throw new RuntimeException( "tip set in trees is not equal");
 			
+			}
 			
 			t1_tips = t1_tipset.toArray(new String[t1_tipset.size()]);
 			Arrays.sort(t1_tips);
