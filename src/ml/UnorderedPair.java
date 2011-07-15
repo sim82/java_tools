@@ -29,6 +29,13 @@ class UnorderedPair<T1, T2> implements Serializable {
 		this.t2 = t2;
 	}
 
+	@SuppressWarnings("unchecked")
+	UnorderedPair( Object[] t ) {
+		// great stuff: the elegant syntax of java combined with the type-safety of perl!
+		this.t1 = (T1) t[0];
+		this.t2 = (T2) t[1];
+	}
+	
 	// HBondTypePair(HBondParameter par) {
 	// this(par.t1, par.t2);
 	// }

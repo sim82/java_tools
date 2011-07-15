@@ -15,111 +15,113 @@ import java.util.Map;
 import java.util.Set;
 
 
-class PimmxlPrinter {
-	public static Set<UnorderedPair<ANode, ANode>> auxSet;
-
-	static void printIndent( int indent, PrintStream s) {
-    	for( int i = 0; i < indent; i++ ) {
-    		
-    		s.print( "  " );
-    	}
-    
-    }
-    static void printCladeTags( int indent, boolean open, PrintStream s ) {
-    	printIndent(indent, s);
-    	if( open ) {
-    		s.println( "<clade>" );
-    	} else {
-    		s.println( "</clade>");
-    	}
-    }
-
-    static void printColor( int indent, int[]c, PrintStream s ) {
-    	printIndent(indent, s);
-    	s.println( "<color>");
-    	printIndent(indent+1, s);
-    	s.printf( "<red>%d</red>\n", c[0]);
-    	printIndent(indent+1, s);
-    	s.printf( "<green>%d</green>\n", c[1]);
-    	printIndent(indent+1, s);
-    	s.printf( "<blue>%d</blue>\n", c[2]);
-    	
-    	printIndent(indent, s);
-    	s.println( "</color>");
-    	
-    	
-    }
-    
-    static void printClade( int indent, LN n, PrintStream s ) {
-    	printCladeTags(indent, true, s);
-    	
-    	indent++;
-    	
-    	int[] color = {255, 255, 255};
-    	if( !PimmxlPrinter.auxSet.contains(new UnorderedPair<ANode, ANode>(n.back.data, n.data))) {
-    		color[1] = 0;
-    		color[2] = 0;
-    		
-    	}
-    	
-    	if( n.data.isTip ) {
-    		printIndent(indent, s);
-        	s.printf( "<name>%s</name>\n", n.data.getTipName());	
-        	printIndent(indent, s);
-        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
-        	printColor( indent, color, s );
-        			
-    	} else {
-    		assert( n.next.back != null && n.next.next.back != null );
-    		printIndent(indent, s);
-        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
-        	printColor( indent, color, s );
-        	
-    		printClade( indent + 1, n.next.back, s);
-    		printClade( indent + 1, n.next.next.back, s);
-    		
-    		
-    	}
-    	
-    	printCladeTags(indent-1, false, s);
-    }
-    
-    static void printPhyloxml( LN node, PrintStream s ) {
-    	if( node.data.isTip ) {
-    		if( node.back != null ) {
-    			node = node.back;
-    		} else if( node.next.back != null ) {
-    			node = node.next.back;
-    		} else if( node.next.next.back != null ) {
-    			node = node.next.next.back;
-    		} else {
-    			throw new RuntimeException( "can not print single unlinked node");
-    		}
-    		
-    		if( node.data.isTip ) {
-    			throw new RuntimeException( "could not find non-tip node for writing the three (this is a braindead limitation of this tree printer!)");
-    		}
-    	}
-    	
-    	s.println( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-    	s.println( "<phyloxml xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd\" xmlns=\"http://www.phyloxml.org\">" );
-    	s.println( "<phylogeny rooted=\"false\">");
-    	
-    	int indent = 1;
-    	
-    	printCladeTags(indent, true, s);
-    	
-    	printClade( indent + 1, node.back, s );
-    	printClade( indent + 1, node.next.back, s );
-    	printClade( indent + 1, node.next.next.back, s );
-    	
-    	printCladeTags(indent, false, s);
-    	s.println("</phylogeny>\n</phyloxml>");
-    }	
-
-}
 
 public class VisualTreeDiff {
+	static class PimmxlPrinter {
+		public static Set<UnorderedPair<ANode, ANode>> auxSet;
+
+		static void printIndent( int indent, PrintStream s) {
+	    	for( int i = 0; i < indent; i++ ) {
+	    		
+	    		s.print( "  " );
+	    	}
+	    
+	    }
+	    static void printCladeTags( int indent, boolean open, PrintStream s ) {
+	    	printIndent(indent, s);
+	    	if( open ) {
+	    		s.println( "<clade>" );
+	    	} else {
+	    		s.println( "</clade>");
+	    	}
+	    }
+
+	    static void printColor( int indent, int[]c, PrintStream s ) {
+	    	printIndent(indent, s);
+	    	s.println( "<color>");
+	    	printIndent(indent+1, s);
+	    	s.printf( "<red>%d</red>\n", c[0]);
+	    	printIndent(indent+1, s);
+	    	s.printf( "<green>%d</green>\n", c[1]);
+	    	printIndent(indent+1, s);
+	    	s.printf( "<blue>%d</blue>\n", c[2]);
+	    	
+	    	printIndent(indent, s);
+	    	s.println( "</color>");
+	    	
+	    	
+	    }
+	    
+	    static void printClade( int indent, LN n, PrintStream s ) {
+	    	printCladeTags(indent, true, s);
+	    	
+	    	indent++;
+	    	
+	    	int[] color = {255, 255, 255};
+	    	if( !PimmxlPrinter.auxSet.contains(new UnorderedPair<ANode, ANode>(n.back.data, n.data))) {
+	    		color[1] = 0;
+	    		color[2] = 0;
+	    		
+	    	}
+	    	
+	    	if( n.data.isTip ) {
+	    		printIndent(indent, s);
+	        	s.printf( "<name>%s</name>\n", n.data.getTipName());	
+	        	printIndent(indent, s);
+	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
+	        	printColor( indent, color, s );
+	        			
+	    	} else {
+	    		assert( n.next.back != null && n.next.next.back != null );
+	    		printIndent(indent, s);
+	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
+	        	printColor( indent, color, s );
+	        	
+	    		printClade( indent + 1, n.next.back, s);
+	    		printClade( indent + 1, n.next.next.back, s);
+	    		
+	    		
+	    	}
+	    	
+	    	printCladeTags(indent-1, false, s);
+	    }
+	    
+	    static void printPhyloxml( LN node, PrintStream s ) {
+	    	if( node.data.isTip ) {
+	    		if( node.back != null ) {
+	    			node = node.back;
+	    		} else if( node.next.back != null ) {
+	    			node = node.next.back;
+	    		} else if( node.next.next.back != null ) {
+	    			node = node.next.next.back;
+	    		} else {
+	    			throw new RuntimeException( "can not print single unlinked node");
+	    		}
+	    		
+	    		if( node.data.isTip ) {
+	    			throw new RuntimeException( "could not find non-tip node for writing the three (this is a braindead limitation of this tree printer!)");
+	    		}
+	    	}
+	    	
+	    	s.println( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
+	    	s.println( "<phyloxml xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd\" xmlns=\"http://www.phyloxml.org\">" );
+	    	s.println( "<phylogeny rooted=\"false\">");
+	    	
+	    	int indent = 1;
+	    	
+	    	printCladeTags(indent, true, s);
+	    	
+	    	printClade( indent + 1, node.back, s );
+	    	printClade( indent + 1, node.next.back, s );
+	    	printClade( indent + 1, node.next.next.back, s );
+	    	
+	    	printCladeTags(indent, false, s);
+	    	s.println("</phylogeny>\n</phyloxml>");
+	    }	
+
+	}
+
+	
 	public static void main(String[] args) {
 		File t1_name = new File( args[0] );
 		File t2_name = new File( args[1] );

@@ -16,10 +16,17 @@ package ml;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 
 public class LN {
@@ -29,6 +36,7 @@ public class LN {
 	LN back;
 	double backLen;
     String backLabel;
+    int	   backId;
     double backSupport;
 
 	public LN( ANode data ) {
@@ -65,7 +73,19 @@ public class LN {
 
 		return list;
 	}
+	public static LN[] getAsList2(LN n, boolean back) {
+		LN[] list = new LN[1024 * 10];
 
+
+
+		int xpos = insertDFS(n, list, 0, back );
+
+		
+
+		return Arrays.copyOf( list, xpos );
+	}
+	
+	
 	public static String[] getAllBranchNameList( LN n ) {
 		LN[][] brl = getAllBranchList(n);
 		
@@ -198,6 +218,375 @@ public class LN {
 		
 	}
     
+    public interface BranchVisitor {
+    	
+    	public void visit( LN[] br );
+    }
+    
+    public static class BranchIndexUpdate implements BranchVisitor {
+    	int idx = 0;
+
+		@Override
+		public void visit(LN[] br) {
+			br[0].backId = br[1].backId = idx++;
+		}
+    }
+    
+    public static void visitBranchesPreorder( LN n, BranchVisitor v, boolean backward ) {
+		
+    	if( backward ) {
+    		if( n.data.isTip ) 
+    		{	throw new RuntimeException("we don't like tips as start node for traversal!");
+    		}
+    		
+    		visitBranchesPreorder(n.back, v, false);
+    	} else {
+    		LN[] br = {n.back,n};
+    		v.visit( br );
+    	}
+    	
+    	if( !n.data.isTip ) {
+    		visitBranchesPreorder(n.next.back, v, false);
+    		visitBranchesPreorder(n.next.next.back, v, false);
+    	}
+    }
+    
+    public interface NodeVisitor {
+    	public void visit( LN n );
+    	
+    }
+    
+    public static class TipIndexUpdate implements NodeVisitor {
+    	int idx = 0;
+    	
+    	@Override
+    	public void visit( LN n ) {
+    		if( n.data.isTip ) {
+    			n.data.setTipSerial(idx++);
+    			System.out.printf( "tip serial: %d\n", n.data.getTipSerial() );
+    		}
+    	}
+    }
+    
+    public static class TipIndexUpdateAlphabetic implements NodeVisitor {
+    	public TreeMap <String,ANode> map = new TreeMap<String, ANode>();
+    	@Override
+    	public void visit( LN n ) {
+    		if( n.data.isTip ) {
+    			map.put(n.data.getTipName(), n.data);
+    		}
+    	}
+    	
+    	public void commit() {
+    		int idx = 0;
+    		
+    		String prev = "";
+    		
+    		for( Entry<String, ANode> p : map.entrySet()) {
+    			if( p.getKey().equals(prev)) {
+    				throw new RuntimeException( "duplicate tip name in tree: '%s" + p.getKey() + "'" );
+    			}
+    			
+    			prev = p.getKey();
+    			p.getValue().setTipSerial(idx++);
+    			
+    			System.out.printf( "update: %s %d\n", p.getValue().getTipName(), p.getValue().getTipSerial() );
+    		}
+    	}
+    }
+    
+    public static class TipCollectVisitor implements NodeVisitor {
+
+    	public ArrayList<LN> tips = new ArrayList<LN>();
+    	
+		@Override
+		public void visit(LN n) {
+			if( n.data.isTip ) {
+				tips.add(n);
+			}
+		}
+    }
+    
+    // this should be typically called with the 'tips' array from a TipCollectVisitor
+    // parameter 'tips' will be modified.
+    public static void tipIndexUpdateAlphabetic( ArrayList<LN> tips ) {
+    	Comparator<LN> comp = new Comparator<LN>() {
+
+			@Override
+			public int compare(LN o1, LN o2) {
+				return o1.data.getTipName().compareTo(o2.data.getTipName());
+			}
+    		
+    	};
+    	
+    	
+    	Collections.sort( tips, comp );
+    	int idx = 0;
+    	String prev = "";
+    	for( LN t : tips ) {
+    		if( t.data.getTipName().equals(prev)) {
+				throw new RuntimeException( "duplicate tip name in tree: '%s" + t.data.getTipName() + "'" );
+			}
+			
+			prev = t.data.getTipName();
+    		
+    		
+    		t.data.setTipSerial(idx++);
+//    		System.out.printf( "serial: %s %d\n", t.data.getTipName(), t.data.getTipSerial() );
+    	}
+    }
+    
+    public static void visitNodesPreorder( LN n, NodeVisitor v, boolean backwards ) {
+    	v.visit( n );
+    	
+    	
+    	if( !n.data.isTip ) {
+	    	if( backwards ) {
+	    		visitNodesPreorder(n.back, v, false);
+	    	}
+	    	
+	    	visitNodesPreorder(n.next.back, v, false);
+	    	visitNodesPreorder(n.next.next.back, v, false);
+    	} else {
+    		if( backwards ) {
+    			
+    			throw new RuntimeException( "BAD: tip as starting node for traversal." );
+    		}
+    	}
+    }
+    
+    public static class VisitNodesBottomUp {
+    	//
+    	// This contraption is supposed to do kind of a breadth-first flooding of a tree.
+    	// When the flooding is started at the tips, it will do a bottom-up traversal.
+    	// A node will be visited after two of it's neighbor nodes have been visited.
+    	//
+    	// WARNING: the AData.serial numbers have to be unique (which _should_ be enforced by AData, anyway...)!
+    	// The traversal order is implicitly defined by the order of the AData.serial values.
+    	//
+    	// TODO: It is currently only tested for the case that the flooding starts at _all_ tips.
+    	// It might throw or fail to terminate in any other case.
+    	// TODO: Maybe use it to re-implement findBranchBySplit. It's basically the same.
+    	//
+    	
+    	
+//    	Set<ANode> done;
+    	static class Pre {
+    		public LN pre;
+    		public Object res;
+    		
+    		Pre( LN pre, Object res ) {
+    			this.pre = pre;
+    			this.res = res;
+    		}
+    		
+    	}
+    	public interface Visitor {
+			// the Pre objects are either null (for tip nodes), or contain the previously
+    		// visited neigbor nodes and the Objects returned by their 'visit' calls.
+			Object visit( LN towardsRest, Pre pre1, Pre pre2 );
+			
+		}
+		Map<Integer,Pre[]> open = new HashMap<Integer,Pre[]>();
+    	
+    	Visitor v = null;
+    	
+    	
+//    	LN findCont( LN n ) {
+//    		int ctDone = 0;
+//    		
+//    		LN undone = null;
+//    		LN nnext = n;
+//    		do {
+//    			if( done.contains(nnext.back.data)) {
+//    				ctDone++;
+//    			} else {
+//    				undone = nnext;
+//    			}
+//    			nnext = n.next;
+//    		} while( nnext != n );
+//    		
+//    		if( ctDone == 2) {
+//    			return undone;
+//    		} else {
+//    			return null;
+//    		}
+//    		
+//    	}
+//    	
+    	void addOpen( LN n, LN pre, Object preRes ) {
+    		assert( pre != null );
+    		
+    		Pre[] ent = open.get(n.data.serial);
+    		
+    		if( ent != null ) {
+    			if( ent[0] == null ) {
+    				throw new RuntimeException( "ent[0] == null" );
+    			}
+    			if( ent[1] != null ) {
+    				System.err.printf( "already open: %s %s %s %s %s\n", ent[0].pre, ent[1].pre, pre, pre.back.next.back, pre.back.next.next.back );
+    				//throw new RuntimeException( "ent[1] != null" );
+    				return;
+    			}
+    			
+    			ent[1] = new Pre(pre, preRes);
+    			
+    		} else {
+    			Pre[] x = {new Pre(pre,preRes),null};
+    			open.put(n.data.serial,x);
+    		}
+    	}
+    	
+    	VisitNodesBottomUp( Collection<LN> tips, Visitor v ) {
+    		this.v = v;
+    		
+    		for( LN t : tips ) {
+    			t = LN.getTowardsTree(t);
+    			
+    			if( t.back.data.isTip ) {
+    				throw new RuntimeException( "tip neighboring tip. me no likee. bailing out.");
+    			}
+    			
+//    			done.add( t.data );
+    			Object res = v.visit( t, null, null );
+    			
+    			addOpen( t.back, t, res );
+//    			addOpen( t.back );
+    			
+    		}
+    		
+    		
+    	}
+    	
+    	void run() {
+    		
+    		while( !open.isEmpty() ) {
+    		
+    			Iterator<Entry<Integer, Pre[]>> iter = open.entrySet().iterator();
+    			while( iter.hasNext() ) {
+    				Entry<Integer, Pre[]> n = iter.next();
+    				
+    				Pre[] pre = n.getValue();
+    				
+//    				if( open.size() == 1 ) {
+//    					System.out.printf( "pre: %s %s\n", pre[0], pre[1] );
+//    				}
+    				
+    				if( pre[0] != null && pre[1] != null ){
+    					final LN towardsRest;
+    					
+    					if( pre[0].pre.back.next != pre[1].pre.back ) {
+    						towardsRest = pre[0].pre.back.next;
+//    						addOpen(pre[0].pre.back.next.back, pre[0].pre.back.next, res);
+						} else if( pre[1].pre.back.next != pre[0].pre.back ) {
+							towardsRest = pre[1].pre.back.next;
+//							addOpen(pre[1].pre.back.next.back, pre[1].pre.back.next, res);
+						} else {
+							throw new RuntimeException( "quirk: pre-nodes do not point back to same node");
+						}
+    					
+    					if( n.getKey() != towardsRest.data.serial ) {
+    						throw new RuntimeException( "quirk: n.getKey() != towardsRest.data");
+    					}
+    					
+    					Object res = v.visit(towardsRest, pre[0], pre[1]);
+    					iter.remove();
+    					
+    					if( pre[0].pre.back.data.serial != n.getKey() || pre[1].pre.back.data.serial != n.getKey() ) {
+    						throw new RuntimeException( "pre[0].back.data != n.getKey() || pre[1].back.data != n.getKey()" );
+    					}
+    					
+    					if( !open.isEmpty() ) {
+    						addOpen(towardsRest.back, towardsRest, res);
+    						
+    					}
+    					break;
+    				}
+    				
+    			}
+    		
+    			
+    		}
+    	}
+    	
+    }
+    
+    static class CollectBranchSplitSets {
+    	public final Map<UnorderedPair<LN,LN>,BitSet> splits = new HashMap<UnorderedPair<LN,LN>, BitSet>();
+		public final int numTips;
+		
+		public CollectBranchSplitSets( LN t1 ) {
+		
+//			PerfTimer timer1 = new PerfTimer();
+			
+			//
+			// collect tip nodes from t1
+			//
+			TipCollectVisitor tcv = new TipCollectVisitor();
+			LN.visitNodesPreorder(t1, tcv, true);
+			
+			
+			//
+			// update the tip serial number (stored in the ANode objects associated with the tips)
+			// to the lexicographic order of the tip names.
+			//
+			LN.tipIndexUpdateAlphabetic(tcv.tips);
+			
+			numTips = tcv.tips.size();
+			
+			//
+			// collect the split-sets (=bit vectors) for all nodes using a bottom-up node visitor.
+			// If the n-th bit in a split set is true this means that the n-th tip (according to the
+			// lexicographic ordering as mentionend above) is present in the subtree below that node.
+			//
+			// Store one of the split-sets in a map indexed by branches (represented by UnorderedSet<LN,LN>).
+			// These are not necessarily the _smaller_ split sets (but they can be converted to the smaller split
+			// by flipping the bits, if necessary, see method convertToSmaller)
+			//
+			VisitNodesBottomUp.Visitor v = new VisitNodesBottomUp.Visitor() {
+				
+				@Override
+				public Object visit( LN n, VisitNodesBottomUp.Pre pre1, VisitNodesBottomUp.Pre pre2) {
+					
+					if( n.back == null ) {
+						throw new RuntimeException( "n.back == null" );
+					}
+					final LN[] br = {n, n.back};
+					final BitSet bs;
+					
+					if( n.data.isTip ) {
+//						System.out.printf( "visit tip: %s\n", n.data.getTipName() );
+						
+						bs = new BitSet(numTips);
+						bs.set(n.data.getTipSerial());
+					} else {
+						bs = (BitSet) ((BitSet) pre1.res).clone();
+						bs.or((BitSet) pre2.res);
+						
+						
+//						System.out.printf( "visit inner: %d, %d %d\n", n.data.serial, pre1.pre.data.serial, pre2.pre.data.serial );
+					}
+					
+					splits.put( new UnorderedPair<LN,LN>(br), bs );
+					return bs;
+				}
+			};
+			
+			VisitNodesBottomUp vnbu = new VisitNodesBottomUp(tcv.tips, v );
+			vnbu.run();
+			
+		}
+		
+		void convertToSmaller() {
+			for( BitSet bs : splits.values()) {
+				if( bs.cardinality() > numTips / 2 ) {
+					bs.flip( 0, numTips );
+				}
+			}
+		}
+//		timer1.print();
+		
+    }
     
 	public static void branchSanityCheck(LN[] b) {
 		boolean x = (b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel;
@@ -238,6 +627,8 @@ public class LN {
 
 	}
 
+    
+    
 	private static int insertDFS(LN n, LN[] list, int pos) {
 //		if (n.data.isTip) {
 //			list[pos] = n;
@@ -268,6 +659,24 @@ public class LN {
 
     }
 
+    private static int insertDFS(LN n, ArrayList<LN> list, int pos, boolean back ) {
+        if( n != null ) {
+            if( back ) {
+                pos = insertDFS( n.back, list, pos, false );
+            }
+            pos = insertDFS(n.next.back, list, pos, false );
+			pos = insertDFS(n.next.next.back, list, pos, false );
+			list.add(n);
+			return pos + 1;
+        } else {
+            return pos;
+        }
+
+    }
+    
+    
+    
+    
     public static LN getTowardsTree( LN ln ) {
         if( !ln.data.isTip ) {
             throw new RuntimeException( "this method must only be called for tip LNs" );
@@ -309,6 +718,17 @@ public class LN {
 		return cur;
 	}
 
+    static ArrayList<String> getTipList( LN[] list ) {
+    	ArrayList<String> set = new ArrayList<String>();
+
+		for( LN n : list ) {
+			if( n.data.isTip) {
+				set.add(n.data.getTipName());
+			}
+		}
+
+		return set;
+    }
 
 	static Set<String> getTipSet(LN[] list) {
 		HashSet<String> set = new HashSet<String>();
@@ -476,6 +896,25 @@ public class LN {
 		Set<String> sr = LN.getTipSet(lr);
 
 		Set<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
+
+	//	System.out.printf( "M00Clon8: %s %s %s\n", sl.contains("M00Clon8"), sr.contains("M00Clon8"), smallset.contains("M00Clon8"));
+		//System.out.printf( "ts: %d %d %d %d\n", ll.length, lr.length, sl.size(), sr.size() );
+		
+		//System.exit(0);
+		String[] split = smallset.toArray(new String[smallset.size()]);
+		Arrays.sort(split);
+		
+		return split;
+	}
+	
+	public static String[] getSmallerSplitSet2( LN[] branch ) {
+		LN[] ll = LN.getAsList2(branch[0], false);
+		LN[] lr = LN.getAsList2(branch[1], false);
+
+		ArrayList<String> sl = LN.getTipList(ll);
+		ArrayList<String> sr = LN.getTipList(lr);
+
+		ArrayList<String> smallset = (sl.size() <= sr.size()) ? sl : sr;
 
 	//	System.out.printf( "M00Clon8: %s %s %s\n", sl.contains("M00Clon8"), sr.contains("M00Clon8"), smallset.contains("M00Clon8"));
 		//System.out.printf( "ts: %d %d %d %d\n", ll.length, lr.length, sl.size(), sr.size() );
