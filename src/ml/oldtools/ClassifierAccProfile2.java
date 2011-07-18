@@ -11,12 +11,16 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 import java.io.File;
 import java.util.ArrayList;
 
-import com.sun.org.apache.bcel.internal.generic.IDIV;
+import ml.ArrayIndex;
+import ml.BucketMeans;
+import ml.CSVFile;
+import ml.FindMinSupport;
+import ml.MultipleAlignment;
 
 public class ClassifierAccProfile2 {
 	public static void main(String[] args) {

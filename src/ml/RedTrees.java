@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+
 class Result {
 	LN n;
 	LN nl;

@@ -77,7 +77,7 @@ public class ANode {
     }
 
 
-    boolean isTip(String taxon) {
+    public boolean isTip(String taxon) {
         return isTip && getTipName().equals(taxon);
     }
 

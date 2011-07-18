@@ -17,8 +17,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
 
-import javax.management.RuntimeErrorException;
-
 public class EvoSim {
 	static Random rnd = new Random(12345);
 	

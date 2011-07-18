@@ -1,7 +1,6 @@
 package ml;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -101,8 +100,7 @@ public class LargePhylip {
 					Rec rec = interpret( line, lineLen );
 	//				rec.print();
 					if( !haveHeader ) {
-						byte[] f1 = new byte[rec.nameLen];
-						byte[] f2 = new byte[rec.dataLen];
+
 				
 						String name = rec.getName();
 						String data = rec.getData();
@@ -220,7 +218,7 @@ public class LargePhylip {
 		return ba;
 	}
 
-	private int lenOfInt(int i) {
+	int lenOfInt(int i) {
 		return ("" + i).length();
 	}
 
@@ -247,9 +245,9 @@ public class LargePhylip {
 		
 		
 
-		int nspace = 0;
+		
 		while( line.hasRemaining() && isSpace(line.get())) {
-			nspace++;
+		
 		}
 		
 		line.position(line.position()-1);
@@ -341,7 +339,7 @@ public class LargePhylip {
 		}
 		System.out.printf( "done\n" );
 		try {
-			Thread.currentThread().sleep(100000);
+			Thread.sleep(100000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -349,7 +347,7 @@ public class LargePhylip {
 	}
 
 
-	private void close() {
+	void close() {
 		mbuf = null;
 		try {
 			fc.close();

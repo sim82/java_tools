@@ -11,10 +11,14 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 import java.io.File;
-import java.util.ArrayList;
+
+import ml.ArrayIndex;
+import ml.BucketMeans;
+import ml.CSVFile;
+import ml.MultipleAlignment;
 
 public class ClassifierAccProfile3 {
 	// this program generates an accuracy profile over the SEQ NN output

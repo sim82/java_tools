@@ -26,7 +26,7 @@ public class FileUtils {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
+					st.nextToken();
                     String k = st.nextToken();
 					st.nextToken(); // skip the 'real neighbor'
                     String v = st.nextToken();
@@ -37,8 +37,6 @@ public class FileUtils {
 					//
 
 					StringTokenizer st2 = new StringTokenizer(v, ",");
-					String tip;
-					
 					int num = st2.countTokens();
 					if( num < 1 ) {
 						throw new RuntimeException("could not parse split list from real neighbor file");

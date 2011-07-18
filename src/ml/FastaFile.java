@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import javax.management.RuntimeErrorException;
-
 public class FastaFile {
 	static class Entry {
 		String name;

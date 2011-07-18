@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.StringTokenizer;
 
 public class Correlator {
@@ -52,8 +51,6 @@ public class Correlator {
 		double[] xtmp2 = null;
 		
 		boolean multi = !true;
-		
-		int nlines = 0;
 		
 		while( (line = r.readLine()) != null) {
 			
@@ -161,7 +158,6 @@ public class Correlator {
 		double mean = 0;
 		double sdcor;
 		{
-			double right = 0.0;
 			double sum = 0.0;
 			double sumsqr = 0.0;
 			for( int i = 0; i < ncol; i++ ) {

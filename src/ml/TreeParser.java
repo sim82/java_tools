@@ -523,7 +523,7 @@ public class TreeParser {
 	public static void main(String[] args) {
 		TreeParser.QUIET = !true;
 		try {
-			LN t = TreeParser.parse(new File( args[0] ));
+			TreeParser.parse(new File( args[0] ));
 			System.out.printf( "good\n" );
 		} catch( RuntimeException e ) {
 			if( !TreeParser.QUIET ) {

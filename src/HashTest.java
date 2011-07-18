@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Random;
@@ -48,7 +47,6 @@ class HashTable {
 		if( nE >= threshold ) {
 			grow();
 		}
-		int probe = PROBE;
 		ninserts++;
 		while( n < M ) {
 			
@@ -84,7 +82,6 @@ class HashTable {
 		int hash = s.hashCode();
 		//System.out.printf( "hash: %s %d\n", s, hash );
 		int n = 0;
-		int probe = PROBE;
 		nsearch++;
 		
 		while( n < M ) {

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import ml.ClassifierOutput.Res;
-
 public class ClassifierTwoClades {
 	public static void main(String[] args) {
 		File treeFile = new File( args[0] );
@@ -29,8 +27,6 @@ public class ClassifierTwoClades {
 //		print( nl1 );
 //		
 		//LN.getBranchList(n)
-		
-		String ogbrname = sp[0].backLabel;
 		
 		ClassifierOutput cf = ClassifierOutput.read(classFile);
 		
@@ -66,7 +62,7 @@ public class ClassifierTwoClades {
 		
 	}
 	
-	private static void print(Iterable<String> nl1) {
+	static void print(Iterable<String> nl1) {
 		for( String s : nl1 ) {
 			System.out.println( s );
 		}

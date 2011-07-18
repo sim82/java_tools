@@ -1,12 +1,9 @@
 package net;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 
 public class SimplePing2 {
@@ -14,7 +11,7 @@ public class SimplePing2 {
 		final DatagramSocket sock = new DatagramSocket(21845);
 		//sock.bind(new InetSocketAddress());
 		
-		Runnable reader = new Runnable() {
+		new Runnable() {
 			
 			@Override
 			public void run() {

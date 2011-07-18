@@ -37,7 +37,7 @@ public class Shell {
 		
 		
 		try {
-			long time1 = System.currentTimeMillis();
+			System.currentTimeMillis();
 			
 			stdin.write(cmd.getBytes());
 			stdin.write('\n');

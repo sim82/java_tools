@@ -50,25 +50,14 @@ public class BlastOutTreedist {
 	        	throw new RuntimeException( "BlastFile has not query seq" );
 	        }
 	        
-	        if( false ) {
-				for( String name : bf.getSeqNames() ) {
-					//System.out.printf( "%s => %f\n", name, bf.getBitscore(name));
-					
-					double distUW = getPathLenTipToTip( reftree, queryName, name, true );
-					double dist = getPathLenTipToTip( reftree, queryName, name, false );
-					System.out.printf( "%s\t%f\t%d\t%f\t%f\n", name, bf.getBitscore(name), (int)distUW, dist, dist / reftreeDiameter );
-				}
-	        } else {
-	        	if( !queryName.equals( bf.getSeqNames().get(0))) {
-	        		throw new RuntimeException( "ooops. query sequence is not the best blast hit. bailing out");
-	        	}
-	        	
-	        	String name = bf.getSeqNames().get(1);
-	        	double distUW = getPathLenTipToTip( reftree, queryName, name, true );
-				double dist = getPathLenTipToTip( reftree, queryName, name, false );
-				System.out.printf( "%s\t%f\t%d\t%f\t%f\n", name, bf.getBitscore(name), (int)distUW, dist, dist / reftreeDiameter );
-	        	
-	        }
+	        if( !queryName.equals( bf.getSeqNames().get(0))) {
+				throw new RuntimeException( "ooops. query sequence is not the best blast hit. bailing out");
+			}
+			
+			String name = bf.getSeqNames().get(1);
+			double distUW = getPathLenTipToTip( reftree, queryName, name, true );
+			double dist = getPathLenTipToTip( reftree, queryName, name, false );
+			System.out.printf( "%s\t%f\t%d\t%f\t%f\n", name, bf.getBitscore(name), (int)distUW, dist, dist / reftreeDiameter );
         } else {
         	final String autoprefix;
         	if( args.length > 2 ) {

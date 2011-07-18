@@ -1,6 +1,5 @@
 package ml;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 
-import javax.swing.text.DefaultEditorKit.InsertBreakAction;
 
 
 
@@ -38,7 +36,7 @@ public class SimulateMoves {
 		LN[] rb = allBranches[r.nextInt(allBranches.length)];
 		
 		
-		ArrayList<LN[]>ibranches = new ArrayList<LN[]>();
+		new ArrayList<LN[]>();
 		
 		
 		LN[] l0 = LN.getAsList(rb[0], false);

@@ -15,8 +15,6 @@ public class DiameterCorrection {
 
 		double longestPath = 0.0;
 		double longestPathCorr = 0.0;
-		ArrayList<String> longestTrace = null;
-
 		for( LN node : list ) {
 			if( node.data.isTip && node.back != null ) {
 			
@@ -27,7 +25,7 @@ public class DiameterCorrection {
 					
 				double lpc = LN.longestPathCorrected(node);
 				if( longestPathCorr < lpc ) {
-					longestTrace = new ArrayList<String>(LN.trace);
+					new ArrayList<String>(LN.trace);
 				}
 				longestPathCorr = Math.max(longestPathCorr, lpc);
 				

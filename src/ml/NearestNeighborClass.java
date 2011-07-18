@@ -34,7 +34,7 @@ public class NearestNeighborClass {
 			File radir = new File("/space/red_alignments");
 			File rtfile = new File(args[0]);
 
-			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			new ArrayList<String[]>();
 
 			TreeParser tp = new TreeParser(rtfile);
 			reftree = tp.parse();
@@ -89,7 +89,7 @@ public class NearestNeighborClass {
 			File radir = new File("/space/pairedend_alignments");
 			File rtfile = new File(args[0]);
 
-			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			new ArrayList<String[]>();
 
 			TreeParser tp = new TreeParser(rtfile);
 			reftree = tp.parse();
@@ -132,7 +132,7 @@ public class NearestNeighborClass {
 			File radir = new File("/space/dist_subseq_alignments");
 			File rtfile = new File(args[0]);
 
-			ArrayList<String[]> sgpairs = new ArrayList<String[]>();
+			new ArrayList<String[]>();
 
 			TreeParser tp = new TreeParser(rtfile);
 			reftree = tp.parse();
@@ -323,8 +323,6 @@ public class NearestNeighborClass {
 			for (LN n : list) {
 				if (n.data.isTip(nnName)) {
 
-					int wc = 0;
-
 					n = LN.getTowardsTree(n);
 
 					LN[] ipb = { n, n.back };
@@ -421,7 +419,6 @@ public class NearestNeighborClass {
 
 				int edMin = Integer.MAX_VALUE;
 				int idxMin = -1;
-				int nMin = 0;
 				for (int i = 0; i < ma.names.length; i++) {
 					String on = ma.names[i];
 					if (qnSet.contains(on)) {
@@ -440,10 +437,7 @@ public class NearestNeighborClass {
 					if (ed < edMin) {
 						edMin = ed;
 						idxMin = i;
-
-						nMin = 1;
 					} else if (ed == edMin) {
-						nMin++;
 					}
 
 				}
@@ -861,21 +855,7 @@ public class NearestNeighborClass {
 	// return ed;
 	// }
 
-	private static int editDist_bad(String qs, String os) {
-		if (qs.length() != os.length()) {
-			throw new RuntimeException("qs.length() != os.length()");
-		}
 
-		int ed = 0;
-		for (int i = 0; i < qs.length(); i++) {
-
-			if (qs.charAt(i) != os.charAt(i)) {
-				ed++;
-			}
-		}
-
-		return ed;
-	}
 
 	private static boolean isGapCharacter(char c) {
 		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';

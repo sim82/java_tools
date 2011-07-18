@@ -11,7 +11,7 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 /**
  * shamelessly ripped from the interweb: http://www.cs.technion.ac.il/~imaman/programs/dirscanner.html
@@ -45,7 +45,7 @@ public class DirScanner
       return patt.substring(1);
    }
    
-   private static String finalizePatt(String patt, boolean isSubtract) {
+   static String finalizePatt(String patt, boolean isSubtract) {
       if(isSubtract)
          patt = "-" + patt;
       return patt;

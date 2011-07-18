@@ -27,14 +27,10 @@ public class PrunedTreeAnalysis {
 		final File oltfile;
 		final File classfile;
 		
-		if( false ) {
-			oltfile = new File( args[2] );
-			classfile = new File( args[3] );
-		} else {
-			String runName = args[2];
-			oltfile = new File( "RAxML_originalLabelledTree." + runName );
-			classfile = new File( "RAxML_classification." + runName );
-		}
+		
+		String runName = args[2];
+		oltfile = new File( "RAxML_originalLabelledTree." + runName );
+		classfile = new File( "RAxML_classification." + runName );
 		
 		LN reftree = LN.parseTree( reftreefile );
 		LN olt = LN.parseTree( oltfile );

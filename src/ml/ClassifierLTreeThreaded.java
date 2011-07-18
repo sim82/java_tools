@@ -570,7 +570,7 @@ public class ClassifierLTreeThreaded {
         return lnlx;
     }
 
-	private static LN findTipWithNamedBranch(LN[] lnl, String branch) {
+	static LN findTipWithNamedBranch(LN[] lnl, String branch) {
         System.out.printf( "find: %s %d\n", branch, lnl.length );
 
         LN[] lnlx = expandToAllNodes( lnl );
@@ -687,7 +687,7 @@ public class ClassifierLTreeThreaded {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
+					st.nextToken();
                     String k = st.nextToken();
                     String v = st.nextToken();
 
@@ -730,7 +730,7 @@ public class ClassifierLTreeThreaded {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
+					st.nextToken();
                     String k = st.nextToken();
 					st.nextToken(); // skip the 'real neighbor'
                     String v = st.nextToken();
@@ -741,8 +741,6 @@ public class ClassifierLTreeThreaded {
 					//
 
 					StringTokenizer st2 = new StringTokenizer(v, ",");
-					String tip;
-					
 					int num = st2.countTokens();
 					if( num < 1 ) {
 						throw new RuntimeException("could not parse split list from real neighbor file");
@@ -922,13 +920,11 @@ public class ClassifierLTreeThreaded {
 	public static double treeDiameter( LN n ) {
 		LN[] list = LN.getAsList(n);
 
-		int cnt = 0;
 		double longestPath = 0.0;
 
 
 		for( LN node : list ) {
 			if( node.data.isTip && node.back != null ) {
-				cnt++;
 
 				longestPath = Math.max( longestPath, LN.longestPath(node));
 			}

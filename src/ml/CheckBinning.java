@@ -1,14 +1,10 @@
 package ml;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.management.RuntimeErrorException;
 
 public class CheckBinning {
 	public static void main(String[] args) {
@@ -77,8 +73,8 @@ public class CheckBinning {
 				
 				done.add( cbr );
 				if( cbr.equals(brOrig) || cbr.equals(res.branch)) {
-					LN[] brOrigRt = LN.findCorrespondingBranch(LN.findBranchByName(t, brOrig), rtp );
-					LN[] brRt = LN.findCorrespondingBranch(LN.findBranchByName(t, res.branch), rtp );
+//					LN[] brOrigRt = LN.findCorrespondingBranch(LN.findBranchByName(t, brOrig), rtp );
+//					LN[] brRt = LN.findCorrespondingBranch(LN.findBranchByName(t, res.branch), rtp );
 					
 					
 				//	System.out.printf( "exclude: (%s %s) %f %f\n", brOrig, res.branch, brOrigRt[0].backSupport, brRt[0].backSupport );

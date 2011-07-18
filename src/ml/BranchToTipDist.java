@@ -42,24 +42,7 @@ public class BranchToTipDist {
 			int mind = Math.min(d1, d2);
 			System.out.printf( "%s %s\t%d\t%d\n", res.seq, res.branch, (int)res.support, mind );
 		}
-		if( true ) {
-			throw new RuntimeException( "exit" );
-		}
 		
-		Histogram<Integer> hist = new Histogram<Integer>();
-		
-		for( String branchname : branchSet ) {
-			LN[] branch = LN.findBranchByName(olt, branchname);
-			
-			int d1 = ndToNearestTip(branch[0]);
-			int d2 = ndToNearestTip(branch[1]);
-			
-			int mind = Math.min(d1, d2);
-			System.out.printf( "%s\t%d\n", branchname, mind );
-			hist.add(mind);
-		}
-		hist.print();
-		hist.printPoser();
 	}
 	
 	

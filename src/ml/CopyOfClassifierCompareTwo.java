@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
-
 import ml.ClassifierOutput.Res;
 
 public class CopyOfClassifierCompareTwo {

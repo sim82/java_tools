@@ -109,7 +109,7 @@ public class BlastOutTreedistTabformat {
 
 	}
 
-	private static double getPathLenTipToTip(LN tree, String startName, String endName, boolean unweighted) {
+	static double getPathLenTipToTip(LN tree, String startName, String endName, boolean unweighted) {
 		LN[] list = LN.getAsList(tree);
 		
 		LN start = null;

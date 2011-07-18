@@ -19,14 +19,9 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.Vector;
-
-import javax.management.RuntimeErrorException;
 
 public class EvoSimFossil {
 	static Random rnd;
@@ -174,9 +169,7 @@ public class EvoSimFossil {
 
 		drawBranchLengths( treeGood, treeBad );
 		
-		//TreePrinter.printRaw(tree2, System.out);
-		//System.exit(0);
-		Random rnd = new Random();
+		new Random();
 		
 		PrintWriter bw = null;
 		if( GOOD_DATA ) {

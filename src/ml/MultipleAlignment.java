@@ -32,17 +32,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
-import javax.management.RuntimeErrorException;
-
 /**
  *
  * @author sim
  */
 public class MultipleAlignment implements Serializable {
-    int nTaxon;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	int nTaxon;
     int seqLen;
-    String[] names;
-    String[] data;
+    public String[] names;
+    public String[] data;
     HashMap<String,Integer> nameMap;
 
     
@@ -526,7 +528,7 @@ public class MultipleAlignment implements Serializable {
         }
     }
 
-    String getSequence( String name ) {
+    public String getSequence( String name ) {
         int idx = nameToIdx(name);
 
         if( idx < 0 ) {
@@ -539,7 +541,7 @@ public class MultipleAlignment implements Serializable {
         return data[i];
     }
 
-    void replaceSequence( String name, String seq ) {
+    public void replaceSequence( String name, String seq ) {
         int idx = nameToIdx(name);
         if( idx < 0 ) {
             throw new RuntimeException("taxon name not found: " + name );
@@ -562,7 +564,7 @@ public class MultipleAlignment implements Serializable {
 	    	//   ma.print();
     	} else {
     		long time1 = System.currentTimeMillis();
-    		MultipleAlignment ma = MultipleAlignment.loadPhylipShitty(new File( "/space/raxml/VINCENT/DATA/500"));
+    		MultipleAlignment.loadPhylipShitty(new File( "/space/raxml/VINCENT/DATA/500"));
     		System.out.printf( "parse done: %d\n", System.currentTimeMillis() - time1 );
     	}
     }

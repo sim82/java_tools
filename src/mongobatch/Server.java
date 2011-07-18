@@ -124,7 +124,7 @@ class ResponderThread extends Thread {
 				
 				
 					byte[] recbuf = new byte[b];
-					int breal = is.read( recbuf );
+					is.read( recbuf );
 //					if( b != breal ) {
 //						throw new RuntimeException( "b != breal: " + b + " " + breal );
 //					}

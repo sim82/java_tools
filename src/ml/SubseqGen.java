@@ -24,21 +24,12 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 public class SubseqGen {
 	
 	final static int N_RND_SEQS = 100;
 	
 	public static void main(String[] args) {
-		if( false )
-		{
-			int[] x = drawNWithoutReplacement(1, 1);
-			System.out.printf( "size: %d\n", x.length );
-			for( int y : x ) {
-				System.out.printf( "%d\n", y );
-				
-			}
-			System.exit(0);
-		}
 		
 		
 		File treeFile = new File( args[0] );
@@ -221,7 +212,6 @@ public class SubseqGen {
 
 		//System.out.printf("nodes: %d\n", nodelist.length);
 
-		int nTT = 0;
 		int i = 0;
 
         //if( true ) {

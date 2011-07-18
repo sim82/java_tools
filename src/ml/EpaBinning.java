@@ -50,7 +50,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.StreamTokenizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -60,10 +59,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-
-import javax.management.RuntimeErrorException;
-
-import ml.ClassifierTwoCladesBSWeight.Res;
 
 public class EpaBinning {
 	
@@ -308,7 +303,7 @@ public class EpaBinning {
 	}
 	
 	public static void main(String[] args) {
-		boolean includeConnecting;
+		
 		
 		//String[] s1 = {"Graphis_cinerea", "Graphis_angustata", "Graphis_chrysocarpa", "Graphis_pseudocinerea", "Graphis_illinata", "Graphis_vestitoides", "Graphis_rhizocola", "Graphis_ruiziana"};
 //		String[] s1 = {"Graphis_cinerea", "Graphis_angustata", "Graphis_chrysocarpa", "Graphis_pseudocinerea", "Graphis_illinata", "Graphis_vestitoides", "Graphis_rhizocola", "Graphis_ruiziana"};
@@ -408,9 +403,7 @@ public class EpaBinning {
 	
 		
 		for( ClassifierOutput.Res res : cf.reslist ) {
-//			String seq = res.seq + "_" + res.support;
-			String seq = res.seq;
-			Res or = orm.get(res.seq);
+Res or = orm.get(res.seq);
 			
 			if( or == null ) {
 				or = new Res( res.seq, bins.length );

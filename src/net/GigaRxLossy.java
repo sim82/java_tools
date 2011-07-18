@@ -1,13 +1,9 @@
 package net;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 
@@ -100,7 +96,6 @@ public class GigaRxLossy {
 					long time = System.currentTimeMillis();
 	
 					long txbytes = 0;
-					long nj = 0;
 					while( i < 1000000 ) {
 						txb.rewind();
 						
@@ -111,7 +106,6 @@ public class GigaRxLossy {
 						
 							
 							for( int j = 0; j < 100000; j++ ) {
-								nj++;
 							}
 						} catch (IOException e) {
 							// TODO Auto-generated catch block

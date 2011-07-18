@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 
 
 
+
 /**
  *
  * @author sim
@@ -65,7 +66,6 @@ public class FindMinSupport {
 
 		System.out.printf("nodes: %d\n", nodelist.length);
 
-		int nTT = 0;
 		int i = 0;
 
         //if( true ) {
@@ -79,9 +79,6 @@ public class FindMinSupport {
             }
 
             if (nt == 2) {
-                nTT++;
-
-
                 final String[] tn = getTipNames(node);
 
                 assert (tn.length == 2);
@@ -194,9 +191,6 @@ public class FindMinSupport {
             }
 
             if (nt == 2) {
-                nTT++;
-
-
                 final String[] tn = getTipNames(node);
 
                 assert (tn.length == 2);
@@ -494,7 +488,7 @@ public class FindMinSupport {
 				//final String qs = createSubseqAlignment(new File(alignmentdir, alignName), alignOutfile, taxon, len, sp);
 				
 				final MultipleAlignment ma = MultipleAlignment.loadPhylip(new File(alignmentdir, alignName));
-				final String seq = ma.getSequence(taxon);
+				ma.getSequence(taxon);
 				
 				int nseqs = ma.nTaxon - 1 + nSamples;
 				
@@ -963,8 +957,6 @@ public class FindMinSupport {
 
 		final LN start = n;
 		LN cur = n.next;
-		final int nTips = 0;
-
 		while (cur != start) {
 			if (cur.back.data.isTip) {
 				tipnames.add(cur.back.data.getTipName());
@@ -986,7 +978,7 @@ public class FindMinSupport {
 		return c == '-' || c == 'N' || c == '?' || c == 'O' || c == 'X';
 	}
 
-	static String padchar(String input_string, int with_digit, int to_len) {
+	public static String padchar(String input_string, int with_digit, int to_len) {
 		while (input_string.length() < to_len) {
 			input_string = with_digit + input_string;
 		}

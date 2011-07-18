@@ -3,16 +3,9 @@ package net;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.util.concurrent.ArrayBlockingQueue;
 
 public class GigaRx {
 	public static void main(String[] args) throws IOException, InterruptedException {
-		final int MTU = 1500;
-		
-		
 		final DatagramSocket rxsock = new DatagramSocket(21845);
 		//sock.bind(new InetSocketAddress());
 		

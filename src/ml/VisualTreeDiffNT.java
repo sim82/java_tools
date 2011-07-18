@@ -2,31 +2,21 @@ package ml;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+
+import ml.LN.TipCollectVisitor;
 
 import org.forester.io.writers.PhylogenyWriter;
 import org.forester.phylogeny.Phylogeny;
 import org.forester.phylogeny.PhylogenyNode;
 import org.forester.phylogeny.data.BranchColor;
 import org.forester.phylogeny.data.BranchData;
-
-import com.sun.corba.se.impl.ior.NewObjectKeyTemplateBase;
-
-import ml.LN.TipCollectVisitor;
-import ml.LN.VisitNodesBottomUp;
-import ml.VisualTreeDiff.PimmxlPrinter;
 
 class PerfTimer {
 	final long start;
@@ -136,152 +126,152 @@ class ConvertToForester {
 public class VisualTreeDiffNT {
 	
 	
-	static private class PimmxlPrinter {
-		public static Set<UnorderedPair<ANode, ANode>>[] auxSet;
-
-		static void printIndent( int indent, PrintStream s) {
-	    	if( false ) {
-				for( int i = 0; i < indent; i++ ) {
-		    		
-		    		s.print( "  " );
-		    	}
-	    	}
-	    
-	    }
-	    static void printCladeTags( int indent, boolean open, PrintStream s ) {
-	    	printIndent(indent, s);
-	    	if( open ) {
-	    		s.println( "<clade>" );
-	    	} else {
-	    		s.println( "</clade>");
-	    	}
-	    }
-
-	    static void printColor( int indent, int[]c, PrintStream s ) {
-	    	printIndent(indent, s);
-	    	s.println( "<color>");
-	    	printIndent(indent+1, s);
-	    	s.printf( "<red>%d</red>\n", c[0]);
-	    	printIndent(indent+1, s);
-	    	s.printf( "<green>%d</green>\n", c[1]);
-	    	printIndent(indent+1, s);
-	    	s.printf( "<blue>%d</blue>\n", c[2]);
-	    	
-	    	printIndent(indent, s);
-	    	s.println( "</color>");
-	    	
-	    	
-	    }
-	    
-	    static void colorBlend( int[] c1, int[] c2 ) {
-	    	for( int i = 0; i < c1.length; i++ ) {
-	    		c1[i] += c2[i];
-	    		c1[i] = Math.min(c1[i], 255);
-	    	}
-	    
-	    }
-	    
-	    static void printClade( int indent, LN n, PrintStream s ) {
-	    	printCladeTags(indent, true, s);
-	    	
-	    	indent++;
-
-	    	final int[] color;
-	    	if( auxSet.length == 1 ) {
-	    		// pairwise color-scheme
-	    		final int[] x = {255, 255, 255}; // java initializer lists syntax is stupid!
-	    		color = x;
-	    		
-		    	if( !PimmxlPrinter.auxSet[0].contains(new UnorderedPair<ANode, ANode>(n.back.data, n.data))) {
-		    		color[1] = 0;
-		    		color[2] = 0;
-		    		
-		    	}
-	    	} else if( auxSet.length <= 3 ) {
-	    		// rgb scheme for 1-to-[2,3] comparison
-	    		
-		    	int[][] colors = {
-		    			{255,0,0},
-		    			{0,255,0},
-		    			{0,0,255}
-		    	};
-		    	
-		    	if( !n.data.isTip ) {
-		        	final int[] x = {32,32,32};
-			    	color = x;
-			    	
-			    	UnorderedPair<ANode, ANode> key = new UnorderedPair<ANode, ANode>(n.back.data, n.data);
-			    	for( int i = 0; i < auxSet.length; i++ ) {
-			    		if( PimmxlPrinter.auxSet[i].contains(key)) {
-			    			colorBlend(color, colors[i]);
-			    		}
-			    		
-			    	}
-		    	} else {
-		    		final int[] x = {96,96,96};
-			    	color = x;
-			    	
-		    	}
-	    	} else {
-	    		throw new RuntimeException( "no color-scheme for more than 3 tree comparison. bailing out." );
-	    		
-	    	}
-	    	if( n.data.isTip ) {
-	    		printIndent(indent, s);
-	        	s.printf( "<name>%s</name>\n", n.data.getTipName());	
-	        	printIndent(indent, s);
-	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
-	        	printColor( indent, color, s );
-	        			
-	    	} else {
-	    		assert( n.next.back != null && n.next.next.back != null );
-	    		printIndent(indent, s);
-	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
-	        	printColor( indent, color, s );
-	        	
-	    		printClade( indent + 1, n.next.back, s);
-	    		printClade( indent + 1, n.next.next.back, s);
-	    		
-	    		
-	    	}
-	    	
-	    	printCladeTags(indent-1, false, s);
-	    }
-	    
-	    static void printPhyloxml( LN node, PrintStream s ) {
-	    	if( node.data.isTip ) {
-	    		if( node.back != null ) {
-	    			node = node.back;
-	    		} else if( node.next.back != null ) {
-	    			node = node.next.back;
-	    		} else if( node.next.next.back != null ) {
-	    			node = node.next.next.back;
-	    		} else {
-	    			throw new RuntimeException( "can not print single unlinked node");
-	    		}
-	    		
-	    		if( node.data.isTip ) {
-	    			throw new RuntimeException( "could not find non-tip node for writing the three (this is a braindead limitation of this tree printer!)");
-	    		}
-	    	}
-	    	
-	    	s.println( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
-	    	s.println( "<phyloxml xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd\" xmlns=\"http://www.phyloxml.org\">" );
-	    	s.println( "<phylogeny rooted=\"false\">");
-	    	
-	    	int indent = 1;
-	    	
-	    	printCladeTags(indent, true, s);
-	    	
-	    	printClade( indent + 1, node.back, s );
-	    	printClade( indent + 1, node.next.back, s );
-	    	printClade( indent + 1, node.next.next.back, s );
-	    	
-	    	printCladeTags(indent, false, s);
-	    	s.println("</phylogeny>\n</phyloxml>");
-	    }	
-
-	}
+//	static private class PimmxlPrinter {
+//		public static Set<UnorderedPair<ANode, ANode>>[] auxSet;
+//
+//		static void printIndent( int indent, PrintStream s) {
+//	    	if( false ) {
+//				for( int i = 0; i < indent; i++ ) {
+//		    		
+//		    		s.print( "  " );
+//		    	}
+//	    	}
+//	    
+//	    }
+//	    static void printCladeTags( int indent, boolean open, PrintStream s ) {
+//	    	printIndent(indent, s);
+//	    	if( open ) {
+//	    		s.println( "<clade>" );
+//	    	} else {
+//	    		s.println( "</clade>");
+//	    	}
+//	    }
+//
+//	    static void printColor( int indent, int[]c, PrintStream s ) {
+//	    	printIndent(indent, s);
+//	    	s.println( "<color>");
+//	    	printIndent(indent+1, s);
+//	    	s.printf( "<red>%d</red>\n", c[0]);
+//	    	printIndent(indent+1, s);
+//	    	s.printf( "<green>%d</green>\n", c[1]);
+//	    	printIndent(indent+1, s);
+//	    	s.printf( "<blue>%d</blue>\n", c[2]);
+//	    	
+//	    	printIndent(indent, s);
+//	    	s.println( "</color>");
+//	    	
+//	    	
+//	    }
+//	    
+//	    static void colorBlend( int[] c1, int[] c2 ) {
+//	    	for( int i = 0; i < c1.length; i++ ) {
+//	    		c1[i] += c2[i];
+//	    		c1[i] = Math.min(c1[i], 255);
+//	    	}
+//	    
+//	    }
+//	    
+//	    static void printClade( int indent, LN n, PrintStream s ) {
+//	    	printCladeTags(indent, true, s);
+//	    	
+//	    	indent++;
+//
+//	    	final int[] color;
+//	    	if( auxSet.length == 1 ) {
+//	    		// pairwise color-scheme
+//	    		final int[] x = {255, 255, 255}; // java initializer lists syntax is stupid!
+//	    		color = x;
+//	    		
+//		    	if( !PimmxlPrinter.auxSet[0].contains(new UnorderedPair<ANode, ANode>(n.back.data, n.data))) {
+//		    		color[1] = 0;
+//		    		color[2] = 0;
+//		    		
+//		    	}
+//	    	} else if( auxSet.length <= 3 ) {
+//	    		// rgb scheme for 1-to-[2,3] comparison
+//	    		
+//		    	int[][] colors = {
+//		    			{255,0,0},
+//		    			{0,255,0},
+//		    			{0,0,255}
+//		    	};
+//		    	
+//		    	if( !n.data.isTip ) {
+//		        	final int[] x = {32,32,32};
+//			    	color = x;
+//			    	
+//			    	UnorderedPair<ANode, ANode> key = new UnorderedPair<ANode, ANode>(n.back.data, n.data);
+//			    	for( int i = 0; i < auxSet.length; i++ ) {
+//			    		if( PimmxlPrinter.auxSet[i].contains(key)) {
+//			    			colorBlend(color, colors[i]);
+//			    		}
+//			    		
+//			    	}
+//		    	} else {
+//		    		final int[] x = {96,96,96};
+//			    	color = x;
+//			    	
+//		    	}
+//	    	} else {
+//	    		throw new RuntimeException( "no color-scheme for more than 3 tree comparison. bailing out." );
+//	    		
+//	    	}
+//	    	if( n.data.isTip ) {
+//	    		printIndent(indent, s);
+//	        	s.printf( "<name>%s</name>\n", n.data.getTipName());	
+//	        	printIndent(indent, s);
+//	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
+//	        	printColor( indent, color, s );
+//	        			
+//	    	} else {
+//	    		assert( n.next.back != null && n.next.next.back != null );
+//	    		printIndent(indent, s);
+//	        	s.printf( "<branch_length>%f</branch_length>\n", n.backLen );
+//	        	printColor( indent, color, s );
+//	        	
+//	    		printClade( indent + 1, n.next.back, s);
+//	    		printClade( indent + 1, n.next.next.back, s);
+//	    		
+//	    		
+//	    	}
+//	    	
+//	    	printCladeTags(indent-1, false, s);
+//	    }
+//	    
+//	    void printPhyloxml( LN node, PrintStream s ) {
+//	    	if( node.data.isTip ) {
+//	    		if( node.back != null ) {
+//	    			node = node.back;
+//	    		} else if( node.next.back != null ) {
+//	    			node = node.next.back;
+//	    		} else if( node.next.next.back != null ) {
+//	    			node = node.next.next.back;
+//	    		} else {
+//	    			throw new RuntimeException( "can not print single unlinked node");
+//	    		}
+//	    		
+//	    		if( node.data.isTip ) {
+//	    			throw new RuntimeException( "could not find non-tip node for writing the three (this is a braindead limitation of this tree printer!)");
+//	    		}
+//	    	}
+//	    	
+//	    	s.println( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" );
+//	    	s.println( "<phyloxml xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd\" xmlns=\"http://www.phyloxml.org\">" );
+//	    	s.println( "<phylogeny rooted=\"false\">");
+//	    	
+//	    	int indent = 1;
+//	    	
+//	    	printCladeTags(indent, true, s);
+//	    	
+//	    	printClade( indent + 1, node.back, s );
+//	    	printClade( indent + 1, node.next.back, s );
+//	    	printClade( indent + 1, node.next.next.back, s );
+//	    	
+//	    	printCladeTags(indent, false, s);
+//	    	s.println("</phylogeny>\n</phyloxml>");
+//	    }	
+//
+//	}
 	
 	
 	public static void main(String[] args) {
@@ -448,9 +438,9 @@ public class VisualTreeDiffNT {
 			
 		
 		
-		PimmxlPrinter.auxSet = branchFound;
+//		PimmxlPrinter.auxSet = branchFound;
 		
-		boolean archStarted = false;
+//		boolean archStarted = false;
 		
 //		
 //		try
@@ -524,7 +514,7 @@ public class VisualTreeDiffNT {
 		} else {
 			System.err.printf( "Tree visualization using Forester/Archeopteryx (http://www.phylosoft.org/forester)\n" );
 			org.forester.archaeopteryx.Archaeopteryx.createApplication(phy);
-			archStarted = true;
+//			archStarted = true;
 		}
 		
 		//		if( !archStarted ) {
@@ -534,7 +524,7 @@ public class VisualTreeDiffNT {
 //		}
 	}
 
-	private static BitSet splitToBitset(String[] splitSet,
+	static BitSet splitToBitset(String[] splitSet,
 			String[] refOrder ) {
 //		Arrays.sort( splitSet );
 		

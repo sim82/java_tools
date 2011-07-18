@@ -11,11 +11,12 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
+
+import ml.MultipleAlignment;
 
 public class AlignmentFumbelizer {
 

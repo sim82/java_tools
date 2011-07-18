@@ -1,12 +1,9 @@
 package ml;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
-
-import util.StringTools;
 
 /**
  * Reads a multiple alignment file. Outputs multiple alignment containing

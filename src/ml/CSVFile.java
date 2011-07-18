@@ -17,8 +17,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 
 public class CSVFile {
@@ -70,7 +68,7 @@ public class CSVFile {
 	
 	
 	
-	static CSVFile load( File file, String colTypes ) {
+	public static CSVFile load( File file, String colTypes ) {
 		return load( file, ctaFromString(colTypes));
 	}
 	
@@ -198,7 +196,7 @@ public class CSVFile {
 		cf.print();
 	}
 	
-	String[] getString( int col ) {
+	public String[] getString( int col ) {
 		if( colTypes[col] != ColType.STRING) {
 			throw new RuntimeException( "column " + col + " is not of type STRING but" + colTypes[col] );
 		} else {
@@ -206,7 +204,7 @@ public class CSVFile {
 		}
 	}
 	
-	int[] getInteger( int col ) {
+	public int[] getInteger( int col ) {
 		if( colTypes[col] != ColType.INTEGER) {
 			throw new RuntimeException( "column " + col + " is not of type INTEGER but" + colTypes[col] );
 		} else {

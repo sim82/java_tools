@@ -1,14 +1,9 @@
 package ml;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Random;
-
-import javax.management.RuntimeErrorException;
 
 class MatrixIdx {
 	final int w, h;
@@ -112,7 +107,6 @@ public class PairwiseBranchDist {
 	
 	private static double pwdBrute(LN tree, LN[][] sb) {
 		int[] nd = new int[1];
-		int ndsum = 0;
 		double bdsum = 0.0;
 		
 		
@@ -126,7 +120,6 @@ public class PairwiseBranchDist {
 				bdsum += bd;
 				dsBrute[n] = bd;
 				n++;
-				ndsum += nd[0];
 				
 			}
 		}

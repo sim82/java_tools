@@ -24,14 +24,12 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,16 +39,10 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import javax.management.RuntimeErrorException;
-
-import sun.security.provider.MD5;
-
 import wombat.StreamConsumerThread;
-import wombat.pack.Rx.RxFile;
 
 
 class TeeStreamConsumer extends Thread {
@@ -78,8 +70,16 @@ class TeeStreamConsumer extends Thread {
 
 
 public class Tx implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	final static long MAX_SIZE = 1024 * 1024 * 20;
 	static class FileMapping implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1839649731913884312L;
 		/**
 		 * 
 		 */

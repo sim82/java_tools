@@ -34,6 +34,10 @@ public class Rx implements Serializable {
 	private static final long serialVersionUID = 7656276938725569281L;
 
 	static class RxFile implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		String localName;
 		byte[] md5sum;
 		boolean isGzip;

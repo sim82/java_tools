@@ -10,11 +10,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import util.StringTools;
-
 
 
 class Payload implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	String bla = null;
 	int blai = 0;
 	byte big[];

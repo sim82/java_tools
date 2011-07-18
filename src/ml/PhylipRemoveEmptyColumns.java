@@ -1,11 +1,8 @@
 package ml;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
-
-import javax.management.RuntimeErrorException;
 
 import ml.LargePhylip.Rec;
 

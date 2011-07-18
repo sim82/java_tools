@@ -27,7 +27,7 @@ public class BitCount {
 		}
 	
 		final int N = 1000000000;
-		final int C = Integer.parseInt(args[0]);
+//		final int C = Integer.parseInt(args[0]);
 		final int[] R = {4234234,52215,6643636,23423235};;
 		rnd.setSeed(1234);
 		long time1 = System.currentTimeMillis();

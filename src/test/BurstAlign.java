@@ -50,7 +50,7 @@ public class BurstAlign {
 		float[] x = new float[100];
 		float[] y = new float[100];
 		
-		Random rnd = new Random();
+		new Random();
 		float d = 0;
 		for( int i = 0; i < 100; i++ ) {
 			x[i] = (float)Math.sin( (i / 100.0) * 8 * 3.14159 + 3.14159);

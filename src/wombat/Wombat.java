@@ -11,30 +11,17 @@
 
 package wombat;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import javax.swing.JFrame;
 
 import util.StringTools;
 import wombat.pack.TxExec;
@@ -115,15 +102,10 @@ class CfgThread extends Thread {
 
 //						
 						long t = timeNow - r.startTime(); 
-						String tstr;
 						if( t < 60000 ) {
-							tstr = t / 1000 + "s";
 						} else if( t < 60000 * 60 ){
-							tstr = t / 60000 + "m";
 						} else if( t < 60000 * 60 * 24 ){
-							tstr = t / (60000 * 60) + "h";
 						} else {
-							tstr = t / (60000 * 60 * 24) + "d";
 						}
 						
 //						System.out.printf( "%d: serial: %d time: %s cmd: '%s'\n", i, r.getSerial(), tstr, cmd );
@@ -287,8 +269,7 @@ public class Wombat {
 				esc.start();
 				rs.add(this);
 				try {
-					int ret = process.waitFor();
-//					System.out.printf( "wait for returned: %d\n", ret );
+					process.waitFor();
 					
 //					isc.stopPlease();
 //					esc.stopPlease();

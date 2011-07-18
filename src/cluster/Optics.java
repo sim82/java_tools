@@ -100,10 +100,7 @@ public class Optics {
 		
 		orderSeeds = new PriorityQueue<OsMember>();
 		
-		Random rnd = new Random();
-//		for( int i = 0; i < N; i++ ) {
-//			objSet[i] = new Point( rnd.nextFloat(), rnd.nextFloat() );
-//		}
+		new Random();
 		
 		double[] p = {1,4,6,2,5,7,1.5,3,4.5,6.5,1.7};
 		for( int i = 0; i < N; i++ ) {

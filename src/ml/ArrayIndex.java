@@ -20,7 +20,7 @@ public class ArrayIndex {
 	HashMap<String,Integer> idx = new HashMap<String, Integer>();
 	boolean doubleKeys = false;
 	
-	ArrayIndex( String[] a ) {
+	public ArrayIndex( String[] a ) {
 		this.a = a;
 		
 		for( int i = 0; i < a.length; i++ ) {
@@ -29,7 +29,7 @@ public class ArrayIndex {
 		}
 	}
 	
-	int getIdx( String key ) {
+	public int getIdx( String key ) {
 		return idx.get(key);
 	}
 }

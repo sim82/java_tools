@@ -23,7 +23,7 @@ public class TreeCompare {
 		TreeParser tp = new TreeParser( treeFile );
 		LN n = tp.parse();
 		
-		int nTips = tp.getNTips();
+		tp.getNTips();
 		
 		
 		LN[][] branches = getAllBranches(n);

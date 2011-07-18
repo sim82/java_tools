@@ -147,10 +147,10 @@ public class ClassifierLTree {
 		}
 	}
 	
-	static class TaxonSMap {
+	public static class TaxonSMap {
 		HashMap<String,int[]> map = new HashMap<String, int[]>();
 		
-		TaxonSMap( File file ) {
+		public TaxonSMap( File file ) {
 			try {
 				BufferedReader r = new BufferedReader( new FileReader(file));
 				
@@ -184,7 +184,7 @@ public class ClassifierLTree {
 			}
 		}
 		
-		int[] getMap( String taxon ) {
+		public int[] getMap( String taxon ) {
 			int[] m = map.get(taxon);
 			
 			if( m == null ) {
@@ -193,7 +193,7 @@ public class ClassifierLTree {
 			
 			return m;
 		}
-		int maxLen() {
+		public int maxLen() {
 			int max = 0;
 			
 			for( int[] smap : map.values()) {
@@ -582,7 +582,7 @@ public class ClassifierLTree {
         return lnlx;
     }
 
-	private static LN findTipWithNamedBranch(LN[] lnl, String branch) {
+	static LN findTipWithNamedBranch(LN[] lnl, String branch) {
         System.out.printf( "find: %s %d\n", branch, lnl.length );
 
         LN[] lnlx = expandToAllNodes( lnl );
@@ -699,7 +699,7 @@ public class ClassifierLTree {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
+					st.nextToken();
                     String k = st.nextToken();
                     String v = st.nextToken();
 
@@ -742,7 +742,7 @@ public class ClassifierLTree {
 
                 try {
                     StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
+					st.nextToken();
                     String k = st.nextToken();
 					st.nextToken(); // skip the 'real neighbor'
                     String v = st.nextToken();
@@ -753,8 +753,6 @@ public class ClassifierLTree {
 					//
 
 					StringTokenizer st2 = new StringTokenizer(v, ",");
-					String tip;
-					
 					int num = st2.countTokens();
 					if( num < 1 ) {
 						throw new RuntimeException("could not parse split list from real neighbor file");
@@ -934,13 +932,11 @@ public class ClassifierLTree {
 	public static double treeDiameter( LN n ) {
 		LN[] list = LN.getAsList(n);
 
-		int cnt = 0;
 		double longestPath = 0.0;
 
 
 		for( LN node : list ) {
 			if( node.data.isTip && node.back != null ) {
-				cnt++;
 
 				longestPath = Math.max( longestPath, LN.longestPathCorrected(node));
 			}

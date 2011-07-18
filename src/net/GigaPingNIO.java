@@ -1,12 +1,8 @@
 package net;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 
@@ -32,7 +28,7 @@ public class GigaPingNIO {
 		System.out.printf( "rx port: %d\n", rxport );
 	
 		
-		final byte[] addr = {(byte) 127, (byte) 0, 0, 1};
+//		final byte[] addr = {(byte) 127, (byte) 0, 0, 1};
 
 		
 		final MutableInt ack = new MutableInt();
@@ -48,9 +44,6 @@ public class GigaPingNIO {
 				
 				int lastser = -1;
 				int nrec = 0;
-				int nloss = 0;
-
-				
 				long time = System.currentTimeMillis();
 
 				long rxbytes = 0;
@@ -127,7 +120,6 @@ public class GigaPingNIO {
 				long time = System.currentTimeMillis();
 
 				long txbytes = 0;
-				long nj = 0;
 				while( canExit.i == 0 ) {
 					txb.rewind();
 					

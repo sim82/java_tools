@@ -13,25 +13,14 @@
  */
 package ml;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StreamTokenizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import com.sun.jmx.remote.util.OrderClassLoaders;
-
-import ml.ClassifierOutput.Res;
 
 public class ClassifierTwoCladesBSWeight {
 	static class Res {
@@ -102,20 +91,16 @@ public class ClassifierTwoCladesBSWeight {
 //		
 		//LN.getBranchList(n)
 		
-		String ogbrname = sp[0].backLabel;
-		
 		ClassifierOutput cf = ClassifierOutput.read(classFile);
 		
-		ArrayList<String> os1 = new ArrayList<String>();
-		ArrayList<String> os2 = new ArrayList<String>();
-		ArrayList<String> osog = new ArrayList<String>();
+		new ArrayList<String>();
+		new ArrayList<String>();
+		new ArrayList<String>();
 		
 		Map<String,Res> orm = new TreeMap<String, Res>();
 		
 		for( ClassifierOutput.Res res : cf.reslist ) {
-//			String seq = res.seq + "_" + res.support;
-			String seq = res.seq;
-			Res or = orm.get(res.seq);
+Res or = orm.get(res.seq);
 			
 			if( or == null ) {
 				or = new Res( res.seq, 0, 0, 0 );
@@ -165,7 +150,7 @@ public class ClassifierTwoCladesBSWeight {
 		}
 	}
 	
-	private static void print(Iterable<String> nl1) {
+	static void print(Iterable<String> nl1) {
 		for( String s : nl1 ) {
 			System.out.println( s );
 		}

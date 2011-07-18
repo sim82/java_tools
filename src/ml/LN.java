@@ -31,13 +31,13 @@ import java.util.TreeMap;
 
 public class LN {
 
-	ANode data;
-	LN next;
-	LN back;
+	public ANode data;
+	public LN next;
+	public LN back;
 	double backLen;
     String backLabel;
     int	   backId;
-    double backSupport;
+    public double backSupport;
 
 	public LN( ANode data ) {
 		this.data = data;
@@ -589,9 +589,6 @@ public class LN {
     }
     
 	public static void branchSanityCheck(LN[] b) {
-		boolean x = (b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel;
-		
-		
 		if( ((b[0].backLabel != null && b[1].backLabel != null) && !b[0].backLabel.equals(b[1].backLabel)) 
 			|| ((b[0].backLabel == null || b[1].backLabel == null) && b[0].backLabel != b[1].backLabel)) 
 		{	throw new RuntimeException("! b[0].backLabel.equals(b[1].backLabel): " + b[0].backLabel + " " + b[1].backLabel);
@@ -629,7 +626,7 @@ public class LN {
 
     
     
-	private static int insertDFS(LN n, LN[] list, int pos) {
+	static int insertDFS(LN n, LN[] list, int pos) {
 //		if (n.data.isTip) {
 //			list[pos] = n;
 //			return pos + 1;
@@ -659,7 +656,7 @@ public class LN {
 
     }
 
-    private static int insertDFS(LN n, ArrayList<LN> list, int pos, boolean back ) {
+    static int insertDFS(LN n, ArrayList<LN> list, int pos, boolean back ) {
         if( n != null ) {
             if( back ) {
                 pos = insertDFS( n.back, list, pos, false );
@@ -1264,8 +1261,8 @@ public class LN {
 //			System.out.printf( "%s\n", s );
 //		}
 		
-		int nn1 = LN.countNodes(ref[0]);
-		int nn2 = LN.countNodes(other);
+		LN.countNodes(ref[0]);
+		LN.countNodes(other);
 		
 		//System.out.printf( "counts: %d %d\n", nn1, nn2 );
 		

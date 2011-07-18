@@ -23,8 +23,6 @@ public class GigaPing {
 			
 			@Override
 			public void run() {
-				int i = 0;
-				
 				while( true ) {
 					byte[] rxb = new byte[2048];
 					DatagramPacket rxp = new DatagramPacket(rxb, rxb.length );
@@ -33,7 +31,7 @@ public class GigaPing {
 						
 						//System.out.printf( "received packet of length: %d from %s\n", rxp.getLength(), rxp.getAddress().toString() );
 						byte[] bb = rxp.getData();
-						int serial = bb[0] + (bb[1] << 8) + (((int)bb[2]) << 16) + (((int)bb[3]) << 24);
+						
 						
 						
 //						System.out.printf( "%d received packet of length: %d from %s:%d (%d) (%d %d %d %d)\n", i, rxp.getLength(), rxp.getAddress().toString(), rxp.getPort(), serial, bb[0], bb[1], bb[2], bb[3] );
@@ -41,11 +39,6 @@ public class GigaPing {
 						
 						DatagramPacket retp = new DatagramPacket(abuf, 4, rxp.getAddress(), 21844 );
 						rxsock.send( retp );
-						
-						i++;
-//						if( i % 1000 == 0 ) {
-//							System.out.printf( "received %d\n", i );
-//						}			
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

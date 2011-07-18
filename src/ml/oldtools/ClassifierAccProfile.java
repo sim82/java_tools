@@ -11,7 +11,7 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import ml.CSVFile;
+import ml.ClassifierLTree;
+import ml.ClassifierLTree.TaxonSMap;
 
 public class ClassifierAccProfile {
 
@@ -66,13 +70,10 @@ public class ClassifierAccProfile {
 					int[] nds = cf.getInteger(4);
 					int[] starts = cf.getInteger(8);
 					
-					int ntaxa = 0;
 					for( int i = 0; i < names.length; i++ ) {
 						if( starts[i] < 0 ) {
 							continue;
 						}
-						ntaxa++;
-						
 						String seq = names[i];
 						int seqSubIdx = -1; 
 			            

@@ -11,7 +11,7 @@
  *  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
  */
-package ml;
+package ml.oldtools;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,7 +24,7 @@ import java.util.StringTokenizer;
 
 
 
-public class ParsimonyAlignVista {
+public class ParsimonyAlignXP {
 	
 	static String sA = "abcda<bbcdab";
 	static String sB = "abcbbdab";
@@ -43,13 +43,8 @@ public class ParsimonyAlignVista {
 	final int W;// = LenA + 1;
 	final int H;// = LenB + 1;
 	
-	final int[] _score;// = new int[W*H];
-	final int[] _scoreL;// = new int[W*H];
-	
-	final int[] dbscore;// = new int[W*H];
-	final int[] dbscoreL;// = new int[W*H];
-	
-	
+	final int[] score;// = new int[W*H];
+	final int[] scoreL;// = new int[W*H];
 	final byte[] dir;// = new byte[W*H];
 
 	// initialized after call of 'traceback'
@@ -74,16 +69,37 @@ public class ParsimonyAlignVista {
 	static int GAP_OPEN = 3;
 	static int GAP_EXTEND = 1;
 	
-	
+	static boolean COMPRESS_MATRIX = true;
 	static boolean PRINT_ALIGNMENT = false;
 	
-	
-	byte dir_safe( int a, int b ) {
-		return dir[addr(a, b)];
-		
+	int score_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return score[addr(a, b)];
+		} else {
+			return -1;
+		}
 	}
 	
+	int scoreL_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return scoreL[addr(a, b)];
+		} else {
+			return -1;
+		}
+	}
 	
+	byte dir_safe( int a, int b ) {
+		if( validPos( a, b )) {
+			return dir[addr(a, b)];
+		} else {
+			return -1;
+		}
+	}
+	
+	private boolean validPos(int a, int b) {
+		return (!COMPRESS_MATRIX) || (a >= b || a <= b + (W-H));
+	}
+
 
 
 	static int gapCost( int l ) {
@@ -108,11 +124,20 @@ public class ParsimonyAlignVista {
 		if( a < 0 || b < 0 ) {
 			throw new RuntimeException( "a or b out of range" ); 
 		}
-		
-		return b + a * H;
-		
+		if( COMPRESS_MATRIX ) {
+			if( a < b || a > b + (W - H)) {
+				throw new RuntimeException( "bad maths exception " + a + " " + b + " " + W + " " + H );
+			}
+			if( b > W-H ) { 
+				return b -(W-H) + a * (W-H);
+			} else {
+				return b + a * (W-H);
+			}
+		} else {
+			return b + a * H;
+		}
 	}
-
+	
 	// address for 'sequence space' coordinate (correct for trailing gap row/column)
 	int saddr( int a, int b ) {
 		return addr(a + 1, b + 1);
@@ -123,7 +148,7 @@ public class ParsimonyAlignVista {
 	static int[] scoreL_cached;
 	static byte[] dir_cached;
 	
-	public ParsimonyAlignVista( int[] seqA, int[] seqB, int[] scoreA ) {
+	public ParsimonyAlignXP( int[] seqA, int[] seqB, int[] scoreA ) {
 		this.seqA = seqA;
 		this.seqB = seqB;
 		this.scoreA = scoreA;
@@ -135,22 +160,20 @@ public class ParsimonyAlignVista {
 		H = lenB + 1;
 
 		int size;
-		
-		size = W * H;
-		int strip = lenA - lenB + 1;
-		
+		if( COMPRESS_MATRIX ) {
+			size = (W - H + 1) * W;
+		} else {
+			size = W * H;
+		}
 		// array allocation seemed to cause quite some overhead.
 		// get rid of allocation and (more importantly) unnecessary initialization
 		// of the score arrays.
 		if( true ) {
 				
-			if( score_cached == null || score_cached.length < strip ) {
-				score_cached = new int[strip];
-				scoreL_cached = new int[strip];
-			} 
-			if( dir_cached == null || dir_cached.length < size ) {
+			if( score_cached == null || score_cached.length < size ) {
+				score_cached = new int[size];
+				scoreL_cached = new int[size];
 				dir_cached = new byte[size];
-				
 			} else {
 				//Arrays.fill(score_cached, 0, W*H, 0);
 				//Arrays.fill(scoreL_cached, 0, W*H, 0);
@@ -158,18 +181,12 @@ public class ParsimonyAlignVista {
 			}
 			
 			
-			_score = score_cached;
-			_scoreL = scoreL_cached;
-		
-//			dbscore = new int[size];			
-//			dbscoreL = new int[size];
-			dbscore = null;
-			dbscoreL = null;
-			
+			score = score_cached;
+			scoreL = scoreL_cached;
 			dir = dir_cached;
 		} else {
-			_score = new int[size];
-			_scoreL = new int[size];
+			score = new int[size];
+			scoreL = new int[size];
 			dir = new byte[size];
 		}
 	}
@@ -177,50 +194,32 @@ public class ParsimonyAlignVista {
 	int align() {
 			
 		for( int ia = 0; ia <= lenA - lenB - 1; ia++ ) {
-			//_set_scoreL( ia, -1, gapCost(ia+1));
-		//	_set_score( ia, -1, gapCost(ia+1));
+			scoreL[saddr(ia, -1)] = gapCost(ia+1);
+			score[saddr(ia, -1)] = gapCost(ia+1);
 			
-			
-//			scoreL[saddr(ia, -1)] = gapCost(ia+1);
-//			score[saddr(ia, -1)] = gapCost(ia+1);
-//			
 			dir[saddr(ia, -1)] = STAY_L;
 		}
 	
-//		score[saddr(-1,-1)] = 0;
-//		scoreL[saddr(-1,-1)] = 0;
-		
-		//_set_score(-1,-1, 0);
-		//_set_scoreL(-1,-1, 0);
-		
-		
-		init_ib(0, -1);
-		set_score_1_1(0);
-		set_scoreL_0_0(0);
-		
+		score[saddr(-1,-1)] = 0;
+		scoreL[saddr(-1,-1)] = 0;
 		
 		for( int ia = 0; ia < lenA; ia++ ) {
 			int bstart = Math.max(0, ia - (lenA - lenB));
 			int bend = Math.min(lenB, ia + 1); 
-			
-			init_ib(bstart, gapCost(ia));
-//			if( bstart == 0 ) {
-//				set_score_1_1(gapCost(ia));
-//				//set_scoreL_1_1(gapCost(ia));
-//			} 
-			for( int ib = bstart; ib < bend; inc_ib(++ib) ) {
-			
-				//_set_ib(ib);
 				
+			for( int ib = bstart; ib < bend; ib++ ) {
+			
 				int ca = seqA[ia];
 				int cb = seqB[ib];
 				
-				
+				int saddr_0_0 = saddr(ia, ib);
 				
 				// calculate match score ('go diagonal')
-				//int sd = score[saddr(ia-1, ib-1)];
-				int sd = get_score_1_1();//(ia-1, ib-1);
+				int sd = score[saddr(ia-1, ib-1)];
 				
+				if( !IGNORE_SCORE_A ) {
+					sd += scoreA[ia];
+				}
 				
 				// penalize based on parsimony
 				if( (ca & cb) == 0 ) {
@@ -229,7 +228,7 @@ public class ParsimonyAlignVista {
 				
 				int sl;
 				if( ia > ib ) {
-				//	int saddr_1_0 = saddr(ia-1, ib);
+					int saddr_1_0 = saddr(ia-1, ib);
 					// calculate gap score. Either open or extend gap
 					
 					
@@ -238,23 +237,17 @@ public class ParsimonyAlignVista {
 					// only allow to jump to gap-extent matrix if we can have a gap of
 					// length greater than one before hitting the left diagonal.
 					if( ia > ib + 1 ) { 
-						//scoreExt = scoreL[saddr_1_0] + GAP_EXTEND;
-						scoreExt = get_scoreL_1_0()/*(ia-1, ib)*/ + GAP_EXTEND;
-						
+						scoreExt = scoreL[saddr_1_0] + GAP_EXTEND;
 					} else {
 						scoreExt = LARGE_VALUE;
-						
 					}
-					//final int scoreOpen = score[saddr_1_0] + GAP_OPEN + GAP_EXTEND;
-					
-					final int scoreOpen = get_score_1_0() /*(ia-1, ib)*/ + GAP_OPEN + GAP_EXTEND;
-					
+					final int scoreOpen = score[saddr_1_0] + GAP_OPEN + GAP_EXTEND;
 					
 					if( /*ia > ib + 1 && */ scoreExt < scoreOpen ) {
 						// gap gets extended. Set 'stay' flag in the gap-extension matrix,
 						// so the traceback knows to stay in the extension state.
 						sl = scoreExt;
-						dir[saddr(ia, ib)] |= STAY_L;
+						dir[saddr_0_0] |= STAY_L;
 					} else {
 						// gap gets openend. No stay flag means 'go left and switch to main-matrix'
 						sl = scoreOpen;
@@ -268,7 +261,7 @@ public class ParsimonyAlignVista {
 					
 					sl += scoreA[ia];
 				}
-				set_scoreL_0_0(sl);//(ia, ib, sl);
+				scoreL[saddr_0_0] = sl;
 				
 				// the ia > ib is there to prevent getting into a situation where we would have
 				// to open a gap in seqA later on. (== getting below the left diagonal 
@@ -290,143 +283,23 @@ public class ParsimonyAlignVista {
 				// choose between match or gap
 				if( sl < sd && ia > ib ) {
 					// open gap. No stay flag means 'go left and switch to gap-matrix'.
-					set_score_0_0(sl);//(ia, ib, sl);
+					score[saddr_0_0] = sl;
 				} else {
-					set_score_0_0(sd);//(ia, ib, sd);
+					score[saddr_0_0] = sd;
 					// match positions. Set 'stay' flag in the main-matrix (means 'go diagonal')
-					dir[saddr(ia, ib)] |= STAY;
+					dir[saddr_0_0] |= STAY;
 				}
 			}			
 		}
 		
 		tbStartA = lenA-1;
 		tbStartB = lenB-1;
-		
-		g_ia = tbStartA;
-		g_ib = tbStartB;
-		//g_bstart = 0;
-		return get_score_0_0();
+				
+		return score[saddr(lenA-1, lenB-1)];
 	}
-
-	
-
-	int g_ia = -1;
-	int g_ib = -1;
-	//int g_bstart = -1;
-//	private int score_0_0 = -1;
-	private int score_1_1 = -1;
-	private int score_1_0 = -1;
-	
-//	private int scoreL_0_0 = -1;
-	private int scoreL_1_0 = -1;
-	
-	private void init_ib(int ib, int g) {
-		//g_ib = ib;
-	//	g_bstart = ib;
-		g_ib = ib;
-		if( ib == 0 ) {
-			score_1_1 = g;
-		} else {
-			score_1_1 = _score[g_ib - 1];
-		}
-		//score_1_1 = LARGE_VALUE;
-		score_1_0 = _score[g_ib];
-		scoreL_1_0 = _scoreL[g_ib];
-	}
-
-	private void inc_ib( int ib ) {
-		g_ib = ib;
-		score_1_1 = score_1_0;
-		score_1_0 = _score[g_ib];
-		scoreL_1_0 = _scoreL[g_ib];
-		
-	}
-	
-//	private void init_ia() {
-////		g_ia = 0;
-////		score_1_0 = LARGE_VALUE;
-////		score_1_1 = LARGE_VALUE;
-////		scoreL_1_0 = LARGE_VALUE;
-//	}
-//	
-//	private void inc_ia() {
-////		g_ia++;
-////		score_1_0 = LARGE_VALUE;
-////		scoreL_1_0 = LARGE_VALUE;
-////		score_1_1 = LARGE_VALUE;
-//	}
 
 
 	
-	private void set_score_0_0(int sl) {
-//		_set_score(g_ia, g_ib + g_bstart, sl);
-		_score[g_ib] = sl;
-		
-//		score_0_0 = sl;
-	}
-
-	private void set_score_1_1(int sl) {
-//		_set_score(g_ia - 1, g_ib + g_bstart- 1, sl);
-		score_1_1 = sl;
-	}
-	
-	
-	private void set_scoreL_0_0(int sl) {
-//		_set_scoreL(g_ia, g_ib + g_bstart, sl);
-		_scoreL[g_ib] = sl;
-		
-//		scoreL_0_0 = sl;
-	}
-
-	private int get_score_1_0() {
-////		int r = _get_score(g_ia - 1, g_ib + g_bstart);
-//
-//		assert( r == score_1_0 );
-		//return r;
-		return score_1_0;
-	}
-
-	private int get_scoreL_1_0() {
-//		int r = _get_scoreL(g_ia - 1, g_ib + g_bstart);
-//		assert( r == scoreL_1_0 );
-		//return r;
-		return scoreL_1_0;
-	}
-
-	private int get_score_1_1() {
-//		int r = _get_score(g_ia - 1, g_ib + g_bstart - 1);
-//		assert( r == score_1_1 );
-//		//return r;
-		return score_1_1;
-	}
-
-	private int get_score_0_0() {
-//		int r = _get_score(g_ia, g_ib + g_bstart);
-//		assert( r == score_0_0 );
-		//return r;
-//		return score_0_0;
-		return _score[g_ib];
-	}
-	
-//	private void _set_score(int ia, int ib, int sl) {
-//		dbscore[saddr(ia, ib)] = sl;
-//	}
-//
-//	private void _set_scoreL(int ia, int ib, int sl) {
-//		dbscoreL[saddr(ia, ib)] = sl;
-//	}
-//
-//	private int _get_scoreL(int ia, int ib) {
-//		return dbscoreL[saddr(ia, ib)];
-//	}
-//
-//	private int _get_score(int ia, int ib) {
-//		return dbscore[saddr(ia, ib)];
-//	}
-
-
-
-
 	private void traceback() {
 		assert( tbStartB == lenB-1 );
 		
@@ -506,7 +379,7 @@ public class ParsimonyAlignVista {
 			int w = 40;
 			for( int ib = 0; ib < h; ib++ ) {
 				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d ", (int)dir_safe(ia,ib) & STAY);
+					System.out.printf( "%d ", dir_safe(ia,ib) & STAY);
 				}
 				System.out.println();
 			}
@@ -514,7 +387,7 @@ public class ParsimonyAlignVista {
 			
 			for( int ib = 0; ib < h; ib++ ) {
 				for( int ia = 0; ia < w; ia++ ) {
-					System.out.printf( "%d ", (int)dir_safe(ia,ib) & STAY_L);
+					System.out.printf( "%d ", dir_safe(ia,ib) & STAY_L);
 				}
 				System.out.println();
 			}
@@ -528,7 +401,7 @@ public class ParsimonyAlignVista {
 						dir[saddr(ia-1, ib-1)] |= BT_DIAG;
 					}
 					
-					System.out.printf( "%x ", (int)dir_safe(ia,ib) & (BT_TOUCH|BT_DIAG));
+					System.out.printf( "%x ", dir_safe(ia,ib) & (BT_TOUCH|BT_DIAG));
 				}
 				System.out.println();
 			}
@@ -543,22 +416,22 @@ public class ParsimonyAlignVista {
 			}
 			System.out.println();
 			
-//			for( int ib = 0; ib < h; ib++ ) {
-//				for( int ia = 0; ia < w; ia++ ) {
-//					System.out.printf( "%d\t", score_safe(ia,ib) );
-//				}
-//				System.out.println();
-//			}
-//			System.out.println();
-//			
-//			
-//			for( int ib = 0; ib < h; ib++ ) {
-//				for( int ia = 0; ia < w; ia++ ) {
-//					System.out.printf( "%d\t", scoreL_safe(ia,ib) );
-//				}
-//				System.out.println();
-//			}
-//			System.out.println();
+			for( int ib = 0; ib < h; ib++ ) {
+				for( int ia = 0; ia < w; ia++ ) {
+					System.out.printf( "%d\t", score_safe(ia,ib) );
+				}
+				System.out.println();
+			}
+			System.out.println();
+			
+			
+			for( int ib = 0; ib < h; ib++ ) {
+				for( int ia = 0; ia < w; ia++ ) {
+					System.out.printf( "%d\t", scoreL_safe(ia,ib) );
+				}
+				System.out.println();
+			}
+			System.out.println();
 			throw new RuntimeException( "bailing out" );
 		}
 	}
@@ -576,7 +449,7 @@ public class ParsimonyAlignVista {
 		
 		PrintWriter w = new PrintWriter(new File( "/scratch/pars.out.XP" ));
 		
-		Random rnd = new Random( 123456 );
+		new Random( 123456 );
 		
 		long time1 = System.currentTimeMillis();
 		long time2 = time1;
@@ -612,7 +485,7 @@ public class ParsimonyAlignVista {
 			
 			
 			
-			ParsimonyAlignVista pa = new ParsimonyAlignVista(seqA, seqB, scoreA);
+			ParsimonyAlignXP pa = new ParsimonyAlignXP(seqA, seqB, scoreA);
 			int score = pa.align();
 			//int score = pa.alignFreeshift();
 			if( PRINT_ALIGNMENT ) {
