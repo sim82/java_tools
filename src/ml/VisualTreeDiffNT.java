@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -14,10 +16,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.forester.io.writers.PhylogenyWriter;
 import org.forester.phylogeny.Phylogeny;
 import org.forester.phylogeny.PhylogenyNode;
 import org.forester.phylogeny.data.BranchColor;
 import org.forester.phylogeny.data.BranchData;
+
+import com.sun.corba.se.impl.ior.NewObjectKeyTemplateBase;
 
 import ml.LN.TipCollectVisitor;
 import ml.LN.VisitNodesBottomUp;
@@ -77,11 +82,11 @@ class ConvertToForester {
 		    			{0,255,0},
 		    			{0,0,255}
 		    	};
-		    	final int[] x = {32,32,32};
-		    	color = x;
-		    	
+
 		    	if( !n.data.isTip ) {
-		    	
+		        	final int[] x = {32,32,32};
+			    	color = x;
+			    	
 			    	UnorderedPair<ANode, ANode> key = new UnorderedPair<ANode, ANode>(n.back.data, n.data);
 			    	for( int i = 0; i < branchFound.length; i++ ) {
 			    		if( branchFound[i].contains(key)) {
@@ -89,6 +94,10 @@ class ConvertToForester {
 			    		}
 			    		
 			    	}
+		    	} else {
+		    		final int[] x = {96,96,96};
+			    	color = x;
+			    	
 		    	}
 	    	} else {
 	    		throw new RuntimeException( "no color-scheme for more than 3 tree comparison. bailing out." );
@@ -98,6 +107,10 @@ class ConvertToForester {
 			
 			BranchData bd = new BranchData();
 			bd.setBranchColor(new BranchColor(new Color(color[0], color[1], color[2])));
+
+			if( n.data.isTip ) {
+				fn.setName(n.data.getTipName());
+			}
 			
 			fn.setBranchData(bd);
 			fn.setDistanceToParent(n.backLen);
@@ -192,11 +205,11 @@ public class VisualTreeDiffNT {
 		    			{0,255,0},
 		    			{0,0,255}
 		    	};
-		    	final int[] x = {32,32,32};
-		    	color = x;
 		    	
 		    	if( !n.data.isTip ) {
-		    	
+		        	final int[] x = {32,32,32};
+			    	color = x;
+			    	
 			    	UnorderedPair<ANode, ANode> key = new UnorderedPair<ANode, ANode>(n.back.data, n.data);
 			    	for( int i = 0; i < auxSet.length; i++ ) {
 			    		if( PimmxlPrinter.auxSet[i].contains(key)) {
@@ -204,6 +217,10 @@ public class VisualTreeDiffNT {
 			    		}
 			    		
 			    	}
+		    	} else {
+		    		final int[] x = {96,96,96};
+			    	color = x;
+			    	
 		    	}
 	    	} else {
 	    		throw new RuntimeException( "no color-scheme for more than 3 tree comparison. bailing out." );
@@ -298,38 +315,41 @@ public class VisualTreeDiffNT {
 			
 		}
 		
-		final String[] t1_tips;
-		LN[] t1_list = LN.getAsList(t1);
+//		final String[] t1_tips;
+//		LN[] t1_list = LN.getAsList(t1);
 		
 		
 		final int numQTrees = args.length - 1;
-		Set<String> t1_tipset = LN.getTipSet(t1_list);
+//		Set<String> t1_tipset = LN.getTipSet(t1_list);
 	
-		t1_tips = t1_tipset.toArray(new String[t1_tipset.size()]);
-		Arrays.sort(t1_tips);
+//		t1_tips = t1_tipset.toArray(new String[t1_tipset.size()]);
+//		Arrays.sort(t1_tips);
 	
 		LN[][] t1_br = LN.getAllBranchList3(t1);
 		BitSet[] t1_splits = new BitSet[t1_br.length];
+		Map<BitSet,LN[]> t1_hash = new HashMap<BitSet,LN[]>();
 		for( int i = 0; i < t1_br.length; i++ ) {
-			if( false ) {
-				t1_splits[i] = splitToBitset( LN.getSmallerSplitSet(t1_br[i]), t1_tips);
-				
-				BitSet os = cbss1.splits.get( new UnorderedPair<LN,LN>(t1_br[i]));
-				
-				if( os.cardinality() > cbss1.numTips / 2 ) {
-					os.flip(0,cbss1.numTips);
-				}
-				
-				BitSet os2 = (BitSet) os.clone();
-				
-				os2.xor(t1_splits[i]);
-				
-				if( !os.equals(t1_splits[i] )) {
-					System.out.printf( "non equal: %d %d %d\n", i, os.cardinality(), t1_splits[i].cardinality() );
-				}
-			} else {
+//			if( false ) {
+//				t1_splits[i] = splitToBitset( LN.getSmallerSplitSet(t1_br[i]), t1_tips);
+//				
+//				BitSet os = cbss1.splits.get( new UnorderedPair<LN,LN>(t1_br[i]));
+//				
+//				if( os.cardinality() > cbss1.numTips / 2 ) {
+//					os.flip(0,cbss1.numTips);
+//				}
+//				
+//				BitSet os2 = (BitSet) os.clone();
+//				
+//				os2.xor(t1_splits[i]);
+//				
+//				if( !os.equals(t1_splits[i] )) {
+//					System.out.printf( "non equal: %d %d %d\n", i, os.cardinality(), t1_splits[i].cardinality() );
+//				}
+//			} else 
+			{
 				
 				t1_splits[i] = cbss1.splits.get( new UnorderedPair<LN,LN>(t1_br[i]));
+				t1_hash.put(t1_splits[i],t1_br[i]);
 			}
 		}
 		timer1.print();
@@ -341,67 +361,89 @@ public class VisualTreeDiffNT {
 		
 		for( int qTree = 0; qTree < numQTrees; qTree++ )
 		{
+			PerfTimer timer = new PerfTimer();
+			
 			File t2_name = new File( args[1 + qTree] );
 			LN t2 = TreeParser.parse(t2_name);
 			
 			LN.CollectBranchSplitSets cbss_q = new LN.CollectBranchSplitSets(t2);
 			cbss_q.convertToSmaller();
+			timer.print();
 			
-			LN[] t2_list = LN.getAsList(t2);
+			for( int i = 0; i < cbss1.tcv.tips.size(); i++ ) {
+				if( !cbss1.tcv.tips.get(i).data.getTipName().equals(cbss_q.tcv.tips.get(i).data.getTipName() ) ) {
+					throw new RuntimeException( "inconsitent tip sets in trees" );
+				}
+			}
+//			LN[] t2_list = LN.getAsList(t2);
 					
 			
 			
 			branchFound[qTree] = new HashSet<UnorderedPair<ANode, ANode>>();
 			
-			Set<String> t2_tipset = LN.getTipSet(t2_list);
+//			Set<String> t2_tipset = LN.getTipSet(t2_list);
+//			
+//			
+//			final boolean c12 = t1_tipset.containsAll(t2_tipset);
+//			final boolean c21 = t2_tipset.containsAll(t1_tipset);
 			
-			
-			final boolean c12 = t1_tipset.containsAll(t2_tipset);
-			final boolean c21 = t2_tipset.containsAll(t1_tipset);
-			
-			System.err.printf( "equal: %s\n", (c12 && c21) ? "true" : "false" );
-			if( !(c12 && c21) ) {
-				throw new RuntimeException( "tip set in trees is not equal");
-			
-			}
+//			System.err.printf( "equal: %s\n", (c12 && c21) ? "true" : "false" );
+//			if( !(c12 && c21) ) {
+//				throw new RuntimeException( "tip set in trees is not equal");
+//			
+//			}
 			
 			LN[][] t2_br = LN.getAllBranchList3(t2);
-			
-			System.err.printf( "br: %d %d\n", t1_br.length, t2_br.length );
-			
-			assert( t1_br.length == t2_br.length );
+//			
+//			System.err.printf( "br: %d %d\n", t1_br.length, t2_br.length );
+//			
+//			assert( t1_br.length == t2_br.length );
 			
 			BitSet[] t2_splits = new BitSet[t2_br.length];
 			
 			for( int i = 0; i < t1_br.length; i++ ) {
-				if( !true ) {
-					t2_splits[i] = splitToBitset( LN.getSmallerSplitSet(t2_br[i]), t1_tips);	
-				} else {
+//				if( !true ) {
+//					t2_splits[i] = splitToBitset( LN.getSmallerSplitSet(t2_br[i]), t1_tips);	
+//				} else
+				{
 					t2_splits[i] = cbss_q.splits.get( new UnorderedPair<LN, LN>(t2_br[i]));
 				}
 			}
 	
 			
-			int nFound = 0;
-			for( int i = 0; i < t1_splits.length; i++ ) {
-				boolean found = false;
-				
-				
-				//if( t1_splits[i].cardinality() > 1 ) {
-				for( int j = 0; j < t2_splits.length; j++ ) {
-					if( t1_splits[i].equals(t2_splits[j]) ) {
-						nFound++;
-						found = true;
-						break;
+			if( false ) {
+				int nFound = 0;
+				for( int i = 0; i < t1_splits.length; i++ ) {
+					boolean found = false;
 					
+				
+					//if( t1_splits[i].cardinality() > 1 ) {
+					for( int j = 0; j < t2_splits.length; j++ ) {
+						if( t1_splits[i].equals(t2_splits[j]) ) {
+							nFound++;
+							found = true;
+							break;
+						
+						}
+					}
+					
+					if( found ) {
+						branchFound[qTree].add( new UnorderedPair<ANode, ANode>(t1_br[i][0].data, t1_br[i][1].data));
+						
+						
 					}
 				}
-				if( found ) {
-					branchFound[qTree].add( new UnorderedPair<ANode, ANode>(t1_br[i][0].data, t1_br[i][1].data));
+			} else {
+				for( int j = 0; j < t2_splits.length; j++ ) {
+					LN[] br_j = t1_hash.get(t2_splits[j]);
 					
-					
+					if( br_j != null ) {
+						branchFound[qTree].add( new UnorderedPair<ANode, ANode>(br_j[0].data, br_j[1].data));
+						
+					}
 				}
 			}
+			timer.print();
 		}
 			
 		
@@ -460,22 +502,36 @@ public class VisualTreeDiffNT {
 //			e.printStackTrace();
 //			throw new RuntimeException( "failed java magic. bailing out.");
 //		}
-		{
 						
-			Phylogeny phy = new Phylogeny();
-			PhylogenyNode fn = (new ConvertToForester(branchFound)).trav( t1, true );
-			phy.setRoot( fn );
-			phy.setRooted( false );
+		Phylogeny phy = new Phylogeny();
+		PhylogenyNode fn = (new ConvertToForester(branchFound)).trav( t1, true );
+		phy.setRoot( fn );
+		phy.setRooted( false );
+	
+		
+		if( !true ) {
+			try {
+				Writer w = new OutputStreamWriter(System.out);
+				
+				PhylogenyWriter.createPhylogenyWriter().toPhyloXML(w, phy, 0);
+				w.flush();
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			
+			}
+		} else {
+			System.err.printf( "Tree visualization using Forester/Archeopteryx (http://www.phylosoft.org/forester)\n" );
 			org.forester.archaeopteryx.Archaeopteryx.createApplication(phy);
 			archStarted = true;
 		}
 		
-		if( !archStarted ) {
-			PimmxlPrinter.printPhyloxml(t1, System.out);
-				
-		
-		}
+		//		if( !archStarted ) {
+//			PimmxlPrinter.printPhyloxml(t1, System.out);
+//				
+//		
+//		}
 	}
 
 	private static BitSet splitToBitset(String[] splitSet,

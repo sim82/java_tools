@@ -514,7 +514,7 @@ public class LN {
     static class CollectBranchSplitSets {
     	public final Map<UnorderedPair<LN,LN>,BitSet> splits = new HashMap<UnorderedPair<LN,LN>, BitSet>();
 		public final int numTips;
-		
+		public final TipCollectVisitor tcv = new TipCollectVisitor();
 		public CollectBranchSplitSets( LN t1 ) {
 		
 //			PerfTimer timer1 = new PerfTimer();
@@ -522,7 +522,7 @@ public class LN {
 			//
 			// collect tip nodes from t1
 			//
-			TipCollectVisitor tcv = new TipCollectVisitor();
+			
 			LN.visitNodesPreorder(t1, tcv, true);
 			
 			
