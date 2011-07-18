@@ -22,85 +22,81 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class FastaFile {
-	static class Entry {
-		String name;
-		String data;
-	}
-	
-	
-	ArrayList<Entry>entries = new ArrayList<Entry>();
-	
-	static FastaFile parse( File f ) {
-		try {
-			return FastaFile.parse(new BufferedReader(new FileReader(f)));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException( "bailing out." );
-		}
-	}
-	static FastaFile parse( BufferedReader r ) {
-		
-		FastaFile ff = new FastaFile();
-		
+    static class Entry {
+	String name;
+	String data;
+    }
 
-		
-		try {
-			
-			String line;
-			
-			Entry curEntry = null;
-			
-			while( (line = r.readLine()) != null ) {
-				if( line.startsWith(">")) {
-					
-					curEntry = new Entry();
-									
-					
-					int start = 1;
-					
-					while( Character.isWhitespace(line.charAt(start)) ) {
-						start++;
-					}
-					int end = start;
-					
-					
-					while( end < line.length() && !Character.isWhitespace(line.charAt(end)) ) {
-						
-						end++;
-					}
-					
-					curEntry.name = line.substring(start, end);
-					curEntry.data = "";
-					ff.entries.add( curEntry );
-				} else {
-					StringTokenizer ts = new StringTokenizer(line);
-					while( ts.hasMoreTokens() ) {
-						String token = ts.nextToken();
-						
-						for( int i = 0; i < token.length(); i++ ) {
-							char c = token.charAt(i);
-							if( Character.isLetter(c)) {
-								curEntry.data += c;
-							}
-						}
-						
-						//curEntry.data += ts.nextToken();
-					}
-				}
+    ArrayList<Entry> entries = new ArrayList<Entry>();
+
+    static FastaFile parse(File f) {
+	try {
+	    return FastaFile.parse(new BufferedReader(new FileReader(f)));
+	} catch (FileNotFoundException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	    throw new RuntimeException("bailing out.");
+	}
+    }
+
+    static FastaFile parse(BufferedReader r) {
+
+	FastaFile ff = new FastaFile();
+
+	try {
+
+	    String line;
+
+	    Entry curEntry = null;
+
+	    while ((line = r.readLine()) != null) {
+		if (line.startsWith(">")) {
+
+		    curEntry = new Entry();
+
+		    int start = 1;
+
+		    while (Character.isWhitespace(line.charAt(start))) {
+			start++;
+		    }
+		    int end = start;
+
+		    while (end < line.length()
+			    && !Character.isWhitespace(line.charAt(end))) {
+
+			end++;
+		    }
+
+		    curEntry.name = line.substring(start, end);
+		    curEntry.data = "";
+		    ff.entries.add(curEntry);
+		} else {
+		    StringTokenizer ts = new StringTokenizer(line);
+		    while (ts.hasMoreTokens()) {
+			String token = ts.nextToken();
+
+			for (int i = 0; i < token.length(); i++) {
+			    char c = token.charAt(i);
+			    if (Character.isLetter(c)) {
+				curEntry.data += c;
+			    }
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw new RuntimeException("bailing out.");
-		}
-		
-		return ff; 
-	}
-	
 
-	ArrayList<Entry>getEntries() {
-		return entries;
+			// curEntry.data += ts.nextToken();
+		    }
+		}
+	    }
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	    throw new RuntimeException("bailing out.");
 	}
-	
+
+	return ff;
+    }
+
+    ArrayList<Entry> getEntries() {
+	return entries;
+    }
+
 }

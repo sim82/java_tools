@@ -4,32 +4,30 @@ package ml;
 
 import java.io.File;
 
-
 public class SplitTree {
-	public static void main( String args[] ) {
-		
-		
-		File inFile = new File(args[0]);
-		
-		LN n = TreeParser.parse(inFile);
-		
-		LN[] nl = LN.getAsList(n);
-		String[] rl = { "b", "d" };
-		
-		for( String r : rl ) {
-			for( LN cn : nl ) {
-				if( cn.data.isTip(r)) {
-					LN cnt = LN.getTowardsTree(cn);
-					
-					n = LN.removeBranch(cnt.back)[0];
-					break;
-				}
-			
-			}
-		
+    public static void main(String args[]) {
+
+	File inFile = new File(args[0]);
+
+	LN n = TreeParser.parse(inFile);
+
+	LN[] nl = LN.getAsList(n);
+	String[] rl = { "b", "d" };
+
+	for (String r : rl) {
+	    for (LN cn : nl) {
+		if (cn.data.isTip(r)) {
+		    LN cnt = LN.getTowardsTree(cn);
+
+		    n = LN.removeBranch(cnt.back)[0];
+		    break;
 		}
-		
-		TreePrinter.printRaw(n, System.out);
-		
+
+	    }
+
 	}
+
+	TreePrinter.printRaw(n, System.out);
+
+    }
 }
