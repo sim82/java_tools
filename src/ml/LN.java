@@ -603,7 +603,7 @@ public class LN {
 		Entry<BitSet, UnorderedPair<LN, LN>> v = esi.next();
 		if (v.getKey().cardinality() > numTips / 2) {
 		    esi.remove();
-		    
+		   
 		    v.getKey().flip(0, numTips);
 		    tmp.put(v.getKey(), v.getValue());
 		    
