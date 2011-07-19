@@ -331,7 +331,7 @@ public class VisualTreeDiffNT {
 		
 	    xxx.runDiff(files.toArray( new File[files.size()]), showArch);
 	} else {
-//	    try {
+	    try {
 		String curDir = System.getProperty("user.dir");
 
 		final JFileChooser fc = new JFileChooser(curDir);
@@ -360,12 +360,12 @@ public class VisualTreeDiffNT {
 		VisualTreeDiffNT xxx = new VisualTreeDiffNT();
 		xxx.runDiff(treeFiles, true);
 
-//	    } catch (RuntimeException x) {
-//		x.printStackTrace();
-//
-//		JOptionPane.showMessageDialog(null, x.getMessage(),
-//			"Runtime error", JOptionPane.ERROR_MESSAGE);
-//	    }
+	    } catch (RuntimeException x) {
+		x.printStackTrace();
+
+		JOptionPane.showMessageDialog(null, x.getMessage(),
+			"Runtime error", JOptionPane.ERROR_MESSAGE);
+	    }
 
 	}
     }
@@ -374,6 +374,10 @@ public class VisualTreeDiffNT {
 	File t1_name = treeFiles[0];
 
 	LN t1 = TreeParser.parse(t1_name);
+	if( t1 == null ) {
+	    throw new RuntimeException( "could not parse newick file: " + t1_name );
+	}
+	
 	PerfTimer timer1;
 	LN.CollectBranchSplitSets cbss1;
 
@@ -419,14 +423,22 @@ public class VisualTreeDiffNT {
 	    File t2_name = treeFiles[qTree + 1];
 	    LN t2 = TreeParser.parse(t2_name);
 
+	    if( t2 == null ) {
+		throw new RuntimeException( "could not parse newick file: " + t2_name );
+	    }
+	    
 	    LN.CollectBranchSplitSets cbss_q = new LN.CollectBranchSplitSets(t2);
 	    cbss_q.convertToSmaller();
 	    timer.print();
 
+	    if( cbss1.tcv.tips.size() != cbss_q.tcv.tips.size() ) {
+		throw new RuntimeException("inconsitent tip sets in trees (the trees can not be compared).\nthe trees have different sizes: "+ cbss1.tcv.tips.size() + " vs " + cbss_q.tcv.tips.size());
+	    }
+	    
 	    for (int i = 0; i < cbss1.tcv.tips.size(); i++) {
 		if (!cbss1.tcv.tips.get(i).data.getTipName().equals(
 			cbss_q.tcv.tips.get(i).data.getTipName())) {
-		    throw new RuntimeException("inconsitent tip sets in trees");
+		    throw new RuntimeException("inconsitent tip sets in trees (the trees can not be compared).\nfirst inconsitent taxon: " + cbss1.tcv.tips.get(i).data.getTipName() + " vs " + cbss_q.tcv.tips.get(i).data.getTipName());
 		}
 	    }
 	    // LN[] t2_list = LN.getAsList(t2);
@@ -513,7 +525,7 @@ public class VisualTreeDiffNT {
 	Phylogeny phy = new Phylogeny();
 	ConvertToForester ctf = new ConvertToForester(branchFound);
 	PhylogenyNode fn = ctf.trav(t1, true);
-	System.out.printf( "ctf found: %d\n", ctf.nfound );
+	
 	phy.setRoot(fn);
 	phy.setRooted(false);
 
