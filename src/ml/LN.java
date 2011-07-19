@@ -520,7 +520,7 @@ public class LN {
     }
 
     static class CollectBranchSplitSets {
-	public final Map<UnorderedPair<LN, LN>, BitSet> splits = new HashMap<UnorderedPair<LN, LN>, BitSet>();
+	public final Map<BitSet, UnorderedPair<LN, LN>> splits = new HashMap<BitSet, UnorderedPair<LN, LN>>();
 	public final int numTips;
 	public final TipCollectVisitor tcv = new TipCollectVisitor();
 
@@ -584,7 +584,7 @@ public class LN {
 			// pre2.pre.data.serial );
 		    }
 
-		    splits.put(new UnorderedPair<LN, LN>(br), bs);
+		    splits.put(bs, new UnorderedPair<LN, LN>(br));
 		    return bs;
 		}
 	    };
@@ -595,11 +595,22 @@ public class LN {
 	}
 
 	void convertToSmaller() {
-	    for (BitSet bs : splits.values()) {
-		if (bs.cardinality() > numTips / 2) {
-		    bs.flip(0, numTips);
+	    Iterator<Entry<BitSet, UnorderedPair<LN, LN>>> esi = splits.entrySet().iterator();
+	    
+	    HashMap<BitSet, UnorderedPair<LN, LN>> tmp = new HashMap<BitSet, UnorderedPair<LN,LN>>();
+	    
+	    while( esi.hasNext() ) {
+		Entry<BitSet, UnorderedPair<LN, LN>> v = esi.next();
+		if (v.getKey().cardinality() > numTips / 2) {
+		    esi.remove();
+		    
+		    v.getKey().flip(0, numTips);
+		    tmp.put(v.getKey(), v.getValue());
+		    
 		}
 	    }
+	    
+	    splits.putAll(tmp);
 	}
 	// timer1.print();
 

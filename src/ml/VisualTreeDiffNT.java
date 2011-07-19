@@ -1,17 +1,33 @@
 package ml;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import javax.management.RuntimeErrorException;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+
 import ml.LN.TipCollectVisitor;
 
+import org.forester.archaeopteryx.MainFrame;
+import org.forester.archaeopteryx.MainFrameApplication;
 import org.forester.io.writers.PhylogenyWriter;
 import org.forester.phylogeny.Phylogeny;
 import org.forester.phylogeny.PhylogenyNode;
@@ -33,9 +49,9 @@ class PerfTimer {
 }
 
 class ConvertToForester {
-    final HashSet<UnorderedPair<ANode, ANode>>[] branchFound;
+    final HashSet<UnorderedPair<LN, LN>>[] branchFound;
 
-    ConvertToForester(HashSet<UnorderedPair<ANode, ANode>>[] branchFound) {
+    ConvertToForester(HashSet<UnorderedPair<LN, LN>>[] branchFound) {
 	this.branchFound = branchFound;
     }
 
@@ -46,7 +62,7 @@ class ConvertToForester {
 	}
 
     }
-
+    int nfound = 0;
     PhylogenyNode trav(LN n, boolean back) {
 	PhylogenyNode fn = new PhylogenyNode();
 
@@ -58,13 +74,23 @@ class ConvertToForester {
 		final int[] x = { 255, 255, 255 }; // java initializer lists
 						   // syntax is stupid!
 		color = x;
-
-		if (!branchFound[0].contains(new UnorderedPair<ANode, ANode>(
-			n.back.data, n.data))) {
+		boolean found = branchFound[0].contains(new UnorderedPair<LN, LN>(n, n.back));
+		if (!found) {
 		    color[1] = 0;
 		    color[2] = 0;
 
+		    if( n.data.isTip ) {
+			System.out.printf( "tip: %s %s %s\n", found ? "true" : "false", n.data.toString(), n.back.data.toString() );
+			throw new RuntimeException( "consistency check failed while creating forester phylogeny: trivial split not marked.");
+			
+		    }
+		    
+		} else {
+		    nfound++;
 		}
+		
+
+		
 	    } else if (branchFound.length <= 3) {
 		// rgb scheme for 1-to-[2,3] comparison
 
@@ -74,8 +100,8 @@ class ConvertToForester {
 		    final int[] x = { 32, 32, 32 };
 		    color = x;
 
-		    UnorderedPair<ANode, ANode> key = new UnorderedPair<ANode, ANode>(
-			    n.back.data, n.data);
+		    UnorderedPair<LN, LN> key = new UnorderedPair<LN, LN>(
+			    n, n.back);
 		    for (int i = 0; i < branchFound.length; i++) {
 			if (branchFound[i].contains(key)) {
 			    colorBlend(color, colors[i]);
@@ -277,15 +303,76 @@ public class VisualTreeDiffNT {
     // }
 
     public static void main(String[] args) {
-	File t1_name;
+	
 
-	if (args.length > 0) {
-	    t1_name = new File(args[0]);
+	
+	
+	if (args.length >= 2) {
+	    boolean showArch = false;
+	    ArrayList<File> files = new ArrayList<File>();
+	    
+	    //treeFiles = new File[args.length];
+	    for (int i = 0; i < args.length; i++) {
+		if( args[i].equals("-v")) {
+		    showArch = true;
+		} else {
+		    File f = new File(args[i]); 
+		    
+		    if (!f.canRead() || !f.isFile()) {
+			throw new RuntimeException(
+			    "illegal parameter: not a file or not readable: "
+				    + args[i]);
+		    
+		    }
+		    files.add(f);
+		}
+	    }
+	    VisualTreeDiffNT xxx = new VisualTreeDiffNT();
+		
+	    xxx.runDiff(files.toArray( new File[files.size()]), showArch);
 	} else {
-	    t1_name = new File(
-		    "/home/sim/src_exelixis/papara_nt/sa_1604/sa_tree000.phy");
+//	    try {
+		String curDir = System.getProperty("user.dir");
+
+		final JFileChooser fc = new JFileChooser(curDir);
+
+		fc.setPreferredSize(new Dimension(800, 600));
+		fc.setMultiSelectionEnabled(true);
+		fc.setCurrentDirectory(new File(curDir));
+
+		ArrayList<File> files = new ArrayList<File>();
+
+		while (files.size() < 2) {
+		    int returnVal = fc.showOpenDialog(null);
+
+		    if (returnVal != JFileChooser.APPROVE_OPTION) {
+			throw new RuntimeException(
+				"file chooser cancelled with less than 2 files already selected. bailing out.");
+		    }
+
+		    File[] f1 = fc.getSelectedFiles();
+		    files.addAll(Arrays.asList(f1));
+		}
+
+		File[] treeFiles = files.toArray(new File[files.size()]);
+
+		
+		VisualTreeDiffNT xxx = new VisualTreeDiffNT();
+		xxx.runDiff(treeFiles, true);
+
+//	    } catch (RuntimeException x) {
+//		x.printStackTrace();
+//
+//		JOptionPane.showMessageDialog(null, x.getMessage(),
+//			"Runtime error", JOptionPane.ERROR_MESSAGE);
+//	    }
 
 	}
+    }
+
+    void runDiff(File[] treeFiles, boolean showArch) {
+	File t1_name = treeFiles[0];
+
 	LN t1 = TreeParser.parse(t1_name);
 	PerfTimer timer1;
 	LN.CollectBranchSplitSets cbss1;
@@ -309,7 +396,7 @@ public class VisualTreeDiffNT {
 	// final String[] t1_tips;
 	// LN[] t1_list = LN.getAsList(t1);
 
-	final int numQTrees = args.length - 1;
+	final int numQTrees = treeFiles.length - 1;
 	// Set<String> t1_tipset = LN.getTipSet(t1_list);
 
 	// t1_tips = t1_tipset.toArray(new String[t1_tipset.size()]);
@@ -317,46 +404,19 @@ public class VisualTreeDiffNT {
 
 	LN[][] t1_br = LN.getAllBranchList3(t1);
 	BitSet[] t1_splits = new BitSet[t1_br.length];
-	Map<BitSet, LN[]> t1_hash = new HashMap<BitSet, LN[]>();
-	for (int i = 0; i < t1_br.length; i++) {
-	    // if( false ) {
-	    // t1_splits[i] = splitToBitset( LN.getSmallerSplitSet(t1_br[i]),
-	    // t1_tips);
-	    //
-	    // BitSet os = cbss1.splits.get( new
-	    // UnorderedPair<LN,LN>(t1_br[i]));
-	    //
-	    // if( os.cardinality() > cbss1.numTips / 2 ) {
-	    // os.flip(0,cbss1.numTips);
-	    // }
-	    //
-	    // BitSet os2 = (BitSet) os.clone();
-	    //
-	    // os2.xor(t1_splits[i]);
-	    //
-	    // if( !os.equals(t1_splits[i] )) {
-	    // System.out.printf( "non equal: %d %d %d\n", i, os.cardinality(),
-	    // t1_splits[i].cardinality() );
-	    // }
-	    // } else
-	    {
+	final Map<BitSet, UnorderedPair<LN, LN>> t1_hash = cbss1.splits;
 
-		t1_splits[i] = cbss1.splits.get(new UnorderedPair<LN, LN>(
-			t1_br[i]));
-		t1_hash.put(t1_splits[i], t1_br[i]);
-	    }
-	}
 	timer1.print();
 	if (!true) {
 	    return;
 	}
 
-	final HashSet<UnorderedPair<ANode, ANode>>[] branchFound = new HashSet[numQTrees];
+	final HashSet<UnorderedPair<LN,LN>>[] branchFound = new HashSet[numQTrees];
 
-	for (int qTree = 0; qTree < numQTrees; qTree++) {
+	for (int qTree = 0; qTree < treeFiles.length - 1; qTree++) {
 	    PerfTimer timer = new PerfTimer();
 
-	    File t2_name = new File(args[1 + qTree]);
+	    File t2_name = treeFiles[qTree + 1];
 	    LN t2 = TreeParser.parse(t2_name);
 
 	    LN.CollectBranchSplitSets cbss_q = new LN.CollectBranchSplitSets(t2);
@@ -371,7 +431,7 @@ public class VisualTreeDiffNT {
 	    }
 	    // LN[] t2_list = LN.getAsList(t2);
 
-	    branchFound[qTree] = new HashSet<UnorderedPair<ANode, ANode>>();
+	    branchFound[qTree] = new HashSet<UnorderedPair<LN, LN>>();
 
 	    // Set<String> t2_tipset = LN.getTipSet(t2_list);
 	    //
@@ -394,114 +454,70 @@ public class VisualTreeDiffNT {
 
 	    BitSet[] t2_splits = new BitSet[t2_br.length];
 
-	    for (int i = 0; i < t1_br.length; i++) {
-		// if( !true ) {
-		// t2_splits[i] = splitToBitset(
-		// LN.getSmallerSplitSet(t2_br[i]), t1_tips);
-		// } else
-		{
-		    t2_splits[i] = cbss_q.splits.get(new UnorderedPair<LN, LN>(
-			    t2_br[i]));
-		}
-	    }
+	    t2_splits = cbss_q.splits.keySet().toArray(t2_splits);
+
+	    
 
 	    if (false) {
-		int nFound = 0;
-		for (int i = 0; i < t1_splits.length; i++) {
-		    boolean found = false;
-
-		    // if( t1_splits[i].cardinality() > 1 ) {
-		    for (int j = 0; j < t2_splits.length; j++) {
-			if (t1_splits[i].equals(t2_splits[j])) {
-			    nFound++;
-			    found = true;
-			    break;
-
-			}
-		    }
-
-		    if (found) {
-			branchFound[qTree].add(new UnorderedPair<ANode, ANode>(
-				t1_br[i][0].data, t1_br[i][1].data));
-
-		    }
-		}
+//		int nFound = 0;
+//		for (int i = 0; i < t1_splits.length; i++) {
+//		    boolean found = false;
+//
+//		    // if( t1_splits[i].cardinality() > 1 ) {
+//		    for (int j = 0; j < t2_splits.length; j++) {
+//			if (t1_splits[i].equals(t2_splits[j])) {
+//			    nFound++;
+//			    found = true;
+//			    break;
+//
+//			}
+//		    }
+//
+//		    if (found) {
+//			branchFound[qTree].add(new UnorderedPair<ANode, ANode>(
+//				t1_br[i][0].data, t1_br[i][1].data));
+//
+//		    }
+//		}
 	    } else {
+		int nfound = 0;
+		int ntips = 0;
+		
 		for (int j = 0; j < t2_splits.length; j++) {
-		    LN[] br_j = t1_hash.get(t2_splits[j]);
-
+		    UnorderedPair<LN, LN> br_j = t1_hash.get(t2_splits[j]);
+		    
+		    
+		    if( t2_splits[j].cardinality() == 1 && br_j == null ) {
+			throw new RuntimeException( "consitency check failed: did not find trivial split in other tree." );
+		    }
+//		    
+//		    if( t2_splits[j].cardinality() == 1 ) {
+//			ntips++;
+//			System.out.printf( "found tip: %s %s\n", br_j.get1(), br_j.get2() ); 
+//		    }
+		    
 		    if (br_j != null) {
-			branchFound[qTree].add(new UnorderedPair<ANode, ANode>(
-				br_j[0].data, br_j[1].data));
+			branchFound[qTree].add(br_j);
+			nfound++;
 
 		    }
 		}
+
+		System.err.printf("nfound: %d %d %d\n", nfound, ntips, branchFound[qTree].size());
 	    }
 	    timer.print();
 	}
 
-	// PimmxlPrinter.auxSet = branchFound;
 
-	// boolean archStarted = false;
-
-	//
-	// try
-	// {
-	// PrintStream ps;
-	// ps = new PrintStream( new FileOutputStream("tmp.xml"));
-	//
-	//
-	// PimmxlPrinter.printPhyloxml(t1, ps);
-	// ps.close();
-	//
-	//
-	// ClassLoader cl = ClassLoader.getSystemClassLoader();
-	// Class<?> clazz;
-	//
-	//
-	// clazz = cl.loadClass("org.forester.archaeopteryx.Archaeopteryx");
-	// Method[] meth = clazz.getMethods();
-	//
-	//
-	// for( Method m : meth ) {
-	// if( m.getName().equals("main")) {
-	// System.err.println( m );
-	// String argsy[] = {"tmp.xml"};
-	// Object argsx[] = {(Object)argsy};
-	// m.invoke(null, argsx);
-	//
-	//
-	// }
-	// }
-	//
-	// archStarted = true;
-	// } catch (ClassNotFoundException e) {
-	// System.err.println(
-	// "archeopteryx not in classpath. wiriting to stdout");
-	// } catch (IOException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// throw new RuntimeException( "bailing out.");
-	// } catch (IllegalArgumentException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// throw new RuntimeException( "failed java magic. bailing out.");
-	// } catch (IllegalAccessException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// throw new RuntimeException( "failed java magic. bailing out.");
-	// } catch (InvocationTargetException e) {
-	// // TODO Auto-generated catch block
-	// e.printStackTrace();
-	// throw new RuntimeException( "failed java magic. bailing out.");
-	// }
 
 	Phylogeny phy = new Phylogeny();
-	PhylogenyNode fn = (new ConvertToForester(branchFound)).trav(t1, true);
+	ConvertToForester ctf = new ConvertToForester(branchFound);
+	PhylogenyNode fn = ctf.trav(t1, true);
+	System.out.printf( "ctf found: %d\n", ctf.nfound );
 	phy.setRoot(fn);
 	phy.setRooted(false);
 
-	if (!true) {
+	if (!showArch) {
 	    try {
 		Writer w = new OutputStreamWriter(System.out);
 
@@ -516,15 +532,43 @@ public class VisualTreeDiffNT {
 	} else {
 	    System.err
 		    .printf("Tree visualization using Forester/Archeopteryx (http://www.phylosoft.org/forester)\n");
-	    org.forester.archaeopteryx.Archaeopteryx.createApplication(phy);
+	    
+	    
+	    Phylogeny[] phys = {phy};
+	    Object xxx = new Object();
+	    
+	    
+	    
+	    final File tmp;	    
+	    try {
+		tmp = File.createTempFile("arc", ".txt");
+		ClassLoader cl = getClass().getClassLoader();
+		    	
+		InputStream is = cl.getResourceAsStream("_aptx_configuration_file.txt");
+		FileOutputStream os = new FileOutputStream(tmp);
+		byte[] buf = new byte[4096];
+		while(true ) {
+		    int read = is.read(buf);
+		    os.write(buf,0,read);
+		    
+		    if( read != buf.length ) {
+			break;
+		    }
+		}
+		os.close();
+		tmp.deleteOnExit();
+	    } catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		throw new RuntimeException( "error while creating temp file" );
+ 	    }
+	    MainFrame x = org.forester.archaeopteryx.Archaeopteryx.createApplication(phys, tmp.getPath(), "" );
+	    
+	   
+	    
 	    // archStarted = true;
 	}
 
-	// if( !archStarted ) {
-	// PimmxlPrinter.printPhyloxml(t1, System.out);
-	//
-	//
-	// }
     }
 
     static BitSet splitToBitset(String[] splitSet, String[] refOrder) {

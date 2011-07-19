@@ -64,6 +64,15 @@ public class ANode {
 	return tipName;
     }
 
+    public String toString() {
+	if( isTip ) {
+	    return "TIP:" + tipName;
+	} else {
+	    return "NODE:" + serial;
+	}
+	
+    }
+    
     void setSupport(double support) {
 	this.support = support;
     }
