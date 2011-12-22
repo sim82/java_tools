@@ -20,7 +20,7 @@ public class ANode {
     public final int serial = serialCount++;
     int localSerial = -1;
 
-    boolean isTip;
+    public boolean isTip;
     private String tipName;
     private double support;
     private String nodeLabel;

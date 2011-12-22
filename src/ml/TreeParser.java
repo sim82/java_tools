@@ -18,6 +18,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,7 +30,7 @@ public class TreeParser {
 
     // input as char array
     private byte[] inputA;
-
+    private int[] newlines;
     // pointer to next char in input string
     private int ptr = 0;
 
@@ -52,10 +53,51 @@ public class TreeParser {
     public TreeParser(File f) {
 
 	this.inputA = readFile(f);
+	
+	
+	ArrayList<Integer> nls = new ArrayList<Integer>();
+	for( int i = 0; i < this.inputA.length; i++ ) {
+	    if( this.inputA[i] == '\n' ) {
+		nls.add( i );
+	    }
+	}
+	
+	//this.newlines = nls.toArray(new int[nls.size() ]); <=== this does not work? stupid autoboxing
+	
+	newlines = new int[nls.size()];
+	for( int i = 0; i < nls.size(); i++ ) {
+	    newlines[i] = nls.get(i).intValue();
+	}
+	
 	// this.input = new String(inputA);
 	ptr = 0;
     }
 
+    boolean findLineColumn( int[] out ) {
+	if( newlines == null ) {
+	    return false;
+	}
+	
+	for( int i = 0; i < newlines.length - 1; i++ ) {
+	    if( newlines[i] > ptr ) {
+
+		out[0] = i;
+		
+		if( i > 0 ) {
+		    out[1] = ptr - newlines[i-1];
+		} else {
+		    out[1] = ptr;
+		}
+		
+		return true;
+		
+	    }
+	}
+	
+	return false;
+	
+    }
+    
     private static byte[] readFile(File f) {
 
 	try {
@@ -163,6 +205,7 @@ public class TreeParser {
 
 	if (ptr >= inputA.length) {
 	    // seems like we hit the end of the file
+	    //System.out.printf( "end: %d %d\n", ptr, inputA.length ) ;
 	    return null;
 	}
 	// expect at least one node
@@ -534,15 +577,38 @@ public class TreeParser {
     }
 
     public static void main(String[] args) {
-	TreeParser.QUIET = !true;
+	
+	
+//	TreeParser.QUIET = !true;
+	int numTrees = 1;
+	TreeParser tp = new TreeParser(new File( args[0] ));
 	try {
-	    TreeParser.parse(new File(args[0]));
+	//    TreeParser.parse(new File(args[0]));
+	    
+	    while( true ) {
+		LN n = tp.parse();
+		numTrees++;
+		//System.out.printf("good\n");
+		if( n == null ) {
+		    break;
+		}
+	    }
 	    System.out.printf("good\n");
 	} catch (RuntimeException e) {
 	    if (!TreeParser.QUIET) {
-		e.printStackTrace();
+		//e.printStackTrace();
+		//System.out.printf( "line: %d\n", numTrees );
+		
+		int[] lineCol = {0,0};
+		
+		if( tp.findLineColumn(lineCol)) {
+		    System.out.printf( "line: %d col: %d\n", lineCol[0] + 1, lineCol[1] );
+		}
+		
+		System.out.println( e.getMessage() );
 	    }
-	    System.out.printf("bad\n");
+	    
+	    
 	}
     }
 

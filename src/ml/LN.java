@@ -33,8 +33,8 @@ public class LN {
     public ANode data;
     public LN next;
     public LN back;
-    double backLen;
-    String backLabel;
+    public double backLen;
+    public String backLabel;
     int backId;
     public double backSupport;
 
@@ -1020,6 +1020,47 @@ public class LN {
 		+ "'");
     }
 
+    public static LN[] removeTip( LN node ) {
+	if( !node.data.isTip ) {
+	    throw new RuntimeException("LN.removeTip called with non-tip LN");
+	}
+	
+	node = getTowardsTree(node);
+
+	
+
+	// removing one branch means to join the two adjacent branches.
+	// use the sum of the two branch length as approximation for the
+	// length of the joined branch.
+	double newLen = node.back.next.back.backLen
+		+ node.back.next.next.back.backLen;
+	node.back.next.back.backLen = newLen;
+	node.back.next.next.back.backLen = newLen;
+
+	double newSupport = Math.min(node.back.next.back.backSupport,
+		node.back.next.next.back.backSupport);
+	// System.out.printf( "remove: %f %f %f\n",
+	// node.back.next.back.backSupport,
+	// node.back.next.next.back.backSupport, newSupport );
+	node.back.next.back.backSupport = newSupport;
+	node.back.next.next.back.backSupport = newSupport;
+
+	node.back.next.back.back = node.back.next.next.back;
+	node.back.next.next.back.back = node.back.next.back;
+
+	LN[] ret = { node.back.next.back, node.back.next.next.back };
+
+	// scratch links in old node to prevent dead links from orphans.
+	// (node and node.back should be unreachable now, but there may
+	// still be
+	// references to them)
+	node.back.next.back = null;
+	node.back.next.next.back = null;
+
+	return ret;
+    
+    }
+    
     public static LN[] removeNode(LN d1, LN d2) {
 	if (d1.back.data.serial != d2.back.data.serial) {
 	    throw new RuntimeException(

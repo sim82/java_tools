@@ -26,8 +26,10 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -265,6 +267,38 @@ public class VisualTreeDiffNT {
 	    cbss_q.convertToSmaller();
 	    timer.print();
 
+	    
+	    // special hack to easily compare trees up different size (iff the larger tree is a superset of the smaller one)
+	    if( cbss_q.tcv.tips.size() > cbss1.tcv.tips.size() ) {
+		System.out.println( "WARNING: running auto prune on tree " + (qTree + 1) );
+		
+		//ArrayList<LN> tips = cbss_q.tcv.tips;
+		
+		// get a tip-name set for the reference tree (=the 1st given tree)
+		Set<String> refTipSet = new HashSet<String>();
+		for( LN ln : cbss1.tcv.tips ) {
+		    refTipSet.add(ln.data.getTipName());
+		}
+		
+		// prune all tips form the query tree which are not also present in the ref-tree
+		for( LN ln : cbss_q.tcv.tips ) {
+		    if( !refTipSet.contains(ln.data.getTipName()) ) {
+			LN[] branch = LN.removeTip( ln );
+			t2 = branch[0];
+			
+			System.out.printf( "prune %s\n", ln.data.getTipName() );
+		    }
+		    
+		    
+		}
+		
+		// re-do CollectBranchSplitSets on pruned tree
+		cbss_q = new LN.CollectBranchSplitSets(t2);
+		cbss_q.convertToSmaller();
+		timer.print();
+		
+	    }
+	    
 	    if( cbss1.tcv.tips.size() != cbss_q.tcv.tips.size() ) {
 		throw new RuntimeException("inconsitent tip sets in trees (the trees can not be compared).\nthe trees have different sizes: "+ cbss1.tcv.tips.size() + " vs " + cbss_q.tcv.tips.size());
 	    }
@@ -316,13 +350,22 @@ public class VisualTreeDiffNT {
 	    } else {
 		int nfound = 0;
 		int ntips = 0;
-		
+		int nNontrivial = 0;
+		int nNontrivialFound = 0;
 		for (int j = 0; j < t2_splits.length; j++) {
 		    UnorderedPair<LN, LN> br_j = t1_hash.get(t2_splits[j]);
 		    
 		    
-		    if( t2_splits[j].cardinality() == 1 && br_j == null ) {
-			throw new RuntimeException( "consitency check failed: did not find trivial split in other tree." );
+		    if( t2_splits[j].cardinality() == 1 ) {
+			
+			if(  br_j == null ) {
+			    throw new RuntimeException( "consitency check failed: did not find trivial split in other tree." );
+			}
+		    } else {
+			nNontrivial++;
+			if (br_j != null) {
+			    nNontrivialFound++;
+			}
 		    }
 //		    
 //		    if( t2_splits[j].cardinality() == 1 ) {
@@ -337,7 +380,9 @@ public class VisualTreeDiffNT {
 		    }
 		}
 
-		System.err.printf("nfound: %d %d %d\n", nfound, ntips, branchFound[qTree].size());
+		System.err.printf("nfound: %d (%d) %d %d\n", nfound, t2_splits.length, ntips, branchFound[qTree].size());
+		System.out.printf( "nontrivial: %d/%d %f\n", nNontrivialFound, nNontrivial, ((double)nNontrivialFound) / nNontrivial );
+		
 	    }
 	    timer.print();
 	}
@@ -352,17 +397,17 @@ public class VisualTreeDiffNT {
 	phy.setRooted(false);
 
 	if (!showArch) {
-	    try {
-		Writer w = new OutputStreamWriter(System.out);
-
-		PhylogenyWriter.createPhylogenyWriter().toPhyloXML(w, phy, 0);
-		w.flush();
-
-	    } catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-
-	    }
+//	    try {
+//		Writer w = new OutputStreamWriter(System.out);
+//
+//		PhylogenyWriter.createPhylogenyWriter().toPhyloXML(w, phy, 0);
+//		w.flush();
+//
+//	    } catch (IOException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//
+//	    }
 	} else {
 	    System.err
 		    .printf("Tree visualization using Forester/Archeopteryx (http://www.phylosoft.org/forester)\n");

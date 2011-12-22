@@ -15,7 +15,7 @@ package ml;
 
 import java.io.Serializable;
 
-class UnorderedPair<T1, T2> implements Serializable {
+public class UnorderedPair<T1, T2> implements Serializable {
 
     /**
 	 * 
@@ -24,13 +24,13 @@ class UnorderedPair<T1, T2> implements Serializable {
     private final T1 t1;
     private final T2 t2;
 
-    UnorderedPair(T1 t1, T2 t2) {
+    public UnorderedPair(T1 t1, T2 t2) {
 	this.t1 = t1;
 	this.t2 = t2;
     }
 
     @SuppressWarnings("unchecked")
-    UnorderedPair(Object[] t) {
+    public UnorderedPair(Object[] t) {
 	// great stuff: the elegant syntax of java combined with the type-safety
 	// of perl!
 	this.t1 = (T1) t[0];
