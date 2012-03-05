@@ -434,14 +434,18 @@ public class VisualTreeDiffNT {
 					}
 				}
 			} else {
+				
+				int nfound = 0;
 				for( int j = 0; j < t2_splits.length; j++ ) {
 					LN[] br_j = t1_hash.get(t2_splits[j]);
 					
 					if( br_j != null ) {
 						branchFound[qTree].add( new UnorderedPair<ANode, ANode>(br_j[0].data, br_j[1].data));
-						
+						nfound++;
 					}
 				}
+				
+				System.out.printf( "found: %d\n", nfound );
 			}
 			timer.print();
 		}
