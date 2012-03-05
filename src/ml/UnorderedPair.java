@@ -15,54 +15,56 @@ package ml;
 
 import java.io.Serializable;
 
-class UnorderedPair<T1, T2> implements Serializable {
+public class UnorderedPair<T1, T2> implements Serializable {
 
-	/**
+    /**
 	 * 
 	 */
-	private static final long	serialVersionUID	= -4016575602203280524L;
-	private final T1			t1;
-	private final T2			t2;
+    private static final long serialVersionUID = -4016575602203280524L;
+    private final T1 t1;
+    private final T2 t2;
 
-	UnorderedPair(T1 t1, T2 t2) {
-		this.t1 = t1;
-		this.t2 = t2;
-	}
+    public UnorderedPair(T1 t1, T2 t2) {
+	this.t1 = t1;
+	this.t2 = t2;
+    }
 
-	@SuppressWarnings("unchecked")
-	UnorderedPair( Object[] t ) {
-		// great stuff: the elegant syntax of java combined with the type-safety of perl!
-		this.t1 = (T1) t[0];
-		this.t2 = (T2) t[1];
-	}
-	
-	// HBondTypePair(HBondParameter par) {
-	// this(par.t1, par.t2);
-	// }
+    @SuppressWarnings("unchecked")
+    public UnorderedPair(Object[] t) {
+	// great stuff: the elegant syntax of java combined with the type-safety
+	// of perl!
+	this.t1 = (T1) t[0];
+	this.t2 = (T2) t[1];
+    }
 
-	@Override
-	public int hashCode() {
-		return this.t1.hashCode() + this.t2.hashCode();
-	}
+    // HBondTypePair(HBondParameter par) {
+    // this(par.t1, par.t2);
+    // }
 
-	@Override
-	public boolean equals(Object o) {
-		if (o instanceof UnorderedPair) {
-			// looks strange, but seems to be the right way to get rid of
-			// the unchecked cast warning
-			final UnorderedPair<?, ?> other = (UnorderedPair<?, ?>) o;
+    @Override
+    public int hashCode() {
+	return this.t1.hashCode() + this.t2.hashCode();
+    }
 
-			return (this.t1.equals(other.t1) && this.t2.equals(other.t2))
-					|| (this.t1.equals(other.t2) && this.t2.equals(other.t1));
-		} else {
-			return false;
-		}
+    @Override
+    public boolean equals(Object o) {
+	if (o instanceof UnorderedPair) {
+	    // looks strange, but seems to be the right way to get rid of
+	    // the unchecked cast warning
+	    final UnorderedPair<?, ?> other = (UnorderedPair<?, ?>) o;
+
+	    return (this.t1.equals(other.t1) && this.t2.equals(other.t2))
+		    || (this.t1.equals(other.t2) && this.t2.equals(other.t1));
+	} else {
+	    return false;
 	}
-	
-	public T1 get1() {
-		return this.t1;
-	}
-	public T2 get2() {
-		return this.t2;
-	}
+    }
+
+    public T1 get1() {
+	return this.t1;
+    }
+
+    public T2 get2() {
+	return this.t2;
+    }
 }

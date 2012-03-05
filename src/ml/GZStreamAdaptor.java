@@ -21,14 +21,15 @@ import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 public class GZStreamAdaptor {
-	public static InputStream open( File file ) throws FileNotFoundException, IOException {
-		String name = file.getName();
-		
-		if( name.endsWith(".gz" )) {
-			return new GZIPInputStream(new FileInputStream(file));
-		} else {
-			return new FileInputStream(file);
-		}
-		
+    public static InputStream open(File file) throws FileNotFoundException,
+	    IOException {
+	String name = file.getName();
+
+	if (name.endsWith(".gz")) {
+	    return new GZIPInputStream(new FileInputStream(file));
+	} else {
+	    return new FileInputStream(file);
 	}
+
+    }
 }

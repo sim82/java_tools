@@ -12,71 +12,69 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FileUtils {
-	static Map<String, String[]> parseSplits(File rnFile) {
-        try {
-            BufferedReader r = new BufferedReader(new FileReader(rnFile));
+    static Map<String, String[]> parseSplits(File rnFile) {
+	try {
+	    BufferedReader r = new BufferedReader(new FileReader(rnFile));
 
-            Map<String,String[]> map = new HashMap<String, String[]>();
+	    Map<String, String[]> map = new HashMap<String, String[]>();
 
+	    String line;
 
-            String line;
+	    while ((line = r.readLine()) != null) {
 
-            while( (line = r.readLine()) != null ) {
+		try {
+		    StringTokenizer st = new StringTokenizer(line);
+		    st.nextToken();
+		    String k = st.nextToken();
+		    st.nextToken(); // skip the 'real neighbor'
+		    String v = st.nextToken();
 
+		    //
+		    // parse the 'split list' (comma separated list of tips
+		    // names)
+		    //
 
-                try {
-                    StringTokenizer st = new StringTokenizer(line);
-					String seq = st.nextToken();
-                    String k = st.nextToken();
-					st.nextToken(); // skip the 'real neighbor'
-                    String v = st.nextToken();
+		    StringTokenizer st2 = new StringTokenizer(v, ",");
+		    int num = st2.countTokens();
+		    if (num < 1) {
+			throw new RuntimeException(
+				"could not parse split list from real neighbor file");
+		    }
 
+		    String[] split = new String[num];
 
-					//
-					// parse the 'split list' (comma separated list of tips names)
-					//
+		    // System.out.printf( "split: %s\n", k );
+		    for (int i = 0; i < num; i++) {
+			split[i] = st2.nextToken();
+			// System.out.printf( " '%s'", split[i] );
+		    }
+		    // split[num] = k;
+		    // System.out.println();
 
-					StringTokenizer st2 = new StringTokenizer(v, ",");
-					String tip;
-					
-					int num = st2.countTokens();
-					if( num < 1 ) {
-						throw new RuntimeException("could not parse split list from real neighbor file");
-					}
+		    map.put(k, split);
+		} catch (NoSuchElementException x) {
 
-					String[] split = new String[num];
+		    System.out.printf("bad line in tsv file: " + line);
+		    x.printStackTrace();
+		    throw new RuntimeException("bailing out");
+		}
+	    }
 
+	    r.close();
 
-//					System.out.printf( "split: %s\n", k );
-					for( int i = 0; i < num; i++ ) {
-						split[i] = st2.nextToken();
-//						System.out.printf( " '%s'", split[i] );
-					}
-					//split[num] = k;
-//					System.out.println();
-					
-                    map.put(k,split);
-                } catch( NoSuchElementException x ) {
+	    // for( Map.Entry<String,String> e : map.entrySet() ) {
+	    // System.out.printf( "rnm: '%s' => '%s'\n", e.getKey(),
+	    // e.getValue() );
+	    //
+	    // }
 
-                    System.out.printf( "bad line in tsv file: " + line );
-                    x.printStackTrace();
-                    throw new RuntimeException("bailing out");
-                }
-            }
+	    return map;
 
-            r.close();
+	} catch (IOException ex) {
+	    Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE,
+		    null, ex);
 
-//			for( Map.Entry<String,String> e : map.entrySet() ) {
-//				System.out.printf( "rnm: '%s' => '%s'\n", e.getKey(), e.getValue() );
-//
-//			}
-
-            return map;
-
-        } catch (IOException ex) {
-            Logger.getLogger(ClassifierLTree.class.getName()).log(Level.SEVERE, null, ex);
-
-            throw new RuntimeException( "bailing out");
-        }
+	    throw new RuntimeException("bailing out");
+	}
     }
 }

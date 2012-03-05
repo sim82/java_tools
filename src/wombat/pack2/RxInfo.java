@@ -20,21 +20,23 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 public class RxInfo {
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		File rxFile = new File( args[0] );
-		
-		ObjectInputStream ois = new ObjectInputStream( new BufferedInputStream(new FileInputStream(rxFile)));
-		
-		
-		RxData rx = (RxData) ois.readObject();
-		ois.close();
-		
-		
-		for( RxData.RxFile rxf : rx.rxfs ) {
-			System.out.printf( "%s %d\n", rxf.localName, rxf.data.length );
-		}
-		System.out.printf( "pre time: %.2f s\n", (rx.timeStart - rx.timeFirst) / 1000.0 );
-		System.out.printf( "exec time: %.2f s\n", (rx.timeEnd - rx.timeStart) / 1000.0 );
-		
+    public static void main(String[] args) throws IOException,
+	    ClassNotFoundException {
+	File rxFile = new File(args[0]);
+
+	ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(
+		new FileInputStream(rxFile)));
+
+	RxData rx = (RxData) ois.readObject();
+	ois.close();
+
+	for (RxData.RxFile rxf : rx.rxfs) {
+	    System.out.printf("%s %d\n", rxf.localName, rxf.data.length);
 	}
+	System.out.printf("pre time: %.2f s\n",
+		(rx.timeStart - rx.timeFirst) / 1000.0);
+	System.out.printf("exec time: %.2f s\n",
+		(rx.timeEnd - rx.timeStart) / 1000.0);
+
+    }
 }
