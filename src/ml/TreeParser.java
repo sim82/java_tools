@@ -506,6 +506,8 @@ public class TreeParser {
 
 	// System.out.printf("leaf: %s\n", ld);
 	LN n = LN.create();
+	
+	ld = ld.replaceAll("\\s", "");
 	n.data.setTipName(ld);
 	n.data.setTipSerial(nLeafs);
 	// n.data = ld;

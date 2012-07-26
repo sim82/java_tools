@@ -1602,7 +1602,8 @@ public class LN {
     static LN getNonTipNode(LN n, boolean back) {
 	if (n == null) {
 	    return null;
-	} else if (!n.data.isTip && !n.back.data.isTip) {
+	    
+	} else if (!n.data.isTip /*&& !n.back.data.isTip*/) {
 	    return n;
 	} else {
 	    LN good = null;

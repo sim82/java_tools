@@ -76,6 +76,8 @@ public class EvoSimFossil {
 		    FindMinSupport.commaSeparatedList(splitSet));
 	}
 
+	
+	
 	LN tip = LN.insertBranch(innerstBranch, meanBranchLen);
 	tip.data.setTipName("fossil");
 	tip.data.isTip = true;
@@ -155,8 +157,8 @@ public class EvoSimFossil {
 	byte[] fossilSeqBad = new byte[BAD_LEN];
 	randSeqBIN(fossilSeqBad);
 
-	LN treeBad = LN.parseTree(new File(args[0]));
-	LN treeGood = LN.parseTree(new File(args[1]));
+	LN treeBad = LN.getNonTipNode(LN.parseTree(new File(args[0])));
+	LN treeGood = LN.getNonTipNode(LN.parseTree(new File(args[1])));
 
 	drawBranchLengths(treeGood, treeBad);
 

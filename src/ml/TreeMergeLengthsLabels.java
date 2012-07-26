@@ -15,6 +15,10 @@ public class TreeMergeLengthsLabels {
 	for (LN[] br : lenBrl) {
 	    String[] split = LN.getSmallerSplitSet(br);
 
+	    if( br[0].backLen < 0 ) {
+		br[0].backLen = br[1].backLen = 1.0; // initialize branch lengths to 1.0 if there werent any lengths in the inlout file.
+	    }
+	    
 	    try {
 		LN[] lableBranch = LN.findBranchBySplit(lableTree, split);
 
