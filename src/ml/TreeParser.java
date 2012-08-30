@@ -37,9 +37,11 @@ public class TreeParser {
     private int nLeafs = 0;
     private int nInnerNodes = 0;
 
+    private boolean keepRooted = false;
+    
     public static LN parse(File f) {
-	TreeParser tp = new TreeParser(f);
-	return tp.parse();
+    	TreeParser tp = new TreeParser(f);
+    	return tp.parse();
     }
 
     static boolean QUIET = false;
@@ -50,6 +52,10 @@ public class TreeParser {
     // ptr = 0;
     // }
 
+    public void setKeepRooted( boolean k ) {
+    	keepRooted = k;
+    }
+    
     public TreeParser(File f) {
 
 	this.inputA = readFile(f);
@@ -222,8 +228,8 @@ public class TreeParser {
 	    parseBranchLength();
 	}
 
-	if (node.back == null) {
-	    // oh my god. a fucking rooted tree
+	if (node.back == null && !keepRooted) {
+	    // un-root the tree
 	    // System.out.println("rooted");
 	    // double sup = Math.max( nl.data.getSupport(),
 	    // nr.data.getSupport());
